@@ -1,7 +1,8 @@
 # setup
 install.packages(c("devtools", "roxygen2", "testthat",
                    "knitr",'checkmate','beepr','readr',
-                   'dplyr','tidyr','exifr'))
+                   'dplyr','tidyr','exifr', 'ggplot2'))
+
 
 # log
 # use_package('checkmate')
@@ -13,6 +14,8 @@ install.packages(c("devtools", "roxygen2", "testthat",
 # use_package('dplyr')
 # use_package('tidyr')
 # use_package('exifr')
+# use_package('ggplot2')
+# use_package('ggnewscale')
 
 
 # install.packages("bench")
@@ -40,22 +43,68 @@ files <- get_input_files(path_in,
 df_meta <- collect_metadata(files, pattern_orgimg_files)
 
 # Read raw data
-df_raw_rings <- read_raw_data(df_meta, 'rings')
-df_raw_cells <- read_raw_data(df_meta, 'cells')
+raw_data <- collect_raw_data(df_meta, subset_treecodes = NULL)
 
-clean_data <- clean_raw_data(df_raw_cells,
-                             df_raw_rings,
-                             max_val_year = 2500,
-                             min_val_MRW = 10)
+# flag then clean
+df_rings_flags <- flag_problem_rings(raw_data$rings, raw_data$cells,
+                                     max_val_year = 2500,
+                                     min_val_MRW = 10)
+# TODO: make it so flags can be viewde then manually changed, then data is cleaned?
+flags_remove <- c(
+  no_rings_data = TRUE,
+  inv_year = TRUE,
+  no_CWT = TRUE,
+  duplicate_fewer_cells = TRUE,
+  innermost_year = TRUE
+)
 
-# create out dir
-# create diagnostics file?
-# save df_meta?
+clean_data <- clean_raw_data(df_rings_flags, raw_data$cells, flags_remove)
+
+# TODO: create out dir
+trees <- unique(df_raw_cells$tree_code)
+for (tree in trees) {
+  plot_coverage(tree, clean_data$rings, df_meta, path_plots='./')
+}
+
+# TODO: iterative steps for cleaning?
+
+# TODO: store data
+
+# EWLW estimation need some of the additional measures (SECTOR100, RRADDISTR.ST, ..?)
+
+# and EWLW needs CWT estimates
+
+# the EW LW calculations can be done in multiple ways and in saxoR, they each
+# result in 3 new columns in df_cells
+# EWW early wood width and LWW late wood width are the same for the whole ring!!
+# EW_LW is "EW" for cells belonging to the early wood part of the ring and "LW"
+# for the others, based on the boundary estimated by the resp. method
+# so shouldnt these variables rather be stored in the ring df???
+
+# proflie calculation needs an EWLW estimate
+
+# for the profile calculation, a method is selected (with the resp. 3 EWLW cols)
+# and then moving averages are calculated along the "time" direction for a specified bandwidth ???
+# this results in a smaller df
+# so PRF_allDATA$tbl_prf_calc[[1]]$CWTRAD might hold the median and other quantiles of CWTRAD
+# over the individual bands slid across the cells
 
 
 
-path_out <- './out'
+# dgn functions require EWLW, but not profiles (?)
+# they add flags to the diagnostics table, but do not change the cells data
 
-# Harmonizer: the collect function
-# Saxor: sxr_initialise and rxs_read
+# dgn_Ncells: adds n cells and n bands per ring to diagnostics, add a variable that has
+# the count of bands with less than X cells per ring (seperate per EW, LW??)
+# dgn_ringborder
+# dgn_outofffocus
+
+
+
+
+
+# YTE
+
+
+
 
