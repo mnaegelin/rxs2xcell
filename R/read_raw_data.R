@@ -2,12 +2,20 @@
 # TODO: the txt files have only two digits after decimal point for many variables -> enough precision?
 # or should we read form xlsx instead?
 
-# helper function to read all the (ring or cell) output files and store in large df
-read_raw_data <- function(df_meta, files_colname = 'files_cells', sel_tree_codes){
+#' Read all the (ring or cell) output files and store in large df
+#'
+#' Helper function
+#'
+#' @param df_meta Dataframe containing metadata.
+#' @param files_colname Name of the column in df_meta with the filenames to read.
+#' @param sel_tree_codes List/vector of tree codes to be included.
+#' @returns A dataframe with the combined raw data.
+#'
+read_raw_data <- function(df_meta, files_colname = 'fname_cells'){
   # NOTE: all columns except ID are converted to numeric
+  #       all columns from all raw files are included in the output
   df_raw <- df_meta %>%
     dplyr::select(!!dplyr::sym(files_colname), tree_code, image_code) %>%
-    dplyr::filter(tree_code %in% sel_tree_codes) %>%
     dplyr::mutate(
       raw_data = purrr::map(
         !!dplyr::sym(files_colname),
@@ -26,30 +34,34 @@ read_raw_data <- function(df_meta, files_colname = 'files_cells', sel_tree_codes
   return(df_raw)
 }
 
+subset_treecodes <- function(df_meta, sel_treecodes) {
+  # check for validity
+  beepr::beep_on_error(
+    checkmate::assert_subset(sel_treecodes, df_meta$tree_code),
+    sound=2
+  )
 
+  df_meta_filt <- df_meta %>% dplyr::filter(tree_code %in% sel_treecodes)
+  return(df_meta_filt)
+}
+
+
+#' Collect the raw ROXAS cell and ring data
+#'
+#' @param df_meta Dataframe containing metadata.
+#' @param subset_treecodes (optional) a list of tree codes to include.
+#' @returns A dataframe with the combined raw data.
+#'
 collect_raw_data <- function(df_meta, subset_treecodes = NULL){
 
-  sel_tree_codes <- df_meta$tree_code
-
-  # if a subset of treecodes is supplied, check for validity
-  if (!is.null(subset_treecodes)) {
-    beepr::beep_on_error(
-      checkmate::assert_character(subset_treecodes),
-      sound=2
-    )
-    beepr::beep_on_error(
-      checkmate::assert_subset(subset_treecodes, df_meta$tree_code),
-      sound=2
-    )
-    sel_tree_codes <- subset_treecodes
-  }
-
   # read in the raw data
-  df_rings_raw <- read_raw_data(df_meta, 'files_rings', sel_tree_codes)
-  df_cells_raw <- read_raw_data(df_meta, 'files_cells', sel_tree_codes)
+  df_rings_raw <- read_raw_data(df_meta, 'fname_rings')
+  df_cells_raw <- read_raw_data(df_meta, 'fname_cells')
 
   # specify the columns we want, and at same time harmonizing column names of
   # different ROXAS versions
+  # TODO: what if some columns are not in data / NA? what if there are others?
+  # what about different softwares / image analysis types?
   selcols_rings <- c(
     'YEAR', 'RA', 'MRW', 'CWTTAN'
   )

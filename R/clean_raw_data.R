@@ -15,17 +15,21 @@ flag_problem_rings <- function(df_rings_raw, df_cells_raw,
   df_rings_flags <- df_cells_raw %>%
     dplyr::count(tree_code, image_code, YEAR, name = 'n_cells')
 
-  # 2. flag which (cell) years have no corresponding row in rings output file
+  # 2. combine with the raw rings data and add a column to log whether a
+  # yearring is removed from the data
+  df_rings_flags <- df_rings_flags %>%
+  dplyr::left_join(df_rings_raw,
+                   by = c('tree_code', 'image_code', 'YEAR')) %>%
+    dplyr::mutate(removed = FALSE,
+                  removed_bc = NA)
+
+  # 3. flag which (cell) years have no corresponding row in rings output file
   # NOTE: There are sometimes cells from incomplete rings, e.g. at the edge of
   # a subsample. These cells are given a year value, and cell measurements are
   # written to the cells output files, but the corresponding row in the rings
-  # output does not exist. Using a join on the raw rings df, we can filter
-  # these years.
-  # NOTE: There should be no years in the rings data that have no corresponding
-  # rows in the cells data, but just in case, we use an inner_join
+  # output does not exist. Using a join on the raw rings df in the previous step
+  # would give us NA values for the ring measurements of these years.
   df_rings_flags <- df_rings_flags %>%
-    dplyr::left_join(df_rings_raw,
-                     by = c('tree_code', 'image_code', 'YEAR')) %>%
     dplyr::mutate(no_rings_data = is.na(MRW))
 
   # 3.&4. flag the rings which have invalid (i.e., in-future) or NA year values,
@@ -75,25 +79,34 @@ clean_raw_data <- function(df_rings_flags, df_cells_raw, flags_remove){
   # if set to TRUE, the corresponding column in df_rings_flags will be used to
   # filter out the flagged data
 
+
+
   # 1 remove the noisy data based on the selected flags
   sel_flags <- names(flags_remove[flags_remove])
-  df_rings_flags <- df_rings_flags %>%
-    dplyr::mutate(
-      removed = rowSums(dplyr::across(dplyr::all_of(sel_flags))) > 0)
+
+  for (flag in sel_flags) {
+    df_rings_flags[
+      (!df_rings_flags['removed']) & # not yet removed
+        (df_rings_flags[flag])       # with the flag set to TRUE
+      , c('removed','removed_bc')] <- list(TRUE,flag)
+  }
+
+  # df_rings_flags <- df_rings_flags %>%
+  #   dplyr::mutate(
+  #     removed = rowSums(dplyr::across(dplyr::all_of(sel_flags))) > 0)
 
   years_to_remove <- df_rings_flags[df_rings_flags[['removed']],
                                    c('tree_code','image_code','YEAR')]
   df_cells_clean <- df_cells_raw %>%
     dplyr::anti_join(years_to_remove, by=c('tree_code','image_code','YEAR'))
 
-
-  # TODO: warn, summary
-  warning('In total, ', nrow(years_to_remove),
-          ' years were removed from the data from the following treecodes:\n',
-           paste(paste0(' ', unique(years_to_remove$tree_code)), collapse='\n'),
-          '\ndue to one or more of the following flgas:\n',
-           paste(paste0(' ', sel_flags), collapse='\n'),
-          '\nSee fct_output$rings for more details.')
+  if (sum(df_rings_flags$removed) > 0){
+    message('In total, ', nrow(years_to_remove),
+            ' years were removed from the data from the treecodes\n',
+             paste(unique(years_to_remove$tree_code), collapse=', '),
+            '\ndue to the following flags (see fct_output$rings for details):',
+            paste0(capture.output(table(df_rings_flags$removed_bc)), collapse = "\n"))
+  }
   # for (flag in names(flags_remove)) {
   #   flag <- 'no_rings_data'
   #   df_rings_flags[df_rings_flags[[flag]],c('tree_code','image_code','YEAR')]
@@ -109,9 +122,9 @@ clean_raw_data <- function(df_rings_flags, df_cells_raw, flags_remove){
 
 
 
-plot_coverage <- function(tree_code, df_rings_clean, df_meta, path_plots = './') {
+plot_coverage <- function(tree, df_rings_clean, df_meta,
+                          show_plot = TRUE, save_plot = TRUE, path_plots = './') {
   # create the data for the plot
-  df_rings_clean <- clean_data$rings
   df_plot <- df_rings_clean %>%
     dplyr::filter(tree_code == tree) %>%
     dplyr::left_join(df_meta[c('image_code', 'tree_code', 'sample','subsample')],
@@ -165,21 +178,27 @@ plot_coverage <- function(tree_code, df_rings_clean, df_meta, path_plots = './')
       x = "Year", y = "Image") +
     ggplot2::theme_minimal()
 
-  # Save the plot to png
-  plot_name <- file.path(path_plots, paste0(tree,'.png')) # TODO: make path safe
-  # make plot size dynamically dependent on nr of rows (images) and total
-  # range of years, with some hard limits to avoid extremes (all in px)
-  image_width <- min(
-    max((max(df_summary$max_year)-min(df_summary$min_year))*75+800, 2000),
-    6000)
-  image_height <- min(
-    max(nrow(df_summary)*100+200, 750),
-    2000)
+  if (show_plot){
+    print(p_cov)
+  }
 
-  ggplot2::ggsave(plot_name, p_cov, bg='white',
-                  width = image_width, height = image_height, units='px')
+  if (save_plot){
+    # Save the plot to png
+    plot_name <- file.path(path_plots, paste0(tree,'.png')) # TODO: make path safe
+    # make plot size dynamically dependent on nr of rows (images) and total
+    # range of years, with some hard limits to avoid extremes (all in px)
+    image_width <- min(
+      max((max(df_summary$max_year)-min(df_summary$min_year))*75+800, 2000),
+      6000)
+    image_height <- min(
+      max(nrow(df_summary)*100+200, 750),
+      2000)
 
-  message(tree, ': coverage plot saved to ', plot_name)
+    ggplot2::ggsave(plot_name, p_cov, bg='white',
+                    width = image_width, height = image_height, units='px')
+
+    message(tree, ': coverage plot saved to ', plot_name)
+  }
 
 }
 
