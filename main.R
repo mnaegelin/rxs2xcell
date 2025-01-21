@@ -1,7 +1,7 @@
 # setup
 install.packages(c("devtools", "roxygen2", "testthat",
                    "knitr",'checkmate','beepr','readr',
-                   'dplyr','tidyr','exifr', 'ggplot2'))
+                   'dplyr','tidyr','exifr', 'ggplot2','data.table'))
 
 
 # log
@@ -17,46 +17,84 @@ install.packages(c("devtools", "roxygen2", "testthat",
 # use_package('ggplot2')
 # use_package('ggnewscale')
 # use_package('aws.s3') # TODO: really in this package, or seperate?
+# usethis::use_data_table()
+# (maybe) install.packages("bench")
+# (maybe) library(bench)
 
-# install.packages("bench")
-# library(bench)
+
+
 library(devtools)
 load_all()
 
 # path to the input data
 path_in <- '../QWA_Arzac2024'
-# path_in <- '../saxoRdata/inst/extdata/YAM_LASI_2756'
 
-# define the patterns of ROXAS output files we want
-# NOTE: the leading _underscore
-# pattern_cell_files = "_Output_Cells\\.txt$"
-# pattern_ring_files = "_Output_Rings\\.txt$"
-# pattern_settings_files = "_ROXAS_Settings\\.txt$"
-# pattern_orgimg_files = "\\.(jpg|jpeg)$" # "\\.(jpg|jpeg|png|gif|bmp|tiff)$"
-# imgfiles_exclude_keywords = c("annotated",
-#                               "ReferenceSeries",
-#                               "Preview")
-
-# read raw metadata
-files <- get_input_files(path_in,
-                         pattern_cell_files,
-                         pattern_ring_files,
-                         pattern_settings_files,
-                         pattern_orgimg_files,
-                         imgfiles_exclude_keywords)
-
+# get overview of data to be read
+files <- get_input_files(path_in)
 df_structure <- extract_data_structure(files)
 
+# optional: subset treecodes
+# df_structure <- subset_treecodes(df_structure,
+#                                  # EITHER: include_codes=c('treecode1', 'treecode2')
+#                                  # OR: exclude_codes=c('treecode3', 'treecode4')
+#                                  )
+
+# read available metadata
 df_meta <- collect_metadata(df_structure,
                             roxas_version='classic')
+# TODO: write to file, create template for user input
 
-# Read raw data
-raw_data <- collect_raw_data(df_meta)
+# read raw cells/rings data
+# TODO: add batch processing for large datasets?
+QWA_data <- list('cells' = collect_cells_data(df_structure),
+                 'rings' = collect_rings_data(df_structure))
 
-# flag then clean
-df_rings_flags <- flag_problem_rings(raw_data$rings, raw_data$cells,
-                                     max_val_year = 2500,
-                                     min_val_MRW = 10)
+# clean raw data
+QWA_data <- validate_QWA_data(QWA_data)
+QWA_data <- remove_double_rings(QWA_data)
+# TODO: write to file
+# TODO: do we want to store the rings log in DB (and thus only flag but don't remove years with issues)?
+
+create_coverage_plots(QWA_data$rings)
+
+# manual exclusions of years based on user input
+# TODO:
+
+# remove outliers
+# TODO:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# all other processing steps could be voluntary
+# so from here could move to data write to db
+# TODO: compare calc DH to file DH
+# TODO: what about the additional calculated vars?
+
+
+# flag then clean the cells/rings data
+df_rings_flags <- flag_problem_rings(raw_data$rings, raw_data$cells)
 # TODO: make it so flags can be viewed then manually changed, then data is cleaned?
 # there are different requirements:
 # automatically remove things which would lead to errors

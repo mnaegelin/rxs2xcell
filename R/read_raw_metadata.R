@@ -1,26 +1,27 @@
 
-pattern_cell_files = "_Output_Cells\\.txt$"
-pattern_ring_files = "_Output_Rings\\.txt$"
-pattern_settings_files = "_ROXAS_Settings\\.txt$"
-pattern_orgimg_files = "\\.(jpg|jpeg)$" # "\\.(jpg|jpeg|png|gif|bmp|tiff)$"
-imgfiles_exclude_keywords = c("annotated",
-                              "ReferenceSeries",
-                              "Preview")
 
 
-#' Get input files
+
+#' Get list of input files
 #'
-#' Given a path_in, get the paths of relevant ROXAS files to be imported
+#' Given a path_in, get the paths and filenames of the ROXAS files to be imported
 #'
 #' @param path_in path of the input directory.
+#'
 #' @returns A list of lists of the images and ROXAS files.
 #'
-get_input_files <- function(path_in,
-                            pattern_cell_files,
-                            pattern_ring_files,
-                            pattern_settings_files,
-                            pattern_orgimg_files,
-                            imgfiles_exclude_keywords) {
+get_input_files <- function(path_in) {
+
+  # Regex pattern to be matched by the different ROXAS files
+  # NOTE: in addition to the original images (IMGNAME.jpg), the ROXAS output
+  # might include annotated images, etc. These are filtered out with keywords.
+  pattern_cell_files = "_Output_Cells\\.txt$"
+  pattern_ring_files = "_Output_Rings\\.txt$"
+  pattern_settings_files = "_ROXAS_Settings\\.txt$"
+  pattern_orgimg_files = "\\.(jpg|jpeg)$" # "\\.(jpg|jpeg|png|gif|bmp|tiff)$"
+  imgfiles_exclude_keywords = c("annotated",
+                                "ReferenceSeries",
+                                "Preview")
 
   # assert that path_in is valid
   beepr::beep_on_error(
@@ -46,8 +47,6 @@ get_input_files <- function(path_in,
                                )
 
   # list original images used for ROXAS analysis
-  # TODO: maybe match on "FILENAME\\.(jpg|jpeg)$" from the settings files
-  #       instead of manually excluding keywords?
   pattern_excl_keywords = paste(imgfiles_exclude_keywords, collapse="|")
   files_images <- list.files(path_in,
                              pattern = pattern_orgimg_files,
@@ -105,21 +104,28 @@ get_input_files <- function(path_in,
 }
 
 
-
-# check that the filenames follow the right labeling structure of
-# `site_species_tree_sample_subsample`
-# and extract this information into a dataframe
+#' Extract the data structure from image filenames
+#'
+#' Extract the structure of the data (i.e., which images belong to which sample,
+#' tree, site) from the filenames of the input data into a dataframe.
+#' This requires that all files follow the same labeling pattern of
+#' `site_species_tree_sample_subsample`
+#' NOTE: we already checked that all output filenames match, so it is ok
+#' to do the pattern extraction on the image filenames only.
+#'
+#' @param files The list of lists with all input filenames.
+#'
+#' @returns A dataframe containing the filenames and data structure.
+#'
 # TODO: allow for different labeling structures
 # e.g., site/species/tree/sample/imgname.jpg, or other variants
-# NOTE: we already checked that all output filenames match, so it is ok
-# to work with image filenames only
 extract_data_structure <- function(files) {
-  # we expect the basenames of the files to have the following structure:
+  # NOTE: we expect the basenames of the files to have the following structure:
   lbl_structure <- 'site_species_tree_sample_subsample'
   # in regex, this corresponds to the following pattern (NOTE the named groups)
   pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:]+)_(?<sample>[:alnum:]+)_(?<subsample>[:alnum:]+)$"
 
-  # remove paths and filename extensions (e.g. ".jpg")
+  # remove paths and extensions from the image filenames (e.g. ".jpg")
   fnames <- basename(files$fname_image) %>%
     stringr::str_split_i("\\.",1)
 
@@ -149,11 +155,11 @@ extract_data_structure <- function(files) {
   df_structure <- df_structure %>%
     dplyr::rename(image_code = V1) %>% # full pattern is in column 1
     tidyr::unite('tree_code', site, species, tree, sep = '_', remove = FALSE) %>%
-    dplyr::select(image_code, tree_code,
-                  site, species, tree, sample, subsample)
+    tidyr::unite('sample_code', site, species, tree, sample, sep = '_', remove = FALSE) %>%
+    dplyr::select(site, species, tree, tree_code,
+                  sample, sample_code, subsample, image_code) # reorder columns
 
-  df_structure <- cbind(as.data.frame(files),df_structure)
-
+  df_structure <- cbind(as.data.frame(files),df_structure) # add filenames
 
   # warn if some labels are too long to comply with .rwl format
   # TODO: is this really relevant? do we create an rwl? correct to use site + sample
@@ -167,14 +173,78 @@ extract_data_structure <- function(files) {
             paste(paste0(' ', toolong_for_rwl), collapse='\n'))
   }
 
+  # report the identified treecodes and beep successful ending of the function
+  message("Data structure successfully extracted from ROXAS filenames\n",
+          "for the following ",
+          length(unique(df_structure$tree_code)),
+          " treecode(s):\n",
+          paste(paste0(' ', unique(df_structure$tree_code)), collapse = "\n"))
+  beepr::beep(sound = 1, expr = NULL)
+
   return(df_structure)
 }
 
-#' Extract ROXAS settings
+
+#' Include or exclude tree codes from data collection
 #'
-#' Read and extract from a single ROXAS settings file
+#' This function filters the data structure dataframe based on the tree codes provided
+#'
+#' @param df_structure The dataframe containing all input filenames and data structure.
+#' @param include_codes EITHER provide a vector of the tree codes to be included
+#' @param exclude_codes OR provide a vector of the tree codes to be excluded
+#'
+#' @returns df_structure with the filtered tree codes.
+subset_treecodes <- function(df_structure,
+                             include_codes=NULL,
+                             exclude_codes=NULL) {
+  # check that only one of the two options is used
+  if (xor(is.null(include_codes), is.null(exclude_codes))){
+    beepr::beep(sound = 2, expr = NULL)
+    stop("Please provide either `include_codes` or `exclude_codes`, but not both.")
+  }
+
+  # if include_codes is not null, filter for these
+  if (!is.null(include_codes)){
+    # check input for validity
+    beepr::beep_on_error(
+      checkmate::assert_subset(include_codes, df_structure$tree_code),
+      sound=2
+    )
+    df_struct_filt <- df_structure %>% dplyr::filter(tree_code %in% include_codes)
+  }
+
+  # if exclude_codes is not null, filter these out
+  if (!is.null(exclude_codes)){
+    # check input for validity
+    beepr::beep_on_error(
+      checkmate::assert_subset(exclude_codes, df_structure$tree_code),
+      sound=2
+    )
+    df_struct_filt <- df_structure %>% dplyr::filter(!(tree_code %in% exclude_codes))
+  }
+
+  return(df_struct_filt)
+}
+
+
+
+#' Extract data from ROXAS settings file
+#'
+#' Helper function to read and extract the metadata from a single ROXAS settings file
+#'
+#' @param file_settings The file to be read.
+#' @param roxas_version The version of ROXAS used to create the file (classic, AI)
+#'
+#' @returns A dataframe containing the extracted data.
+#'
+# TODO: check that this works for all old versions of ROXAS
+#       it looks like it works for ROXAS versions
+#       3.0.285, 3.0.575, 3.0.590, 3.0.608, 3.0.620, 3.0.634, 3.0.655 (different date formats)
+# TODO: add support for ROXAS AI
+# TODO: date formatting
 extract_roxas_settings <- function(file_settings,
                                    roxas_version = 'classic') {
+  # check input
   beepr::beep_on_error(
     checkmate::assert_subset(roxas_version, c('classic')), # TODO: add others
     sound=2
@@ -189,13 +259,13 @@ extract_roxas_settings <- function(file_settings,
   if (roxas_version == 'classic'){
     # NOTE: this relies heavily on the consistent layout of the settings file
     # in particular, we need tab delimiters, columns RNUM, SETTING, DESCRIPTION
-    # and the right values in the rows 8,9,10,11,12,13,17,20!
-    # TODO: check for older versions of ROXAS?
+    # and the right values in the rows 8,9,10,12,13,17,20!
+    # TODO: check for different / older versions of ROXAS?
     df_settings <- df_settings %>%
-      dplyr::filter(RNUM %in% c(8,9,10,11,12,13,17,20)) %>%
+      dplyr::filter(RNUM %in% c(8,9,10,12,13,17,20)) %>%
       dplyr::mutate(new_names = c(
         "configuration", "date_created", "software_version",
-        "author", "spatial_resolution", "origin_calibrated",
+        "spatial_resolution", "origin_calibrated",
         "sample_geometry", "outmost_year"
       )) %>%
       dplyr::select(SETTING, new_names) %>%
@@ -215,9 +285,16 @@ extract_roxas_settings <- function(file_settings,
   return(df_settings)
 }
 
-#' Collect ROXAS settings
+
+#' Read and combine ROXAS settings data
 #'
 #' Collect the settings data from all ROXAS settings files
+#'
+#' @param files_settings Vector/list of ROXAS settings filenames
+#' @param roxas_version The version of ROXAS used to create the files (classic, AI)
+#'
+#' @returns A dataframe containing the extracted data.
+#'
 collect_settings_data <- function(files_settings,
                                   roxas_version = 'classic') {
   df_settings_all <- files_settings %>%
@@ -227,8 +304,15 @@ collect_settings_data <- function(files_settings,
   return(df_settings_all)
 }
 
-# collect image exif data from image files
-# TODO: check this works on Windows?
+#' Read and combine image exif data
+#'
+#' Collect the exif data from all image files
+#'
+#' @param files_images Vector/list of image filenames
+#'
+#' @returns A dataframe containing the extracted data.
+#'
+# TODO: check this works on Windows? (PERL)
 # TODO: which of these do we really need?
 # TODO: can get date as well if we have original images? error handling for missing?
 collect_image_info <- function(files_images) {
@@ -246,25 +330,28 @@ collect_image_info <- function(files_images) {
 }
 
 
-
-# collect and combine the settings, image info and label structure metadata
-# of all input files
+#' Read and combine raw metadata
+#'
+#' Collect the ROXAS settings and image exif data from all raw files and
+#' combine into one dataframe with the datas tructure.
+#'
+#' @param df_structure Dataframe with all input filenames
+#' @param roxas_version ROXAS version (used to read the settings files)
+#'
+#' @returns A dataframe containing the extracted data.
+#'
 collect_metadata <- function(df_structure, roxas_version) {
   df_settings <- collect_settings_data(df_structure$fname_settings, roxas_version)
   df_images <- collect_image_info(df_structure$fname_image)
-
 
   df_meta <- df_structure %>%
     dplyr::left_join(df_settings, by='fname_settings') %>%
     dplyr::left_join(df_images, by='fname_image')
 
-  # report the identified treecodes and beep successful ending of the function
-  message("The ROXAS files have been verified and their metadata\n",
-          "successfully collected for the following ",
-          length(unique(df_meta$tree_code)),
-          " treecode(s):\n",
-          paste(paste0(' ', unique(df_meta$tree_code)), collapse = "\n"))
+  # beep successful ending of the function
+  message("Available metadata successfully extracted from the raw files.")
   beepr::beep(sound = 1, expr = NULL)
+
   return(df_meta)
 }
 
