@@ -1,7 +1,3 @@
-
-
-
-
 #' Get list of input files
 #'
 #' Given a path_in, get the paths and filenames of the ROXAS files to be imported
@@ -9,7 +5,7 @@
 #' @param path_in path of the input directory.
 #'
 #' @returns A list of lists of the images and ROXAS files.
-#'
+#' @export
 get_input_files <- function(path_in) {
 
   # Regex pattern to be matched by the different ROXAS files
@@ -109,21 +105,21 @@ get_input_files <- function(path_in) {
 #' Extract the structure of the data (i.e., which images belong to which sample,
 #' tree, site) from the filenames of the input data into a dataframe.
 #' This requires that all files follow the same labeling pattern of
-#' `site_species_tree_sample_subsample`
+#' `site_species_tree_sample_image`
 #' NOTE: we already checked that all output filenames match, so it is ok
 #' to do the pattern extraction on the image filenames only.
 #'
 #' @param files The list of lists with all input filenames.
 #'
 #' @returns A dataframe containing the filenames and data structure.
-#'
-# TODO: allow for different labeling structures
-# e.g., site/species/tree/sample/imgname.jpg, or other variants
+#' @export
 extract_data_structure <- function(files) {
+  # TODO: allow for different labeling structures
+  # e.g., site/species/tree/sample/imgname.jpg, or other variants
   # NOTE: we expect the basenames of the files to have the following structure:
-  lbl_structure <- 'site_species_tree_sample_subsample'
+  lbl_structure <- 'site_species_tree_sample_image'
   # in regex, this corresponds to the following pattern (NOTE the named groups)
-  pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:]+)_(?<sample>[:alnum:]+)_(?<subsample>[:alnum:]+)$"
+  pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:]+)_(?<sample>[:alnum:]+)_(?<image>[:alnum:]+)$"
 
   # remove paths and extensions from the image filenames (e.g. ".jpg")
   fnames <- basename(files$fname_image) %>%
@@ -156,13 +152,13 @@ extract_data_structure <- function(files) {
     dplyr::rename(image_code = V1) %>% # full pattern is in column 1
     tidyr::unite('tree_code', site, species, tree, sep = '_', remove = FALSE) %>%
     tidyr::unite('sample_code', site, species, tree, sample, sep = '_', remove = FALSE) %>%
-    dplyr::select(site, species, tree, tree_code,
-                  sample, sample_code, subsample, image_code) # reorder columns
+    dplyr::select(site, species, tree, sample, image,
+                  tree_code, sample_code, image_code) # reorder columns
 
   df_structure <- cbind(as.data.frame(files),df_structure) # add filenames
 
   # warn if some labels are too long to comply with .rwl format
-  # TODO: is this really relevant? do we create an rwl? correct to use site + sample
+  # TODO: is this really relevant? do we create an rwl? correct to use site + sample?
   toolong_for_rwl <- df_structure[
     nchar(df_structure$site) + nchar(df_structure$sample) > 8,'image_code']
   if (length(toolong_for_rwl)>0) {
@@ -194,6 +190,7 @@ extract_data_structure <- function(files) {
 #' @param exclude_codes OR provide a vector of the tree codes to be excluded
 #'
 #' @returns df_structure with the filtered tree codes.
+#' @export
 subset_treecodes <- function(df_structure,
                              include_codes=NULL,
                              exclude_codes=NULL) {
@@ -312,9 +309,9 @@ collect_settings_data <- function(files_settings,
 #'
 #' @returns A dataframe containing the extracted data.
 #'
-# TODO: check this works on Windows? (PERL)
-# TODO: which of these do we really need?
-# TODO: can get date as well if we have original images? error handling for missing?
+# TODO: check this works on Windows? (exifr requires PERL)
+# TODO: which of these do we really need? is it robust for different image types?
+# TODO: can get date as well if we have original images? error handling for missing tags?
 collect_image_info <- function(files_images) {
   df_image_meta <- exifr::read_exif(files_images,
                                     tags = c(
@@ -322,10 +319,12 @@ collect_image_info <- function(files_images) {
                                       "XResolution", "YResolution",
                                       "ImageWidth", "ImageHeight")) %>%
     dplyr::rename(fname_image = SourceFile,
-                  image_size = FileSize,
-                  imageType = FileType,
-                  ImageXResolution = XResolution,
-                  ImageYResolution = YResolution)
+                  img_size = FileSize,
+                  img_filetype = FileType,
+                  img_width = ImageWidth,
+                  img_height = ImageHeight,
+                  img_resolution_x = XResolution,
+                  img_resolution_y = YResolution)
   return(df_image_meta)
 }
 
@@ -333,13 +332,13 @@ collect_image_info <- function(files_images) {
 #' Read and combine raw metadata
 #'
 #' Collect the ROXAS settings and image exif data from all raw files and
-#' combine into one dataframe with the datas tructure.
+#' combine into one dataframe with the data structure.
 #'
 #' @param df_structure Dataframe with all input filenames
 #' @param roxas_version ROXAS version (used to read the settings files)
 #'
 #' @returns A dataframe containing the extracted data.
-#'
+#' @export
 collect_metadata <- function(df_structure, roxas_version) {
   df_settings <- collect_settings_data(df_structure$fname_settings, roxas_version)
   df_images <- collect_image_info(df_structure$fname_image)
@@ -354,6 +353,8 @@ collect_metadata <- function(df_structure, roxas_version) {
 
   return(df_meta)
 }
+
+
 
 
 

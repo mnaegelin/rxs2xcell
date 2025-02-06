@@ -1,6 +1,31 @@
-
-
+#' Validate the raw QWA data
+#'
+#' Initial checks to ensure the quality of the raw QWA data.
+#' This function checks for the following issues:
+#' - undated images (i.e. YEAR is NA or in the future)
+#' - images without cell wall thickness estimates
+#' If any images with with these issues are found, the function will stop and
+#' ask the user to correct the raw data before proceeding.
+#'
+#' Next, the function identifies (and removes?) the rings with the following issues:
+#' - incomplete rings
+#' - missed rings
+#' - innermost rings
+#' Here, by incomplete rings we mean those at the borders of images, where some
+#' cells where recognized but a MRW could not be estimated, so there is no
+#' corresponding entry in the rings data. Missed rings are those that may have
+#' been manually added in ROXAS, leading to an entry in the rings data. But such
+#' rings contain no actual cells, so there is no entry in the cells data.
+#' Innermost ring is the ring closest to the pith (for all samples from a tree).
+#' Due to the way ROXAS works, this ring should generally be excluded from
+#' further analysis.
+#'
+#' @param QWA_data
+#' @param rm_innermost_ring
+#' @returns validated QWA_data.
+#' @export
 validate_QWA_data <- function(QWA_data,
+                              remove_issues = TRUE,
                               rm_innermost_ring = TRUE){
   # get a list of all annual rings in cells data (distinct image_code, YEAR),
   # with added cell counts per ring
@@ -22,9 +47,6 @@ validate_QWA_data <- function(QWA_data,
                   missed_ring = is.na(n_cells),
                   missed_ringV2 = MRW < 10) # TODO: check V1 works, aligns with V2 with example of a missed ring
 
-  # TODO: could we run into issues with years that would be otherwise removed
-  # in the next steps automatically?
-  # TODO: finalize, output when stopped? when not stopped?
   # check that the data are dated (i.e., YEAR is not NA, and not in future)
   current_year <- as.numeric(format(Sys.Date(), "%Y"))
   df_rings_log <- df_rings_log %>%
@@ -53,7 +75,7 @@ validate_QWA_data <- function(QWA_data,
          'Please ensure that all included samples have CWT estimates, then restart the process.')
   }
 
-  # now we now that undated and no_CWT are ALL FALSE, so we can drop them
+  # now we know that undated and no_CWT are ALL FALSE, so we can drop them
   df_rings_log <- df_rings_log %>% dplyr::select(-undated, -no_CWT)
 
   # identify the innermost year per tree
@@ -62,33 +84,45 @@ validate_QWA_data <- function(QWA_data,
   if (rm_innermost_ring){
     df_rings_log <- df_rings_log %>%
       dplyr::group_by(tree_code) %>%
-      dplyr::mutate(innermost_year = YEAR == min(YEAR)) %>%
+      dplyr::mutate(innermost_ring = YEAR == min(YEAR)) %>%
       dplyr::ungroup()
   }
   else {
     df_rings_log <- df_rings_log %>%
-      dplyr::mutate(innermost_year = FALSE)
+      dplyr::mutate(innermost_ring = FALSE)
     beepr::beep(sound = 10, expr = NULL)
     warning("Due to a ROXAS quirk, the innermost ring per tree should generally\n",
             "always be excluded from further analysis. You have chosen to\n",
             "override this step.\n")
   }
 
-  # filter out data from years with identified issues
+  # TODO: filter or flag
+  # filter out (or flag) data from years with identified issues
   df_rings_log <- df_rings_log %>%
-    dplyr::mutate(invalid_rm = incomplete_ring | missed_ring | innermost_year)
+    dplyr::mutate(invalid_ring = incomplete_ring | missed_ring | innermost_ring)
 
-  years_to_remove <- df_rings_log[df_rings_log[['invalid_rm']],
+  years_to_remove <- df_rings_log[df_rings_log[['invalid_ring']],
                                   c('tree_code','image_code','YEAR')]
-  df_cells_valid <- QWA_data$cells %>%
-    dplyr::anti_join(years_to_remove, by=c('image_code','YEAR'))
 
-  beepr::beep(sound = 1, expr = NULL)
-  message("QWA data has been validated successfully!\n",
-          'In total, ', nrow(years_to_remove),
-          ' invalid years were removed from the data from the treecodes:\n',
-          paste(unique(years_to_remove$tree_code), collapse=', '))
-  # FCT OUTPUT
+  if (remove_issues){
+    df_cells_valid <- QWA_data$cells %>%
+      dplyr::anti_join(years_to_remove, by=c('image_code','YEAR'))
+
+    beepr::beep(sound = 1, expr = NULL)
+    message("QWA data have been validated successfully!\n",
+            'In total, ', nrow(years_to_remove),
+            ' invalid years were removed from the treecodes:\n',
+            paste(unique(years_to_remove$tree_code), collapse=', '))
+  }
+  else{
+    df_cells_valid <- QWA_data$cells
+    beepr::beep(sound = 1, expr = NULL)
+    message("QWA data have been validated successfully!\n",
+            'In total, ', nrow(years_to_remove),
+            ' invalid years were flagged for the treecodes:\n',
+            paste(unique(years_to_remove$tree_code), collapse=', '))
+  }
+
   return(
     setNames(
       list(df_cells_valid, df_rings_log),
@@ -96,30 +130,64 @@ validate_QWA_data <- function(QWA_data,
   )
 }
 
-remove_double_rings <- function(QWA_data){
-  # DOUBLE RINGS
+#' Remove double rings
+#'
+#' Images from the same sample (core) may have some overlap, meaning that there
+#' are duplicated annual rings (double rings) in the data. This function
+#' identifies and removes these double rings, keeping only the ring with the
+#' most cells.
+#'
+#' @param QWA_data
+#' @returns QWA_data with double rings removed (or flagged).
+#' @export
+remove_double_rings <- function(QWA_data,
+                                remove_doubles = TRUE){
+
+  # check QWA data were validated (that QWA_data$rings has a column invalid_ring)
+  if (!'invalid_ring' %in% colnames(QWA_data$rings)){
+    beepr::beep(sound = 2)
+    stop("The provided dataframe does not contain validation information.\n",
+         "Please run validate_QWA_data() first.")
+  }
+
   # find double rings (i.e., the same year in two or more (sub-)samples due to
   # images or samples overlapping)
-  # TODO: group by subsample or sample?
-  # for years (grouped by tree) where there are multiple valid rings, keep only the one with the most cells
-  df_rings_log <-
-
+  # TODO: group by tree or sample?
+  # for years (grouped by tree) where there are multiple valid rings,
+  # keep only the one with the most cells
   df_rings_log <- QWA_data$rings %>%
     dplyr::group_by(tree_code, YEAR) %>%
-    dplyr::filter(!invalid_rm) %>%
-    dplyr::mutate(overlap = dplyr::n() > 1,
-                  overlap_rm = overlap & (n_cells < max(n_cells))) %>%
+    dplyr::mutate(overlap = dplyr::n() > 1) %>%
     dplyr::ungroup()
 
-  years_to_remove <- df_rings_log[df_rings_log[['overlap_rm']],
-                                  c('tree_code','image_code','YEAR')]
+  # find the double rings which do NOT have the max number of cells (while
+  # excluding invalid rings from possible candidates), and thus will be removed/flagged
+  df_overlap_rm <- df_rings_log %>%
+    dplyr::filter(overlap, !invalid_ring) %>%
+    dplyr::arrange(tree_code, YEAR, desc(n_cells)) %>%
+    dplyr::group_by(tree_code, YEAR) %>%
+    dplyr::slice(-1) %>% # take all but the first (which has max n_cell)
+    dplyr::select(tree_code, image_code, YEAR) %>%
+    dplyr::mutate(double_ring = TRUE)
+
+  df_rings_log <- df_rings_log %>%
+    dplyr::left_join(df_overlap_rm, by = c("tree_code", "image_code", "YEAR")) %>%
+    dplyr::mutate(double_ring = ifelse(is.na(double_ring), FALSE, double_ring))
+
+  years_to_remove <- df_rings_log[df_rings_log[['double_ring']],
+                                  c('tree_code', 'image_code','YEAR')]
+  # TODO: flag or remove
+  if (remove_doubles){
   df_cells_clean <- QWA_data$cells %>%
     dplyr::anti_join(years_to_remove, by=c('image_code','YEAR'))
+  } else {
+    df_cells_clean <- QWA_data$cells
+  }
 
   beepr::beep(sound = 1, expr = NULL)
-  message("Double rings have been removed successfully!\n",
+  message("Double rings have been flagged/removed successfully!\n",
           'In total, ', nrow(years_to_remove),
-          ' double rings were removed from the data from the treecodes:\n',
+          ' double rings were removed from the treecodes:\n',
           paste(unique(years_to_remove$tree_code), collapse=', '))
 
   return(
@@ -130,24 +198,50 @@ remove_double_rings <- function(QWA_data){
 }
 
 
+#' Plot overview of annual coverage of images
+#'
+#' For a single tree, each image covers a span of years. This function allows
+#' to visualize which annual rings are covered by which image and which rings
+#' have been flagged due to issues or double rings.
+#'
+#' @param tree the treecode for which the plot should be created
+#' @param df_rings the dataframe containing the rings data (including flags)
+#' @param show_plot should the plot be shown
+#' @param save_plot should the plot be written to disk under path_out
+#' @param path_out path where the plot should be saved.
+#'
+#' @export
 plot_tree_coverage <- function(tree, df_rings,
                                show_plot = TRUE,
                                save_plot = FALSE, path_out = './') {
-  # TODO: check that we have the relevant columns, only one tree
-  # assert correct format for other inputs
 
-  df_plot <- df_rings %>% dplyr::filter(tree_code == tree) %>%
+  # assert that the df_rings underwent validation and double rings checks
+  beepr::beep_on_error(
+    checkmate::assert_names(colnames(df_rings), must.include = c('invalid_ring', 'double_ring')),
+    sound = 2
+  )
+
+  # check that df_rings contains data from the provided tree code
+  df_plot <- df_rings %>% dplyr::filter(tree_code == tree)
+  if (nrow(df_plot) < 1){
+    beepr::beep(sound=2)
+    stop("The provided dataframe does not contain data from tree ", tree)
+  }
+  # TODO: additional input checks
+
+  df_plot <- df_plot %>%
     dplyr::select(tree_code, sample_code, image_code, YEAR, n_cells,
-                  invalid_rm, overlap_rm) %>%
-    dplyr::mutate(removed = dplyr::if_else(invalid_rm, 'invalid',
-                                           dplyr::if_else(overlap_rm, 'double_ring', NA)))
+                  invalid_ring, double_ring) %>%
+    dplyr::mutate(removed = dplyr::if_else(invalid_ring, 'invalid ring',
+                                           dplyr::if_else(double_ring, 'double ring', NA)))
 
-  df_summary <-  df_plot %>%
+  df_summary <- df_plot %>%
     dplyr::group_by(sample_code, image_code) %>%
     dplyr::summarise(min_year = min(YEAR),
                      max_year = max(YEAR),
                      .groups = "drop") %>%
-    dplyr::arrange(min_year)
+    dplyr::arrange(min_year) %>%
+    dplyr::mutate(image_code = factor(image_code, levels=image_code)) # correct y axis order
 
   # PLOTTING
   # create a plot with the years covered by each image as horizontal bars
@@ -155,12 +249,15 @@ plot_tree_coverage <- function(tree, df_rings,
     ggplot2::geom_segment(
       data = df_summary,
       ggplot2::aes(x = min_year-0.4, xend = max_year+0.4,
-                   y = image_code, color = sample_code),
-      position = ggplot2::position_nudge(y=-0.2), linewidth = 3
+                   y = image_code),
+      position = ggplot2::position_nudge(y=-0.2), linewidth = 3,
+      color = "grey75"
     ) +
-    ggplot2::scale_color_manual(
-      values = rep(c("grey70", "grey90"), nrow(df_summary)),
-      guide = 'none')
+    ggplot2::facet_grid(rows = ggplot2::vars(sample_code), scales = 'free_y') +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(strip.text = ggplot2::element_blank(),
+                   axis.line.x = ggplot2::element_line(colour = "grey25"))
+
 
   # add individual years with dots colored by number of cells
   p_cov <- p_cov +
@@ -181,16 +278,15 @@ plot_tree_coverage <- function(tree, df_rings,
       shape = 4, size = 2, stroke = 1
     ) +
     ggplot2::scale_color_manual(values = c('red4','firebrick1'),
-                                breaks = c('invalid', 'double_ring'),
-                                labels = c('invalid ring', 'double ring'),
+                                breaks = c('invalid ring', 'double ring'),
                                 name = 'Removed years')
 
-  # styling
+  # axes labels and title
   p_cov <- p_cov +
     ggplot2::labs(
       title = paste("Year coverage for tree", tree),
-      x = "Year", y = "Image") +
-    ggplot2::theme_minimal()
+      x = "Year", y = "Image")
+
 
   # show plot
   if (show_plot){
@@ -199,7 +295,7 @@ plot_tree_coverage <- function(tree, df_rings,
 
   # save plot
   if (save_plot){
-    # Save the plot to png
+    # save the plot to png
     plot_name <- file.path(path_out, paste0(tree,'_coverage.png')) # TODO: make path safe
     # make plot size dynamically dependent on nr of rows (images) and total
     # range of years, with some hard limits to avoid extremes (all in px)
@@ -218,6 +314,14 @@ plot_tree_coverage <- function(tree, df_rings,
   }
 }
 
+
+#' Create coverage plots for all trees
+#'
+#' Function to create coverage plots for all unique treecodes in the provided
+#' rings df (usually QWA_data$rings) in a for loop. Plots can be shown and/or
+#' saved to a specified path.
+#'
+#' @param df_rings rings dataframe
 create_coverage_plots <- function(df_rings,
                                   show_plot = TRUE,
                                   save_plot = TRUE, path_out = './'){
@@ -229,238 +333,48 @@ create_coverage_plots <- function(df_rings,
   }
 }
 
-# manual exclusions?
-#
-df_rings_log <- QWA_data$rings %>% dplyr::mutate(user_rm = FALSE)
-# # EITHER: write to file and edit
-# # write.csv(df_rings_log, 'rings_log.csv')
-# # OPEN IN EDITOR AND SET user_rm TO TRUE FOR THE RINGS TO BE REMOVED
-# # df_rings_log <- read.csv('rings_log.csv')
-# # OR: manually set the user_rm column
-years_to_exclude = list(
-# c('image_code', YEAR),
-  c('POG_PISY_02B_4_1', 1962),
-  c('POG_PISY_02B_4_1', 1964),
-  c('POG_PISY_02B_4_2', 1961)
-)
-
-yte_vals = lapply(years_to_exclude, \(x) paste(x, collapse ='_'))
-df_rings_log = df_rings_log %>% dplyr::mutate(user_rm = paste(image_code, YEAR, sep='_') %in% yte_vals)
 
 
+# Manual exclusions
+remove_problem_rings <- function(QWA_data, years_to_exclude){
+  df_rings_log <- QWA_data$rings %>%
+    dplyr::left_join(years_to_exclude %>% dplyr::mutate(manual_excl = TRUE),
+                    by = c('image_code','YEAR')) %>%
+    dplyr::mutate(manual_excl = ifelse(is.na(manual_excl), FALSE, manual_excl))
 
+  # remove the years with manual_excl == TRUE
+  df_cells_clean <- QWA_data$cells %>%
+    dplyr::anti_join(years_to_exclude, by=c('image_code','YEAR'))
 
-  # OUTLIERS
-
-  # EXTRA MEASURES
-
-
-
-
-
-
-flag_problem_rings <- function(df_rings_raw, df_cells_raw,
-                               max_val_year = 2500,
-                               min_val_MRW = 10){
-
-  # TODO: check input vals
-
-  # 1. get a list of all yearrings in cells data (distinct image_code, YEAR),
-  # with added cell counts per ring
-  df_rings_flags <- df_cells_raw %>%
-    dplyr::count(tree_code, image_code, YEAR, name = 'n_cells')
-
-  # 2. combine with the raw rings data and add a column to log whether a
-  # yearring is removed from the data
-  df_rings_flags <- df_rings_flags %>%
-  dplyr::left_join(df_rings_raw,
-                   by = c('tree_code', 'image_code', 'YEAR')) %>%
-    dplyr::mutate(removed = FALSE,
-                  removed_bc = NA)
-
-  # 3. flag which (cell) years have no corresponding row in rings output file
-  # NOTE: There are sometimes cells from incomplete rings, e.g. at the edge of
-  # a subsample. These cells are given a year value, and cell measurements are
-  # written to the cells output files, but the corresponding row in the rings
-  # output does not exist. Using a join on the raw rings df in the previous step
-  # would give us NA values for the ring measurements of these years.
-  df_rings_flags <- df_rings_flags %>%
-    dplyr::mutate(no_rings_data = is.na(MRW))
-
-  # 3.&4. flag the rings which have invalid (i.e., in-future) or NA year values,
-  # and those which have an MRW value below the threshold
-  df_rings_flags <- df_rings_flags %>%
-    dplyr::mutate(inv_year = YEAR > max_val_year | is.na(YEAR),
-                  small_MRW = MRW < min_val_MRW)
-
-  # 5. flag the rings which have no CWT estimates
-  # TODO: is noCWT flag given on an year or image basis?
-  df_rings_flags <- df_rings_flags %>%
-    dplyr::group_by(image_code) %>%
-    dplyr::mutate(no_CWT = all(is.na(CWTTAN))) %>%
-    dplyr::ungroup()
-
-  # 6. flag the duplicated rings
-  # NOTE: here is usually overlap between images, meaning that the same year can
-  # be represented in two or more subsamples. Of all duplicates within a tree
-  # (sample?) we then flag all but the ring with the max cell count for removal
-  # TODO: across samples? or only subsamples?
-  # TODO: what if the max count ring will already be removed due to other reasons?
-  df_rings_flags <- df_rings_flags %>%
-    dplyr::group_by(tree_code, YEAR) %>%
-    dplyr::mutate(duplicate = dplyr::n() > 1,
-                  duplicate_fewer_cells = duplicate & (n_cells < max(n_cells))) %>%
-    dplyr::ungroup()
-
-  # 7. flag the innermost year
-  # The very first yearring from the innermost sample from a tree is usually
-  # too close to the pith and flagged for removal
-  # TODO: always removed?
-  # TODO: overall or only after other checks?
-  df_rings_flags <- df_rings_flags %>%
-    dplyr::group_by(tree_code) %>%
-    dplyr::mutate(innermost_year = YEAR == min(YEAR)) %>%
-    dplyr::ungroup()
-
-  return(df_rings_flags)
-}
-
-
-clean_raw_data <- function(df_rings_flags, df_cells_raw, flags_remove){
-  ####
-  # Remove flagged data
-
-  # Set based on which flags we should remove data
-  # if set to TRUE, the corresponding column in df_rings_flags will be used to
-  # filter out the flagged data
-
-
-
-  # 1 remove the noisy data based on the selected flags
-  sel_flags <- names(flags_remove[flags_remove])
-
-  for (flag in sel_flags) {
-    df_rings_flags[
-      (!df_rings_flags['removed']) & # not yet removed
-        (df_rings_flags[flag])       # with the flag set to TRUE
-      , c('removed','removed_bc')] <- list(TRUE,flag)
-  }
-
-  # df_rings_flags <- df_rings_flags %>%
-  #   dplyr::mutate(
-  #     removed = rowSums(dplyr::across(dplyr::all_of(sel_flags))) > 0)
-
-  years_to_remove <- df_rings_flags[df_rings_flags[['removed']],
-                                   c('tree_code','image_code','YEAR')]
-  df_cells_clean <- df_cells_raw %>%
-    dplyr::anti_join(years_to_remove, by=c('tree_code','image_code','YEAR'))
-
-  if (sum(df_rings_flags$removed) > 0){
-    message('In total, ', nrow(years_to_remove),
-            ' years were removed from the data from the treecodes\n',
-             paste(unique(years_to_remove$tree_code), collapse=', '),
-            '\ndue to the following flags (see fct_output$rings for details):',
-            paste0(capture.output(table(df_rings_flags$removed_bc)), collapse = "\n"))
-  }
-  # for (flag in names(flags_remove)) {
-  #   flag <- 'no_rings_data'
-  #   df_rings_flags[df_rings_flags[[flag]],c('tree_code','image_code','YEAR')]
-  # }
-  #
+  beepr::beep(sound = 1, expr = NULL)
+  message("Double rings have been flagged/removed successfully!\n",
+          'In total, ', nrow(v),
+          ' double rings were removed.')
 
   return(
     setNames(
-      list(df_rings_flags, df_cells_clean),
-      c('rings','cells'))
-  )
+      list(df_cells_clean, df_rings_log),
+      c('cells','rings')
+    ))
+}
+
+
+
+# outliers
+remove_outliers <- function(QWA_data){
+  # negative values?
+  # too high values?
+  df_cells <- QWA_data$cells %>%
+    dplyr::mutate(dplyr::across(tidyselect::where(is.numeric), ~ if_else(.x < 0, NA_real_, .x)))
+
+  # TODO: also for rings?
+  df_rings <- QWA_data$rings
+  return(df_cells_clean)
 }
 
 
 
 
-
-
-
-
-plot_coverage <- function(tree, df_rings_clean, df_meta,
-                          show_plot = TRUE, save_plot = TRUE, path_plots = './') {
-  # create the data for the plot
-  df_plot <- df_rings_clean %>%
-    dplyr::filter(tree_code == tree) %>%
-    dplyr::left_join(df_meta[c('image_code', 'tree_code', 'sample','subsample')],
-                     by=c('tree_code', 'image_code')) %>%
-    dplyr::select(image_code, sample, subsample, YEAR, n_cells, removed)
-
-  df_summary <-  df_plot %>%
-    dplyr::group_by(sample, subsample, image_code) %>%
-    dplyr::summarise(min_year = min(YEAR),
-                     max_year = max(YEAR),
-                     .groups = "drop") %>%
-    dplyr::arrange(min_year)
-
-  # PLOTTING
-  # Create a plot with each subsample coverage as bars
-  p_cov <- ggplot2::ggplot() +
-    ggplot2::geom_segment(
-      data = df_summary,
-      ggplot2::aes(x = min_year-0.5, xend = max_year+0.5,
-                   y = image_code, color = sample),
-      position = ggplot2::position_nudge(y=-0.2), linewidth = 3
-    ) +
-    ggplot2::scale_color_manual(
-      values=rep(c("grey75", "grey90"), nrow(df_summary)),
-      guide='none')
-
-  # Add individual years with points colored by number of cells
-  p_cov <- p_cov +
-    ggnewscale::new_scale_colour() +
-    ggplot2::geom_point(
-      data = df_plot,
-      ggplot2::aes(x = YEAR, y = image_code, color = n_cells),
-      size=2
-    ) +
-    ggplot2::scale_colour_steps(low='lightskyblue', high='blue4',
-                                name = "N cells")
-
-  # Highlight the removed years with crosses
-  p_cov <- p_cov +
-    ggplot2::geom_point(
-      data = df_plot %>% dplyr::filter(removed == TRUE),
-      ggplot2::aes(x = YEAR, y = image_code, shape = "removed"), # dummy mapping for legend
-      color = 'red', size = 2, stroke = 1
-    ) +
-    ggplot2::scale_shape_manual(values = c("removed" = 4), name=NULL)
-
-  # Styling
-  p_cov <- p_cov +
-    ggplot2::labs(
-      title = paste("Year coverage for tree", tree),
-      x = "Year", y = "Image") +
-    ggplot2::theme_minimal()
-
-  if (show_plot){
-    print(p_cov)
-  }
-
-  if (save_plot){
-    # Save the plot to png
-    plot_name <- file.path(path_plots, paste0(tree,'.png')) # TODO: make path safe
-    # make plot size dynamically dependent on nr of rows (images) and total
-    # range of years, with some hard limits to avoid extremes (all in px)
-    image_width <- min(
-      max((max(df_summary$max_year)-min(df_summary$min_year))*75+800, 2000),
-      6000)
-    image_height <- min(
-      max(nrow(df_summary)*100+200, 750),
-      2000)
-
-    ggplot2::ggsave(plot_name, p_cov, bg='white',
-                    width = image_width, height = image_height, units='px')
-
-    message(tree, ': coverage plot saved to ', plot_name)
-  }
-
-}
 
 
 # calculate additional measures (see rxs complete)

@@ -1,3 +1,4 @@
+# note: potentially first open fe drive in finder?
 
 folders_PF <- dir('/Volumes/fe/dendro/Dendrosciences_All',
                         pattern = "PatrickFonti", recursive = FALSE, full.names = TRUE)

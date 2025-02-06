@@ -1,8 +1,7 @@
 # setup
-install.packages(c("devtools", "roxygen2", "testthat",
-                   "knitr",'checkmate','beepr','readr',
-                   'dplyr','tidyr','exifr', 'ggplot2','data.table'))
-
+# install.packages(c("devtools", "roxygen2", "testthat",
+#                    "knitr",'checkmate','beepr','readr',
+#                    'dplyr','tidyr','exifr', 'ggplot2','data.table'))
 
 # log
 # use_package('checkmate')
@@ -20,8 +19,13 @@ install.packages(c("devtools", "roxygen2", "testthat",
 # usethis::use_data_table()
 # (maybe) install.packages("bench")
 # (maybe) library(bench)
+# (maybe) install.packages("EML")
+# (maybe) library(EML)
+# (maybe) install.packages("readxl")
+# (maybe) library(readxl)
 
-
+################################################################################
+################################################################################
 
 library(devtools)
 load_all()
@@ -29,39 +33,82 @@ load_all()
 # path to the input data
 path_in <- '../QWA_Arzac2024'
 
+
+################################################################################
 # get overview of data to be read
 files <- get_input_files(path_in)
 df_structure <- extract_data_structure(files)
 
+
+################################################################################
 # optional: subset treecodes
 # df_structure <- subset_treecodes(df_structure,
-#                                  # EITHER: include_codes=c('treecode1', 'treecode2')
-#                                  # OR: exclude_codes=c('treecode3', 'treecode4')
+#                                  # EITHER: include_codes=c('treecode1','treecode2')
+#                                  # OR: exclude_codes=c('treecode3','treecode4')
 #                                  )
 
+
+################################################################################
 # read available metadata
 df_meta <- collect_metadata(df_structure,
                             roxas_version='classic')
 # TODO: write to file, create template for user input
 
+
+################################################################################
 # read raw cells/rings data
 # TODO: add batch processing for large datasets?
-QWA_data <- list('cells' = collect_cells_data(df_structure),
-                 'rings' = collect_rings_data(df_structure))
+QWA_data <- collect_raw_data(df_structure)
 
+
+################################################################################
 # clean raw data
 QWA_data <- validate_QWA_data(QWA_data)
 QWA_data <- remove_double_rings(QWA_data)
 # TODO: write to file
-# TODO: do we want to store the rings log in DB (and thus only flag but don't remove years with issues)?
+# TODO: do we want to store the rings log in DB? flag or remove issues?
 
-create_coverage_plots(QWA_data$rings)
+################################################################################
+# plot yearly coverage to give overview of data and detected issues
+# for a single tree, we can use the plot_tree_coverage function
+tree <- 'POG_PISY_02B'
+df_tree <- QWA_data$rings %>% dplyr::filter(tree_code == tree)
+plot_tree_coverage(tree, df_tree,
+                   show_plot = TRUE, save_plot = FALSE)
 
+# to iterate over all trees, we use create_coverage_plots and save the plots to path_out
+create_coverage_plots(QWA_data$rings,
+                      show_plot = FALSE, save_plot = TRUE, path_out = '.')
+
+
+################################################################################
 # manual exclusions of years based on user input
-# TODO:
+# either denote years to be excluded here:
+years_to_exclude <- tibble::tribble(
+  ~image_code, ~YEAR,
+  'POG_PISY_02B_4_1', 1962,
+  'POG_PISY_02B_4_1', 1964,
+  'POG_PISY_02B_4_2', 1961
+)
 
+# or read from file
+# years_to_exclude <- readr::read_csv('path/to/file/years_to_exclude.csv',
+#                                     # skip = 4, # if header rows need to be skipped
+#                                     col_select = c('image_code', 'YEAR'),
+#                                     col_types = 'cn')
+# NOTE: dplyr::coalesce might be useful if there are multiple columns with YEARS
+
+QWA_data <- remove_problem_rings(QWA_data, years_to_exclude)
+
+
+################################################################################
 # remove outliers
-# TODO:
+
+
+
+################################################################################
+# complete cell measures
+
 
 
 
