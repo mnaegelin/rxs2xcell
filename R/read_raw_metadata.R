@@ -102,10 +102,10 @@ get_input_files <- function(path_in) {
 
 #' Extract the data structure from image filenames
 #'
-#' Extract the structure of the data (i.e., which images belong to which sample,
-#' tree, site) from the filenames of the input data into a dataframe.
+#' Extract the structure of the data (i.e., which images belong to which slide,
+#' woodpiece, tree, site) from the filenames of the input data into a dataframe.
 #' This requires that all files follow the same labeling pattern of
-#' `site_species_tree_sample_image`
+#' `site_species_treewoodpiece_sample_image`
 #' NOTE: we already checked that all output filenames match, so it is ok
 #' to do the pattern extraction on the image filenames only.
 #'
@@ -117,9 +117,10 @@ extract_data_structure <- function(files) {
   # TODO: allow for different labeling structures
   # e.g., site/species/tree/sample/imgname.jpg, or other variants
   # NOTE: we expect the basenames of the files to have the following structure:
-  lbl_structure <- 'site_species_tree_sample_image'
+  lbl_structure <- 'site_species_treewoodpiece_sample_image'
   # in regex, this corresponds to the following pattern (NOTE the named groups)
-  pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:]+)_(?<sample>[:alnum:]+)_(?<image>[:alnum:]+)$"
+  # pattern <- "^(?<site>[:alnum:]+)(?<plot>)_(?<species>[:alnum:]+)_(?<tree>[:alnum:][:alnum:])(?<woodpiece>[:alpha:]*)_(?<slide>[:alnum:]+)_(?<image>[:alnum:]+)$"
+  pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:][:alnum:])(?<woodpiece>[:alpha:]*)_(?<slide>[:alnum:]+)_(?<image>[:alnum:]+)$"
 
   # remove paths and extensions from the image filenames (e.g. ".jpg")
   fnames <- basename(files$fname_image) %>%
@@ -149,25 +150,32 @@ extract_data_structure <- function(files) {
   # extract the matched pattern groups and collect info into df
   df_structure <- as.data.frame(stringr::str_match(fnames,pattern))
   df_structure <- df_structure %>%
-    dplyr::rename(image_code = V1) %>% # full pattern is in column 1
-    tidyr::unite('tree_code', site, species, tree, sep = '_', remove = FALSE) %>%
-    tidyr::unite('sample_code', site, species, tree, sample, sep = '_', remove = FALSE) %>%
-    dplyr::select(site, species, tree, sample, image,
-                  tree_code, sample_code, image_code) # reorder columns
+    dplyr::rename(complete_match = V1) %>% # original pattern is in column 1
+    dplyr::mutate(dplyr::across(dplyr::everything(), ~dplyr::na_if(.x,""))) %>%
+    tidyr::unite('tree_code', site:tree,
+                 sep = '_', na.rm = TRUE, remove = FALSE) %>%
+    tidyr::unite('woodpiece_code', site:woodpiece,
+                 sep = '_', na.rm = TRUE, remove = FALSE) %>%
+    tidyr::unite('slide_code', site:slide,
+                 sep = '_', na.rm = TRUE, remove = FALSE) %>%
+    tidyr::unite('image_code', site:image,
+                 sep = '_', na.rm = TRUE, remove = FALSE) %>%
+    dplyr::select(site:image,
+                  tree_code, woodpiece_code, slide_code, image_code) # reorder columns
 
   df_structure <- cbind(as.data.frame(files),df_structure) # add filenames
 
   # warn if some labels are too long to comply with .rwl format
   # TODO: is this really relevant? do we create an rwl? correct to use site + sample?
-  toolong_for_rwl <- df_structure[
-    nchar(df_structure$site) + nchar(df_structure$sample) > 8,'image_code']
-  if (length(toolong_for_rwl)>0) {
-    beepr::beep(sound = 10, expr = NULL)
-    warning("The following image codes exceed the maximum number of characters.\n",
-            "For compliance with .rwl fomat, `site` and `sample` combined\n",
-            "should not exceed 8 characters (or 7 if rings extend into BCE).\n",
-            paste(paste0(' ', toolong_for_rwl), collapse='\n'))
-  }
+  # toolong_for_rwl <- df_structure[
+  #   nchar(df_structure$site) + nchar(df_structure$sample) > 8,'image_code']
+  # if (length(toolong_for_rwl)>0) {
+  #   beepr::beep(sound = 10, expr = NULL)
+  #   warning("The following image codes exceed the maximum number of characters.\n",
+  #           "For compliance with .rwl fomat, `site` and `sample` combined\n",
+  #           "should not exceed 8 characters (or 7 if rings extend into BCE).\n",
+  #           paste(paste0(' ', toolong_for_rwl), collapse='\n'))
+  # }
 
   # report the identified treecodes and beep successful ending of the function
   message("Data structure successfully extracted from ROXAS filenames\n",
@@ -180,7 +188,7 @@ extract_data_structure <- function(files) {
   return(df_structure)
 }
 
-
+# TODO: exclude woodpieces rather than trees?
 #' Include or exclude tree codes from data collection
 #'
 #' This function filters the data structure dataframe based on the tree codes provided

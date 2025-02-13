@@ -21,7 +21,9 @@ read_cells_output <- function(file_cells){
     'RTSR', 'CTSR', 'DH', 'DRAD', 'DTAN', 'TB2', 'CWA', 'RWD'
     # not included cols are:
     # ID, RADDIST, ANGLE, XCAL, YCAL (superfluous)
-    # NBRNO, NBRID, NBRDST (relates to groups of cells)
+    # TODO
+    #'NBRNO', 'NBRID', 'NBRDST' # (relates to groups of cells, relevant for non-conifers)
+    # if all read, then  df_cells_all %>% purrr::discard(~all(is.na(.x))) might be interesting
     # AOI (relates to areas of interest)
   )
   # define any variant name mappings from old ROXAS versions
@@ -82,13 +84,14 @@ collect_cells_data <- function(df_structure){
 #' @param file_rings filename to be read
 #' @returns A dataframe with the raw data (relevant columns only).
 #'
-# TODO: should we include the other ring measures?-> PF says no
+# TODO: should we include the other ring measures?-> PF says no, GvA says yes
 read_rings_output <- function(file_rings){
   # specify the columns we expect and require in a ROXAS rings output file
   # NOTE: it looks like we should have these columns for ROXAS versions
   # 3.0.285, 3.0.575, 3.0.590, 3.0.608, 3.0.620, 3.0.634, 3.0.655
   selcols_rings <- c(
     'YEAR', 'MRW', 'CWTTAN'
+    # 'CNO' (do not need bc we count cells in anyways, else we would miss the incomplete years)
   )
 
   # read in the raw data
@@ -119,7 +122,7 @@ read_rings_output <- function(file_rings){
 #'
 collect_rings_data <- function(df_structure){
   df_rings_all <- df_structure %>%
-    dplyr::select(tree_code, sample_code, image_code, fname_rings) %>%
+    dplyr::select(tree_code, woodpiece_code, slide_code, image_code, fname_rings) %>%
     dplyr::mutate(raw_data = purrr::map(fname_rings, read_rings_output)) %>%
     tidyr::unnest(raw_data) %>%
     dplyr::select(-fname_rings)

@@ -1,7 +1,8 @@
 # setup
 # install.packages(c("devtools", "roxygen2", "testthat",
 #                    "knitr",'checkmate','beepr','readr',
-#                    'dplyr','tidyr','exifr', 'ggplot2','data.table'))
+#                    'dplyr','tidyr','exifr', 'ggplot2',
+#                    'data.table','ggstance','ggnewscale'))
 
 # log
 # use_package('checkmate')
@@ -17,12 +18,21 @@
 # use_package('ggnewscale')
 # use_package('aws.s3') # TODO: really in this package, or seperate?
 # usethis::use_data_table()
+# use_package('ggstance')
 # (maybe) install.packages("bench")
 # (maybe) library(bench)
 # (maybe) install.packages("EML")
 # (maybe) library(EML)
 # (maybe) install.packages("readxl")
 # (maybe) library(readxl)
+# (not likely) library('swimplot')
+
+
+# maybe host little apps inside package, for metadata input and user selection of flagged rings
+# install.packages('shiny')
+# library(shiny)
+# runApp('app.R')
+
 
 ################################################################################
 ################################################################################
@@ -32,6 +42,7 @@ load_all()
 
 # path to the input data
 path_in <- '../QWA_Arzac2024'
+path_out <- './out'
 
 
 ################################################################################
@@ -63,23 +74,41 @@ QWA_data <- collect_raw_data(df_structure)
 
 ################################################################################
 # clean raw data
+# TODO: finalize ring flags
 QWA_data <- validate_QWA_data(QWA_data)
-QWA_data <- remove_double_rings(QWA_data)
-# TODO: write to file
-# TODO: do we want to store the rings log in DB? flag or remove issues?
+
+
+################################################################################
+# write to csv
+# TODO: improve
+write.csv(QWA_data$cells, file.path(path_out, 'QWA_data_cells.csv'),
+          row.names = FALSE)
+write.csv(QWA_data$rings, file.path(path_out, 'QWA_data_rings.csv'),
+          row.names = FALSE)
+write.csv(df_meta, file.path(path_out, 'QWA_data_meta.csv'),
+          row.names = FALSE)
+write.csv(df_structure, file.path(path_out, 'QWA_data_structure.csv'),
+          row.names = FALSE)
+
+
 
 ################################################################################
 # plot yearly coverage to give overview of data and detected issues
 # for a single tree, we can use the plot_tree_coverage function
-tree <- 'POG_PISY_02B'
-df_tree <- QWA_data$rings %>% dplyr::filter(tree_code == tree)
-plot_tree_coverage(tree, df_tree,
-                   show_plot = TRUE, save_plot = FALSE)
+woodpiece <- 'POG_PISY_02_B'
+df_wp <- QWA_data$rings %>% dplyr::filter(woodpiece_code == woodpiece)
+p <- plot_woodpiece_coverage(woodpiece, df_wp, save_plot = FALSE)
+print(p)
+
 
 # to iterate over all trees, we use create_coverage_plots and save the plots to path_out
 create_coverage_plots(QWA_data$rings,
-                      show_plot = FALSE, save_plot = TRUE, path_out = '.')
+                      save_plot = TRUE, path_out = path_out)
 
+
+################################################################################
+# library(shiny)
+shiny::runApp('inst/shiny_YTE/yte2_app.R')
 
 ################################################################################
 # manual exclusions of years based on user input
@@ -108,7 +137,6 @@ QWA_data <- remove_problem_rings(QWA_data, years_to_exclude)
 
 ################################################################################
 # complete cell measures
-
 
 
 

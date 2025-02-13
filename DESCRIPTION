@@ -19,6 +19,7 @@ Imports:
     exifr,
     ggnewscale,
     ggplot2,
+    ggstance,
     magrittr,
     readr,
     stringr,
