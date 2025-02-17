@@ -1,48 +1,16 @@
-# setup
-# install.packages(c("devtools", "roxygen2", "testthat",
-#                    "knitr",'checkmate','beepr','readr',
-#                    'dplyr','tidyr','exifr', 'ggplot2',
-#                    'data.table','ggstance','ggnewscale'))
-
-# log
-# use_package('checkmate')
-# use_package('stringr')
-# use_package('magrittr')
-# usethis::use_import_from("magrittr", "%>%")
-# use_package('beepr')
-# use_package('readr')
-# use_package('dplyr')
-# use_package('tidyr')
-# use_package('exifr')
-# use_package('ggplot2')
-# use_package('ggnewscale')
-# use_package('aws.s3') # TODO: really in this package, or seperate?
-# usethis::use_data_table()
-# use_package('ggstance')
-# (maybe) install.packages("bench")
-# (maybe) library(bench)
-# (maybe) install.packages("EML")
-# (maybe) library(EML)
-# (maybe) install.packages("readxl")
-# (maybe) library(readxl)
-# (not likely) library('swimplot')
-
-
-# maybe host little apps inside package, for metadata input and user selection of flagged rings
-# install.packages('shiny')
-# library(shiny)
-# runApp('app.R')
-
-
 ################################################################################
 ################################################################################
 
 library(devtools)
 load_all()
 
-# path to the input data
+
+################################################################################
+# set path to the input and output data
 path_in <- '../QWA_Arzac2024'
 path_out <- './out'
+
+dataset_name <- 'QWA_Arzac2024' # used to name the resulting output files
 
 
 ################################################################################
@@ -52,18 +20,14 @@ df_structure <- extract_data_structure(files)
 
 
 ################################################################################
-# optional: subset treecodes
-# df_structure <- subset_treecodes(df_structure,
-#                                  # EITHER: include_codes=c('treecode1','treecode2')
-#                                  # OR: exclude_codes=c('treecode3','treecode4')
-#                                  )
-
-
-################################################################################
 # read available metadata
 df_meta <- collect_metadata(df_structure,
                             roxas_version='classic')
-# TODO: write to file, create template for user input
+
+# save metadata to file
+write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta.csv')),
+          row.names = FALSE)
+# TODO: add workflow for user input to complete metadata
 
 
 ################################################################################
@@ -77,70 +41,62 @@ QWA_data <- collect_raw_data(df_structure)
 # TODO: finalize ring flags
 QWA_data <- validate_QWA_data(QWA_data)
 
-
-################################################################################
 # write to csv
-# TODO: improve
-write.csv(QWA_data$cells, file.path(path_out, 'QWA_data_cells.csv'),
+write.csv(QWA_data$cells,
+          file.path(path_out, paste0(dataset_name, '_cells.csv')),
           row.names = FALSE)
-write.csv(QWA_data$rings, file.path(path_out, 'QWA_data_rings.csv'),
+write.csv(QWA_data$rings,
+          file.path(path_out, paste0(dataset_name, '_rings.csv')),
           row.names = FALSE)
-write.csv(df_meta, file.path(path_out, 'QWA_data_meta.csv'),
-          row.names = FALSE)
-write.csv(df_structure, file.path(path_out, 'QWA_data_structure.csv'),
-          row.names = FALSE)
-
 
 
 ################################################################################
-# plot yearly coverage to give overview of data and detected issues
+# provide user input on ring flags
+
+# VARIANT A: in script
+# plot the yearly coverage to give overview of data and detected issues
 # for a single tree, we can use the plot_tree_coverage function
 woodpiece <- 'POG_PISY_02_B'
 df_wp <- QWA_data$rings %>% dplyr::filter(woodpiece_code == woodpiece)
 p <- plot_woodpiece_coverage(woodpiece, df_wp, save_plot = FALSE)
 print(p)
 
-
-# to iterate over all trees, we use create_coverage_plots and save the plots to path_out
+# or to iterate over all trees, use create_coverage_plots and save the plots
 create_coverage_plots(QWA_data$rings,
                       save_plot = TRUE, path_out = path_out)
 
-
-################################################################################
-# library(shiny)
-shiny::runApp('inst/shiny_YTE/yte2_app.R')
-
-################################################################################
-# manual exclusions of years based on user input
-# either denote years to be excluded here:
-years_to_exclude <- tibble::tribble(
+# after inspecting the plots, and given their own knowledge from the data
+# generation process, the user can provide input on which rings to flag
+years_to_flag <- tibble::tribble(
   ~image_code, ~YEAR,
-  'POG_PISY_02B_4_1', 1962,
-  'POG_PISY_02B_4_1', 1964,
-  'POG_PISY_02B_4_2', 1961
+  # for example:
+  # 'POG_PISY_02B_4_1', 1962,
+  # 'POG_PISY_02B_4_1', 1964,
+  # 'POG_PISY_02B_4_2', 1961
 )
+QWA_data <- add_user_flags(QWA_data, years_to_flag)
 
-# or read from file
-# years_to_exclude <- readr::read_csv('path/to/file/years_to_exclude.csv',
-#                                     # skip = 4, # if header rows need to be skipped
-#                                     col_select = c('image_code', 'YEAR'),
-#                                     col_types = 'cn')
-# NOTE: dplyr::coalesce might be useful if there are multiple columns with YEARS
-
-QWA_data <- remove_problem_rings(QWA_data, years_to_exclude)
+# VARIANT B: interactively in shiny app
+# TODO: app is work in progress
+shiny::runApp('inst/shiny_YTE/yte_app.R')
 
 
 ################################################################################
-# remove outliers
-
+# TODO: remove outliers
 
 
 ################################################################################
-# complete cell measures
+# TODO: complete cell measures
 
 
-
-
+################################################################################
+# save preprocessed data to files
+# write.csv(QWA_data$cells,
+#           file.path(path_out, paste0(dataset_name, '_cells.csv')),
+#           row.names = FALSE)
+# write.csv(QWA_data$rings,
+#           file.path(path_out, paste0(dataset_name, '_rings.csv')),
+#           row.names = FALSE)
 
 
 

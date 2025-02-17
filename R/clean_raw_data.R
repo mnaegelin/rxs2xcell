@@ -308,32 +308,25 @@ create_coverage_plots <- function(df_rings,
 
 
 
-# Manual exclusions
-remove_problem_rings <- function(QWA_data, years_to_exclude){
+# Manual flags
+# TODO: finalize
+add_user_flags <- function(QWA_data, years_to_flag){
   df_rings_log <- QWA_data$rings %>%
-    dplyr::left_join(years_to_exclude %>% dplyr::mutate(manual_excl = TRUE),
+    dplyr::left_join(years_to_flag %>% dplyr::mutate(manual_flag = TRUE),
                     by = c('image_code','YEAR')) %>%
-    dplyr::mutate(manual_excl = ifelse(is.na(manual_excl), FALSE, manual_excl))
-
-  # remove the years with manual_excl == TRUE
-  df_cells_clean <- QWA_data$cells %>%
-    dplyr::anti_join(years_to_exclude, by=c('image_code','YEAR'))
-
-  beepr::beep(sound = 1, expr = NULL)
-  message("Double rings have been flagged/removed successfully!\n",
-          'In total, ', nrow(v),
-          ' double rings were removed.')
+    dplyr::mutate(manual_flag = ifelse(is.na(manual_flag), FALSE, manual_flag))
 
   return(
     setNames(
-      list(df_cells_clean, df_rings_log),
+      list(QWA_data$cells, df_rings_log),
       c('cells','rings')
     ))
 }
 
 
 
-# outliers
+# handle outliers
+# TODO: finalize
 remove_outliers <- function(QWA_data){
   # negative values?
   # too high values?
@@ -347,10 +340,8 @@ remove_outliers <- function(QWA_data){
 
 
 
-
-
-
 # calculate additional measures (see rxs complete)
+# TODO: finalize
 complete_cell_measures <- function(df_cells_clean){
 
   # df_cells_compl <- clean_data$cells %>%

@@ -105,7 +105,7 @@ get_input_files <- function(path_in) {
 #' Extract the structure of the data (i.e., which images belong to which slide,
 #' woodpiece, tree, site) from the filenames of the input data into a dataframe.
 #' This requires that all files follow the same labeling pattern of
-#' `site_species_treewoodpiece_sample_image`
+#' `site_species_treeWoodpiece_sample_image`
 #' NOTE: we already checked that all output filenames match, so it is ok
 #' to do the pattern extraction on the image filenames only.
 #'
@@ -117,7 +117,7 @@ extract_data_structure <- function(files) {
   # TODO: allow for different labeling structures
   # e.g., site/species/tree/sample/imgname.jpg, or other variants
   # NOTE: we expect the basenames of the files to have the following structure:
-  lbl_structure <- 'site_species_treewoodpiece_sample_image'
+  lbl_structure <- 'site_species_treeWoodpiece_sample_image'
   # in regex, this corresponds to the following pattern (NOTE the named groups)
   # pattern <- "^(?<site>[:alnum:]+)(?<plot>)_(?<species>[:alnum:]+)_(?<tree>[:alnum:][:alnum:])(?<woodpiece>[:alpha:]*)_(?<slide>[:alnum:]+)_(?<image>[:alnum:]+)$"
   pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:][:alnum:])(?<woodpiece>[:alpha:]*)_(?<slide>[:alnum:]+)_(?<image>[:alnum:]+)$"
