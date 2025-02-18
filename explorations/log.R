@@ -26,7 +26,7 @@
 # (maybe) install.packages("readxl")
 # (maybe) library(readxl)
 # (not likely) library('swimplot')
-
+# install.packages('bslib)
 
 
 # maybe host little apps inside package, for metadata input and user selection of flagged rings

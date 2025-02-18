@@ -1,4 +1,5 @@
 library(shiny)
+library(bslib)
 library(dplyr)
 library(tidyr)
 library(stringr)
@@ -7,7 +8,7 @@ library(reactable.extras)
 library(ggiraph)
 
 
-# source('../R/clean_raw_data.R')
+source('../../R/clean_raw_data.R')
 
 #https://forum.posit.co/t/shiny-app-matrix-checkbox/108251/3
 
@@ -28,6 +29,9 @@ df_rings <- df_rings %>%
 
 # UI
 ui <- fluidPage(
+  # theme = "bootstrap_wsl.css",
+  theme = bs_theme(primary = "#006268", secondary = "#00919A",
+                   font_scale = 0.8L, preset = "cosmo"),
   titlePanel("Woodpiece Data Viewer"),
   sidebarLayout(
     sidebarPanel(
@@ -42,7 +46,10 @@ ui <- fluidPage(
     ),
   mainPanel(
       verbatimTextOutput('clickTest'),
-      girafeOutput("covPlot"),
+      card(
+        title = "Coverage Plot",
+        girafeOutput("covPlot")
+      ),
       reactable.extras::reactable_extras_dependency(),
       reactableOutput("reactTable"),
     )

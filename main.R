@@ -1,3 +1,6 @@
+# TODO: put some of the data into inst/extdata, usable for testing and examples
+# TODO: remove the explorations/*, out/* and this main.R file from the package
+# TODO: add tests
 ################################################################################
 ################################################################################
 
@@ -7,6 +10,7 @@ load_all()
 
 ################################################################################
 # set path to the input and output data
+
 path_in <- '../QWA_Arzac2024'
 path_out <- './out'
 
@@ -78,6 +82,7 @@ QWA_data <- add_user_flags(QWA_data, years_to_flag)
 
 # VARIANT B: interactively in shiny app
 # TODO: app is work in progress
+# TODO: conflict of sourcing in app vs loading the package?
 shiny::runApp('inst/shiny_YTE/yte_app.R')
 
 
@@ -99,6 +104,9 @@ shiny::runApp('inst/shiny_YTE/yte_app.R')
 #           row.names = FALSE)
 
 
+
+################################################################################
+# TODO: writing to DB
 
 
 

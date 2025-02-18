@@ -1,84 +1,114 @@
 library(shiny)
-library(ggplot2)
-library(ggiraph)
+library(shinyjs)
 
 
-shinyApp(ui = fluidPage(
+# Define UI
+inputUI <- function(id){
+  ns <- NS(id) # Initialize shinyjs
 
-  sidebarLayout(
 
-    sidebarPanel(
-      # test input overlay page should not be shown when input changes
-      selectInput("test",
-                  "This is a test input",
-                  choices = c("Model A", "Model B", "Model C"))
-    ),
-    mainPanel(
-      # plot
-      girafeOutput("plot")
-    ))),
+  # Disable the Remove UI button initially
+  tagList(
+    # fluidRow(div(id = ns("box1"), box(
+    #   fileInput(ns("plotFile1"), "Upload 1")
+    # ))),
+    # fluidRow(div(id = ns("box2"), box(
+    #   fileInput(ns("plotFile2"), "Upload 2")
+    # ))),
+    actionButton(ns("add"), "Add"),
+    actionButton(ns("remove"), "Remove last input")
+  )
+}
 
-  server = function(input, output) {
+# Server logic
+inputServer <- function(id) {
+  library(shinyjs)
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
 
-    # dynamic overlay page
-    # preferably I want to build this page inside R (and not javascriptto,)
-    observeEvent(input$plot_selected, {
 
-      info <- subset(mtcars, rownames(mtcars) == input$plot_selected)
-
-      showModal(shiny::modalDialog(
-
-        tags$table(id = "profile",
-                   style="width:80%",
-                   tags$tr(
-                     tags$th(colspan = 3,
-                             rownames(info)
-                     )
-                   ),
-                   tags$tr(
-                     tags$td(colnames(info)[1]),
-                     tags$td(info[, 1])
-                   ),
-                   tags$tr(
-                     tags$td(colnames(info)[2]),
-                     tags$td(info[, 2])
-                   ),
-                   tags$tr(
-                     tags$td(colnames(info)[3]),
-                     tags$td(info[, 3])
-                   ),
-                   tags$tr(
-                     tags$td(colnames(info)[4]),
-                     tags$td(info[, 4])
-                   )
-        ),
-        easyClose = TRUE,
-        footer = NULL
-      ))
+    added <- reactive({
+      print(added_ui_count())
+      added_ui_count()
     })
 
-    # plot
-    output$plot <- renderGirafe({
+    # Reactive value to track the added UI elements
+    added_ui_count <- reactiveVal(2)  # Initialize with 2
 
-      data <- mtcars
+    # Create a condition for enabling/disabling the "Add UI" button
+    enable_add_button <- reactive({
+      added_ui_count() < 4  # Adjust the number as needed
+    })
 
-      p <- ggplot(aes(x = wt,
-                      y = mpg,
-                      data_id = row.names(mtcars)
-      ),
-      data = data) +
-        geom_point_interactive(size = 3) +
-        theme_minimal()
+    enable_remove_button <- reactive({
+      added_ui_count() > 2  # Adjust the number as needed
+    })
 
-      girafe(
-        ggobj = p,
-        options = list(
-          opts_hover(css = "fill:red;cursor:pointer;"),
-          opts_selection(type = "single")
+    observeEvent(enable_add_button(), {
+      # Enable or disable the "Add UI" button based on the condition
+      if (enable_add_button()) {
+        enable("add")  # Enable the button
+      } else {
+        disable("add")  # Disable the button
+      }
+    })
+
+    observeEvent(enable_remove_button(), {
+      # Enable or disable the "Remove UI" button based on the condition
+      if (enable_remove_button()) {
+        enable("remove")  # Enable the button
+      } else {
+        disable("remove")  # Disable the button
+      }
+    })
+
+    observeEvent(input$add, {
+      if (enable_add_button()) {
+        # Increment the count of added UI elements
+        added_ui_count(added_ui_count() + 1)
+
+        # Generate a unique ID for the new UI element
+        ui_id <- paste0("box", added_ui_count())
+
+        insertUI(
+          selector = paste0("#",ns("add")),
+          where = "afterEnd",
+          ui = tags$div(
+            id = ui_id,
+            box(
+              textInput(paste0("txt", added_ui_count()), "Insert some text")
+            )
+          )
         )
-      )
+      }
     })
 
-  }
+    observeEvent(input$remove, {
+      if (enable_remove_button()) {
+        current_count <- added_ui_count()
 
+        # Remove the UI element with the corresponding ID
+        removeUI(
+          selector = paste0("#box", current_count)
+        )
+
+        # Decrement the count of added UI elements
+        added_ui_count(current_count - 1)
+      }
+    })
+  })
+}
+
+ui <- fluidPage(
+  useShinyjs(), # Initialize ShinyJS
+  inputUI("module1"),
+  # Other UI components
 )
+
+server <- function(input, output, session) {
+  inputServer("module1")
+  # Other server logic
+}
+
+# Complete app with UI and server components
+shinyApp(ui, server)
