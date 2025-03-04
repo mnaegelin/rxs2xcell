@@ -1,5 +1,8 @@
 library(EML)
 
+unitlist <- get_unitList()
+unitlist$units$description <- unitlist$units$description %>% stringr::str_replace_all("[\r\n][ ]+", "")
+
 
 # ATTRIBUTES:
 # possibly what we need?

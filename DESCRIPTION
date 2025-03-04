@@ -1,8 +1,8 @@
 Package: rxs2xcell
-Title: What the Package Does (One Line, Title Case)
+Title: Preprocess QWA Data (from ROXAS) and Upload to XCELL Database
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
+    person("Mara", "Naegelin", , "mara.naegelin@wsl.ch", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
@@ -13,17 +13,26 @@ RoxygenNote: 7.3.2
 Imports: 
     aws.s3,
     beepr,
+    bslib,
     checkmate,
     data.table,
     dplyr,
     exifr,
+    ggiraph,
     ggnewscale,
     ggplot2,
     ggstance,
     magrittr,
+    reactable,
+    reactable.extras,
     readr,
+    shiny,
+    shinyjs,
+    shinyvalidate,
     stringr,
     tidyr
+Remotes:
+    mnaegelin/shinyvalidate@remove_rules
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

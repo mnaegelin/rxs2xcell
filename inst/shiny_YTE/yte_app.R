@@ -8,18 +8,20 @@ library(reactable.extras)
 library(ggiraph)
 
 
-source('../../R/clean_raw_data.R')
+#source('../../R/clean_raw_data.R')
 
 #https://forum.posit.co/t/shiny-app-matrix-checkbox/108251/3
+#https://rstudio.github.io/DT/extensions.html
 
 # get necessary data
 # TODO: should be read from file? or ok bc already in environment?
-path_data <- '../../out'
-df_structure <- read.csv(file.path(path_data, 'QWA_data_structure.csv'))
-df_rings <-  read.csv(file.path(path_data, 'QWA_data_rings.csv'))
+# path_data <- './out'
+# df_structure <- read.csv(file.path(path_data, 'QWA_Arzac2024_meta.csv'))
+# df_rings <-  read.csv(file.path(path_data, 'QWA_Arzac2024_rings.csv'))
 
-df_rings <- df_rings %>%
-  select(woodpiece_code, slide_code, image_code, YEAR, n_cells, MRW,
+df_structure <- df_structure
+df_rings <- QWA_data$rings %>%
+  select(woodpiece_code, slide_code, image_code, year, cno, mrw,
          incomplete_ring, missing_ring, duplicate_ring)
 
 # add button to update df_rings and cov_plot (-> make reactive)
@@ -31,30 +33,56 @@ df_rings <- df_rings %>%
 ui <- fluidPage(
   # theme = "bootstrap_wsl.css",
   theme = bs_theme(primary = "#006268", secondary = "#00919A",
-                   font_scale = 0.8L, preset = "cosmo"),
-  titlePanel("Woodpiece Data Viewer"),
-  sidebarLayout(
-    sidebarPanel(
+                   font_scale = 0.8, preset = "cosmo"),
+
+  tags$head(
+    # Note the wrapping of the string in HTML()
+    tags$style(HTML("
+      .selectize-control .selectize-dropdown {
+        position: static !important;
+      }"))
+    ),
+
+  titlePanel("Inspect Year Coverage of Included Woodpieces"),
+
+  card(
+    card_header("Select woodpiece (core) to inspect"),
+    card_body(
+      fillable = FALSE,
       selectInput(
         "woodpiece",
-        "Select Woodpiece Code:",
+        "Woodpiece Code:",
         choices = unique(df_structure$woodpiece_code),
         selected = unique(df_structure$woodpiece_code)[1]
       ),
-      actionButton("click", "Click me!"),
-      width = 3
-    ),
-  mainPanel(
-      verbatimTextOutput('clickTest'),
-      card(
-        title = "Coverage Plot",
-        girafeOutput("covPlot")
-      ),
+      # imageOutput("image"),
+
+    )
+  ),
+
+  # verbatimTextOutput('clickTest'),
+  card(
+    title = "Coverage Plot",
+    card_body(
+      min_height = 300,
+    girafeOutput("covPlot"))
+  ),
+
+  card(
       reactable.extras::reactable_extras_dependency(),
       reactableOutput("reactTable"),
+  ),
+
+  card(
+    card_body(
+      fillable = FALSE,
+      actionButton("click", "Save user flags"),
     )
   )
-  )
+
+)
+
+
 
 # Server
 server <- function(input, output, session) {
@@ -65,25 +93,32 @@ server <- function(input, output, session) {
 
   df_yte <- reactive({
     df_filt() %>%
-      select(image_code, YEAR, n_cells, MRW, incomplete_ring, duplicate_ring, missing_ring) %>%
-      mutate(user_flag = "")
+      select(image_code, year, cno, mrw, incomplete_ring, duplicate_ring, missing_ring) %>%
+      mutate(user_flag = "") %>%
+      arrange(year)
   })
 
   p <- reactive({
-    p_cov <- plot_woodpiece_coverage(input$woodpiece, df_filt(), save_plot = FALSE)
-    p <- girafe(ggobj = p_cov,,
+    covplot <- plot_woodpiece_coverage(input$woodpiece, df_filt())
+    p <- girafe(ggobj = covplot$p,
+                width_svg = covplot$image_width/300,
+                height_svg = covplot$image_height/300,
                 options = list(
                   opts_hover(css = "fill:red;cursor:pointer;"),
-                  opts_selection(type = "single")
+                  opts_selection(type = "single"),
+                  opts_zoom(min = .5, max = 4)
                 ))
     })
 
-  path_to_img <- reactive({
-    req(input$covPlot_selected)
-    org_img <- df_structure %>% filter(image_code == input$covPlot_selected) %>% pull(fname_image)
-    str_replace(org_img, "\\.jpg", "annotated.jpg")
-  })
-  output$clickTest <- renderPrint(path_to_img())
+  # path_to_img <- reactive({
+  #   req(input$covPlot_selected)
+  #   org_img <- df_structure %>% filter(image_code == input$covPlot_selected) %>% pull(fname_image)
+  #   str_replace(org_img, "\\.jpg", "_annotated.jpg") %>% str_replace("..", "../../..")
+  # })
+  # output$clickTest <- renderPrint({
+  #   c(path_to_img(),
+  #   file.exists(path_to_img()))
+  #   })
 
   output$covPlot <- renderGirafe({
     p()
@@ -107,11 +142,42 @@ server <- function(input, output, session) {
                 user_flag = colDef(
                   cell = dropdown_extra(
                   "dropdown",
-                  c(' ', '\u274c flag2', '\u2714 flag3'),
+                  c(' ', '\u2714 remove incomplete flag',
+                    '\u2714 remove duplicate flag',
+                    '\u274c add incomplete flag',
+                    '\u274c add duplicate flag',
+                    '\u274c add other issue flag'
+                    ),
                   class = "dropdown-extra"
                 ))
                 )
               )
+  })
+
+
+  # output$image <- renderImage({
+  #   req(input$covPlot_selected)
+  #   list(src = path_to_img(), width = "25%")
+  #   },
+  #   deleteFile = FALSE
+  # )
+
+  observeEvent(input$covPlot_selected, {
+    org_img <- df_structure %>% filter(image_code == input$covPlot_selected) %>% pull(fname_image)
+    img_path <- str_replace(org_img, "\\.jpg", "_annotated.jpg") %>% str_replace("..", "../../..")
+
+    if (file.exists(img_path)) {
+      # Open image based on OS
+      if (.Platform$OS.type == "windows") {
+        system2("cmd", c("/c", "start", shQuote(img_path)), wait = FALSE)
+      } else if (Sys.info()["sysname"] == "Darwin") {
+        system(paste("open", shQuote(img_path)))
+      } else {
+        system(paste("xdg-open", shQuote(img_path)))
+      }
+    } else {
+      showNotification("Image could not be opened!", type = "error")
+    }
   })
 
 #   # Reactive values to store data

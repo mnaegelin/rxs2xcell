@@ -42,12 +42,15 @@ validate_QWA_data <- function(QWA_data){
   # get a list of all annual rings in cells data (distinct image_code, YEAR),
   # with added cell counts per ring
   df_rings_log <- QWA_data$cells %>%
-    dplyr::count(image_code, YEAR, name = 'n_cells')
+    dplyr::group_by(image_code, year) %>%
+    dplyr::summarise(cno = dplyr::n(),
+                     no_cwt = all(is.na(cwttan)),
+                     .groups = 'drop')
 
   # combine with rings data
   df_rings_log <- df_rings_log %>%
     dplyr::full_join(QWA_data$rings,
-                     by = c('image_code', 'YEAR')) %>%
+                     by = c('image_code', 'year')) %>%
     dplyr::select(tree_code, woodpiece_code, slide_code, dplyr::everything()) %>%
     dplyr::group_by(image_code) %>% # fill any missing tree/woodpiece codes by image
     tidyr::fill(tree_code, woodpiece_code, slide_code, .direction = 'downup') %>%
@@ -56,13 +59,13 @@ validate_QWA_data <- function(QWA_data){
   # check that the data are dated (i.e., YEAR is not NA, and not in future)
   current_year <- as.numeric(format(Sys.Date(), "%Y"))
   df_rings_log <- df_rings_log %>%
-    dplyr::mutate(undated = is.na(YEAR) | YEAR > current_year)
+    dplyr::mutate(undated = is.na(year) | year > current_year)
 
   if (sum(df_rings_log$undated) > 0){
     beepr::beep(sound = 2, expr = NULL)
-    stop('The following woodpieces have not been properly dated:',
+    stop('The following woodpieces have not been properly dated:\n',
          paste0(unique(df_rings_log[df_rings_log$undated, 'woodpiece_code']), collapse=', '),
-         'Please ensure that all included images are dated, then restart the process.')
+         '\nPlease ensure that all included images are dated, then restart the process.')
   }
 
   # check that the cell data include cell wall thickness estimates
@@ -72,31 +75,37 @@ validate_QWA_data <- function(QWA_data){
   # TODO: could also do this on cell files directly?
   df_rings_log <- df_rings_log %>%
     dplyr::group_by(image_code) %>%
-    dplyr::mutate(no_CWT = all(is.na(CWTTAN))) %>%
+    dplyr::mutate(no_cwt = all(no_cwt)) %>%
     dplyr::ungroup()
 
-  if (sum(df_rings_log$no_CWT) > 0){
+  if (sum(df_rings_log$no_cwt) > 0){
     beepr::beep(sound = 2, expr = NULL)
-    stop('The following woodpieces have images without cell wall thickness estimation:',
-         paste0(unique(df_rings_log[df_rings_log$no_CWT, 'woodpiece_code']), collapse=', '),
-         'Please ensure that all included images have CWT estimates, then restart the process.')
+    warning('The following woodpieces have images without cell wall thickness estimation: \n',
+         paste0(unique(df_rings_log[df_rings_log$no_cwt, 'woodpiece_code']), collapse=', '),
+         '\nIf the data is from conifers, please ensure that all included images have CWT estimates.')
   }
 
-  # now we know that undated and no_CWT are ALL FALSE, so we can drop them
-  df_rings_log <- df_rings_log %>% dplyr::select(-undated, -no_CWT)
+  # now we know that undated and no_cwt are ALL FALSE, so we can drop them
+  df_rings_log <- df_rings_log %>% dplyr::select(-undated, -no_cwt)
 
   # identify incomplete rings, missing rings
   df_rings_log <- df_rings_log %>%
     dplyr::group_by(image_code) %>%
-    dplyr::mutate(innermost_ring = YEAR == min(YEAR),
-                  outermost_ring = YEAR == max(YEAR)) %>%
+    dplyr::mutate(innermost_ring = year == min(year),
+                  outermost_ring = year == max(year)) %>%
     dplyr::ungroup()
 
   df_rings_log <- df_rings_log %>%
-    dplyr::mutate(incomplete_ring = (outermost_ring & is.na(MRW)) | innermost_ring,
-                  missing_ring = is.na(n_cells),
-                  no_MRW_other = is.na(MRW) & !(outermost_ring | innermost_ring), # TODO: check if this ever occurs and for what reason
-                  missing_ringV2 = MRW < 10) # TODO: check if V2 always aligns other def
+    dplyr::mutate(incomplete_ring = (outermost_ring & is.na(mrw)) | innermost_ring,
+                  missing_ring = is.na(cno),
+                  no_MRW_other = is.na(mrw) & !(outermost_ring | innermost_ring), # TODO: check if this ever occurs and for what reason
+                  missing_ringV2 = mrw < 10) # TODO: check if V2 always aligns other def
+
+  # TODO: set raddist and rraddist to NA for incomplete rings (are only already NA for outermost incomplete rings)
+  # TODO: additional check:
+
+
+
 
   df_rings_log <- df_rings_log %>% dplyr::select(-innermost_ring, -outermost_ring)
 
@@ -104,7 +113,7 @@ validate_QWA_data <- function(QWA_data){
   # TODO: these checks are probably be overkill, since these issues should not arise
   # in ROXAS normally. BUT keep for now and see if we find any in existing datasets
   df_rings_log <- df_rings_log %>% dplyr::group_by(image_code) %>%
-    dplyr::mutate(year_diff = YEAR - dplyr::lag(YEAR),
+    dplyr::mutate(year_diff = year - dplyr::lag(year),
                   year_diff = tidyr::replace_na(year_diff, 1)) %>%
     dplyr::ungroup()
 
@@ -124,7 +133,7 @@ validate_QWA_data <- function(QWA_data){
     # fill in missing years
     df_rings_log <- df_rings_log %>%
       dplyr::group_by(image_code) %>%
-      tidyr::complete(YEAR = tidyr::full_seq(YEAR, 1),
+      tidyr::complete(year = tidyr::full_seq(year, 1),
                       fill = list(missing_ring = TRUE), explicit = FALSE) %>%
       dplyr::ungroup()
   }
@@ -137,7 +146,7 @@ validate_QWA_data <- function(QWA_data){
   # we keep only the one with the most cells
   # TODO: avoid switching too often?
   df_rings_log <- df_rings_log %>%
-    dplyr::group_by(woodpiece_code, YEAR) %>%
+    dplyr::group_by(woodpiece_code, year) %>%
     dplyr::mutate(overlap = dplyr::n() > 1) %>%
     dplyr::ungroup()
 
@@ -147,24 +156,24 @@ validate_QWA_data <- function(QWA_data){
   # flagged as duplicates atm - is this the desired behavior?
   df_overlap <- df_rings_log %>%
     dplyr::filter(overlap) %>%
-    dplyr::arrange(woodpiece_code, YEAR, desc(n_cells))
+    dplyr::arrange(woodpiece_code, year, desc(cno))
 
   df_overlap_max <- df_overlap %>%
     dplyr::filter(!incomplete_ring, !missing_ring)  %>%
-    dplyr::group_by(woodpiece_code, YEAR) %>%
+    dplyr::group_by(woodpiece_code, year) %>%
     dplyr::slice(1) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(duplicate_max_ncell = TRUE) %>%
-    dplyr::select(image_code, YEAR, duplicate_max_ncell)
+    dplyr::select(image_code, year, duplicate_max_ncell)
 
   # the other duplicate rings are flagged as duplicates
   df_overlap <- df_overlap %>%
-    dplyr::left_join(df_overlap_max, by = c('image_code', 'YEAR')) %>%
+    dplyr::left_join(df_overlap_max, by = c('image_code', 'year')) %>%
     dplyr::mutate(duplicate_ring = ifelse(is.na(duplicate_max_ncell), TRUE, FALSE)) %>%
-    dplyr::select(image_code, YEAR, duplicate_max_ncell, duplicate_ring)
+    dplyr::select(image_code, year, duplicate_max_ncell, duplicate_ring)
 
   df_rings_log <- df_rings_log %>%
-    dplyr::left_join(df_overlap, by = c("image_code", "YEAR")) %>%
+    dplyr::left_join(df_overlap, by = c("image_code", "year")) %>%
     dplyr::mutate(duplicate_ring = ifelse(is.na(duplicate_ring), FALSE, duplicate_ring))
 
   # TODO: clean up, which columns do we actually need?
@@ -179,7 +188,7 @@ validate_QWA_data <- function(QWA_data){
                                 row.names = FALSE)), collapse='\n'))
 
   return(
-    setNames(
+    stats::setNames(
       list(QWA_data$cells, df_rings_log),
       c('cells','rings'))
   )
@@ -194,13 +203,9 @@ validate_QWA_data <- function(QWA_data){
 #'
 #' @param woodpiece the woodpiece (core) for which the plot should be created
 #' @param df_rings the dataframe containing the rings data (including flags)
-#' @param show_plot should the plot be shown
-#' @param save_plot should the plot be written to disk under path_out
-#' @param path_out path where the plot should be saved.
 #'
 #' @export
-plot_woodpiece_coverage <- function(woodpiece, df_rings,
-                                    save_plot = FALSE, path_out = './') {
+plot_woodpiece_coverage <- function(woodpiece, df_rings) {
   # assert that the df_rings underwent validation and double rings checks
   beepr::beep_on_error(
     checkmate::assert_names(colnames(df_rings),
@@ -220,17 +225,21 @@ plot_woodpiece_coverage <- function(woodpiece, df_rings,
 
   # reformat data for plot
   df_plot <- df_plot %>%
-    dplyr::mutate(incomplete_ring = dplyr::case_when(incomplete_ring ~ YEAR),
-                  missing_ring = dplyr::case_when(missing_ring ~ YEAR),
-                  duplicate_ring = dplyr::case_when(duplicate_ring ~ YEAR)) %>%
+    dplyr::mutate(incomplete_ring = dplyr::case_when(incomplete_ring ~ year),
+                  missing_ring = dplyr::case_when(missing_ring ~ year),
+                  duplicate_ring = dplyr::case_when(duplicate_ring ~ year)) %>%
     # correct order of images
-    dplyr::arrange(YEAR) %>%
-    dplyr::mutate(image_code = factor(image_code, levels = unique(image_code)))
+    dplyr::arrange(desc(year)) %>%
+    dplyr::mutate(image_code = factor(image_code, levels = unique(image_code)),
+                  slide_code = factor(slide_code, levels = rev(unique(slide_code))))
 
   # PLOTTING
   p_cov <- df_plot %>%
-    ggplot2::ggplot(ggplot2::aes(x=YEAR, y=image_code, group=image_code)) +
+    ggplot2::ggplot(ggplot2::aes(x=year, y=image_code, group=image_code)) +
     # add horizontal lines for the years covered by each image
+    # ggplot2::geom_line(linewidth = 4, color = "grey90", lineend = 'round',
+    #                    position = ggplot2::position_nudge(y=-0.1)) +
+    # with interactive functionality for use in shiny
     ggiraph::geom_line_interactive(
       ggplot2::aes(data_id = image_code),
       tooltip = 'Click to open image!',
@@ -238,7 +247,7 @@ plot_woodpiece_coverage <- function(woodpiece, df_rings,
       position = ggplot2::position_nudge(y=-0.1)) +
       #onclick = "window.open(\"https://davidgohel.github.io/ggiraph/\")") +
     # add points colored by the number of cells for each year
-    ggplot2::geom_point(ggplot2::aes(x=YEAR, y=image_code, fill=n_cells),
+    ggplot2::geom_point(ggplot2::aes(x=year, y=image_code, fill=cno),
                         shape=21, size = 3, stroke = 0.1) +
     ggplot2::scale_fill_steps(low='lightskyblue', high='blue4',
                               name = "N cells") +
@@ -266,27 +275,21 @@ plot_woodpiece_coverage <- function(woodpiece, df_rings,
       title = paste("Year coverage for woodpiece", woodpiece),
       x = "Year", y = "Image")
 
-  # save plot
-  if (save_plot){
-    # save the plot to png
-    plot_name <- file.path(path_out, paste0(woodpiece,'_coverage.png')) # TODO: make path safe
-    # make plot size dynamically dependent on nr of rows (images) and total
-    # range of years, with some hard limits to avoid extremes (all in px)
-    # TODO: check if this is the best way to set the size
-    image_width <- min(
-      max((max(df_plot$YEAR)-min(df_plot$YEAR))*75+800, 2000),
-      6000)
-    image_height <- min(
-      max(length(unique(df_plot$image_code))*100+200, 750),
-      2000)
+  # make plot size dynamically dependent on nr of rows (images) and total
+  # range of years, with some hard limits to avoid extremes (all in px)
+  # TODO: check if this is the best way to set the size
+  image_width <- min(
+    max((max(df_plot$year)-min(df_plot$year))*75+800, 2000),
+    6000)
+  image_height <- min(
+    max(length(unique(df_plot$image_code))*100+200, 750),
+    2000)
 
-    ggplot2::ggsave(plot_name, p_cov, bg='white',
-                    width = image_width, height = image_height, units='px')
-
-    message(woodpiece, ': coverage plot saved to ', plot_name)
-  }
-
-  return(p_cov)
+  return(
+    list(p = p_cov,
+         image_width = image_width,
+         image_height = image_height)
+  )
 }
 
 
@@ -297,12 +300,22 @@ plot_woodpiece_coverage <- function(woodpiece, df_rings,
 #' saved to a specified path.
 #'
 #' @param df_rings rings dataframe
+#' @param save_plot should the plot be written to disk under path_out
+#' @param path_out path where the plot should be saved.
+#' @export
 create_coverage_plots <- function(df_rings,
                                   save_plot = TRUE, path_out = './'){
   woodpiece_codes <- unique(df_rings$woodpiece_code)
   for (wp in woodpiece_codes){
-    plot_woodpiece_coverage(wp, df_rings,
-                            save_plot = save_plot, path_out = path_out)
+
+    covplot_list <- plot_woodpiece_coverage(wp, df_rings)
+
+    # save the plot to png
+    plot_name <- file.path(path_out, paste0(wp,'_coverage.png')) # TODO: make path safe
+    ggplot2::ggsave(plot_name, covplot_list$p, bg='white',
+                    width = covplot_list$image_width,
+                    height = covplot_list$image_height, units='px')
+    message(woodpiece, ': coverage plot saved to ', plot_name)
   }
 }
 
@@ -313,11 +326,11 @@ create_coverage_plots <- function(df_rings,
 add_user_flags <- function(QWA_data, years_to_flag){
   df_rings_log <- QWA_data$rings %>%
     dplyr::left_join(years_to_flag %>% dplyr::mutate(manual_flag = TRUE),
-                    by = c('image_code','YEAR')) %>%
+                    by = c('image_code','year')) %>%
     dplyr::mutate(manual_flag = ifelse(is.na(manual_flag), FALSE, manual_flag))
 
   return(
-    setNames(
+    stats::setNames(
       list(QWA_data$cells, df_rings_log),
       c('cells','rings')
     ))
@@ -335,7 +348,12 @@ remove_outliers <- function(QWA_data){
 
   # TODO: also for rings?
   df_rings <- QWA_data$rings
-  return(df_cells_clean)
+
+  return(
+    stats::setNames(
+      list(df_cells, df_rings),
+      c('cells','rings')
+    ))
 }
 
 
@@ -344,29 +362,111 @@ remove_outliers <- function(QWA_data){
 # TODO: finalize
 complete_cell_measures <- function(df_cells_clean){
 
-  # df_cells_compl <- clean_data$cells %>%
-  #   dplyr::mutate(CWTmax = pmax(CWTPI, CWTBA, CWTLE, CWTRI, na.rm=TRUE), # TODO: these can be sign flipped if outliers -> how to handle in max?
-  #                 LR = sqrt(LA / pi),
-  #                 CWAmax = 2 * (pi * (LR + CWTmax)^2 - LA),
-  #                 # replace too high values with NA
-  #                 # NOTE: CWA from Roxas can have negative values to indicate outliers
-  #                 CWA = ifelse(abs(CWA) > CWAmax, NA, CWA),
-  #                 RWD = ifelse(abs(CWA) > CWAmax, NA, RWD),
-  #                 # new:
-  #                 TCA = ifelse(CWA > 0, LA + CWA, ifelse(is.na(CWA), NA, -(LA-CWA))), # if CWA negative, also make it negative?
-  #                 a = 2*sqrt(ASP*LA/pi),
-  #                 b = a/ASP,
-  #                 DH = sqrt((2*a^2*b^2)/(a^2+b^2)), # TODO: why not from Roxas?
-  #                 RWD2 = CWTRAD/DRAD,
-  #   )
+  df_cells_compl <- df_cells_clean %>%
+    # need MRW for some calculations
+    dplyr::left_join(QWA_data$rings %>%
+                       dplyr::select(image_code, YEAR, MRW), by=c('image_code', 'YEAR')) %>%
 
-  # TODO: replace all negatives with NA ?
-  # TODO check these additional calculations
+    dplyr::mutate(
 
-  return(df_cells_clean)
+      # helpers to find CWA, RWD outliers (CWAmax is 2 * the area that would be achieved by the max valid CWT of the four walls)
+      CWTmax = pmax(CWTPI, CWTBA, CWTLE, CWTRI, na.rm=TRUE), # automatically neglects the negative outliers
+      LR = sqrt(LA / pi),
+      CWAmax = 2 * (pi * (LR + CWTmax)^2 - LA), # why the factor 2?
+      # CWA, RWD: replace too high values with NA (so some negative outliers might be sign flipped rather than removed)
+      # NOTE: CWA from Roxas can have negative values to indicate outliers
+      CWA = ifelse(abs(CWA) > CWAmax, NA, CWA),
+      RWD = ifelse(abs(CWA) > CWAmax, NA, RWD),
+
+      # new:
+      TCA = ifelse(CWA > 0, LA + CWA, ifelse(is.na(CWA), NA, -(LA-CWA))), # if CWA negative, also make it negative? LA seems to be always > 0
+
+      # DH recalculation:
+      # mostly agrees with ROXAS output, except for rounding errors. is it not available for earlier versions?
+      # helper:
+      a = 2*sqrt(ASP*LA/pi),
+      b = a/ASP,
+      # new / replace???
+      DH = sqrt((2*a^2*b^2)/(a^2+b^2)), # TODO: why not from Roxas?
+
+      # new:
+      RWD2 = CWTRAD/DRAD,
+
+      # Add CWT-based density:
+      # assume a circular lumen area with homogenous cell wall thickness around it;
+      # for latewood-like cells, take overall average CWT,
+      # for earlywood-like cells, only consider CWTTAN, which avoids pit artefacts
+      # helper:
+      WA = ifelse(RTSR < 1, (LR + CWTTAN)^2 * pi - LA, (LR + CWTALL)^2 * pi - LA),
+      # new:
+      DCWT = WA / (LA + WA),
+
+      # get ring width at tangential position of each cell ??
+      # new:
+      RADDISTR.ST = RRADDISTR * MRW / 100,
+
+      # Add mean CWT: mean of radial and tangential CWT if Mork index latewood-like,
+      # in earlywood-like cells take CWTTAN
+      # new:
+      CWTALL.ADJ = ifelse(RTSR < 1,  CWTTAN,  CWTALL),
+      CDRAD = DRAD + 2*CWTTAN,
+      CDTAN = DTAN + 2*CWTRAD,
+      CDRATIO = CDRAD/CDTAN
+
+    ) %>%
+
+
+
+
+
+    # remove unwanted parameters
+    dplyr::select(-MRW, -MAX.CWT, -LR, -MAX.CWA, -a, -b, -WA, -RW.CELL)
+
+
+
+  return(df_cells_compl)
 }
 
 
+
+
+
+# TODO: add EW/LW estimation (standard implementation)
+
+# Add SECTOR100
+# TODO: does this work with the duplicates / flags?
+# TODO: should be as.numeric(as.character()) ???
+# dplyr::group_by(woodpiece_code, YEAR) %>%
+#   dplyr::mutate(
+#     # TO.SECTORS = as.numeric(cut(RADDISTR.ST, b=seq(from= 0, to=100, by= 100/(NSECTOR[1])), labels=1:(NSECTOR[1]))),
+#     SECTOR100 = as.numeric(cut(RRADDISTR,
+#                                b = seq(from=0, to=100, by= 1),
+#                                labels = 1:100,
+#                                include.lowest = T)))  %>%
+#   dplyr::ungroup() %>%
+#   # round for data just above the RRADDISTR of class 100 otherwise just leave NA
+#   dplyr::mutate(SECTOR100 = if_else(RRADDISTR > 100 & RRADDISTR <= 101, 100, SECTOR100)) %>%
+
+# tbl_YEAR <- tbl_rxs_hmgz %>%
+#   dplyr::filter(!is.na(RTSR)) %>%  # remove cells that do not have a measured CWT
+#   dplyr::group_by(plot_treecode, YEAR, slide, SECTOR100) %>%
+#   dplyr::summarise(RTSR.MEAN = mean(RTSR, na.rm = TRUE),
+#                    MRW = mean(MRW, na.rm = TRUE), .groups = 'drop') %>%
+#   dplyr::group_by(plot_treecode, YEAR, slide) %>%
+#   dplyr::mutate(ROLLMEAN = zoo::rollmean(RTSR.MEAN, 9, fill = c(NA, NA, 10)),
+#                 TO.EWLW = ifelse(SECTOR100 <= max_na_inf(SECTOR100[ROLLMEAN <= mork]), "EW", "LW")) %>%
+#   # filter(plot_treecode=="YAM_2756", YEAR ==1940) %>%
+#   # ggplot(aes(x=SECTOR100,y=ROLLMEAN, group = paste0(plot_treecode,YEAR), colour= TO.EWLW)) + geom_line()
+#   dplyr::group_by(plot_treecode, YEAR, slide) %>%
+#   dplyr::summarise(MRW = mean(MRW),
+#                    EWW = ifelse(any(TO.EWLW == "EW", na.rm = TRUE),
+#                                 max_na_inf(SECTOR100[TO.EWLW == "EW"] * MRW/100),
+#                                 0),
+#                    LWW = MRW - EWW, .groups = 'drop')
+#
+# tbl_out <- tbl_rxs_hmgz %>%
+#   dplyr::left_join(tbl_YEAR %>% select(-MRW),  by = c("plot_treecode", "YEAR", "slide")) %>%
+#   dplyr::mutate(TO.EWLW = ifelse(RADDISTR.ST >= EWW, "LW", "EW"))
 
 
 

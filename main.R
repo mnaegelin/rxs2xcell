@@ -7,7 +7,6 @@
 library(devtools)
 load_all()
 
-
 ################################################################################
 # set path to the input and output data
 
@@ -21,6 +20,12 @@ dataset_name <- 'QWA_Arzac2024' # used to name the resulting output files
 # get overview of data to be read
 files <- get_input_files(path_in)
 df_structure <- extract_data_structure(files)
+
+# optional: if we want to exclude certain woodpieces or include only a subset
+# of woodpieces, we can do so here
+# df_structure <- subset_woodpiece_codes(df_structure,
+#                                        # EITHER: include_codes = c('POG_PISY_02_B'), OR
+#                                        exclude_codes = c('POG_PISY_02_B'))
 
 
 ################################################################################
@@ -42,7 +47,7 @@ QWA_data <- collect_raw_data(df_structure)
 
 ################################################################################
 # clean raw data
-# TODO: finalize ring flags
+# TODO: finalize ring flags, negative checks
 QWA_data <- validate_QWA_data(QWA_data)
 
 # write to csv
@@ -57,17 +62,29 @@ write.csv(QWA_data$rings,
 ################################################################################
 # provide user input on ring flags
 
-# VARIANT A: in script
-# plot the yearly coverage to give overview of data and detected issues
-# for a single tree, we can use the plot_tree_coverage function
-woodpiece <- 'POG_PISY_02_B'
-df_wp <- QWA_data$rings %>% dplyr::filter(woodpiece_code == woodpiece)
-p <- plot_woodpiece_coverage(woodpiece, df_wp, save_plot = FALSE)
-print(p)
+# VARIANT A: interactively in shiny app ----------------------------------------
+# TODO: app is work in progress
+# TODO: conflict of sourcing in app vs loading the package?
+shiny::runApp('inst/shiny_YTE/yte_app.R')
 
-# or to iterate over all trees, use create_coverage_plots and save the plots
-create_coverage_plots(QWA_data$rings,
-                      save_plot = TRUE, path_out = path_out)
+# after running the app, reload the rings data
+# TODO: check formatting
+QWA_data$rings <- read.csv(
+  file.path(path_out, paste0(dataset_name, '_rings.csv')),
+  stringsAsFactors = FALSE)
+
+# VARIANT B: in script / manually ----------------------------------------------
+# use create_coverage_plots and to create and save the plots of the yearly
+# coverage and issues (generates one plot per woodpiece)
+# create_coverage_plots(QWA_data$rings,
+#                       save_plot = TRUE, path_out = path_out)
+
+# can also use the plot_tree_coverage function to plot the coverage of a
+# specific woodpiece and show here
+# woodpiece <- 'POG_PISY_02_B'
+# df_wp <- QWA_data$rings %>% dplyr::filter(woodpiece_code == woodpiece)
+# covplot <- plot_woodpiece_coverage(woodpiece, df_wp)
+# print(covplot$p)
 
 # after inspecting the plots, and given their own knowledge from the data
 # generation process, the user can provide input on which rings to flag
@@ -80,29 +97,36 @@ years_to_flag <- tibble::tribble(
 )
 QWA_data <- add_user_flags(QWA_data, years_to_flag)
 
-# VARIANT B: interactively in shiny app
-# TODO: app is work in progress
-# TODO: conflict of sourcing in app vs loading the package?
-shiny::runApp('inst/shiny_YTE/yte_app.R')
+
+################################################################################
+# remove outliers
+# TODO: finalize (incomplete rings, )
+QWA_data <- remove_outliers(QWA_data)
 
 
 ################################################################################
-# TODO: remove outliers
+# complete cell measures
+# TODO: finalize
+QWA_data <- complete_cell_measures(QWA_data)
 
 
-################################################################################
-# TODO: complete cell measures
+
 
 
 ################################################################################
 # save preprocessed data to files
-# write.csv(QWA_data$cells,
-#           file.path(path_out, paste0(dataset_name, '_cells.csv')),
-#           row.names = FALSE)
-# write.csv(QWA_data$rings,
-#           file.path(path_out, paste0(dataset_name, '_rings.csv')),
-#           row.names = FALSE)
+write.csv(QWA_data$cells,
+          file.path(path_out, paste0(dataset_name, '_cells.csv')),
+          row.names = FALSE)
+write.csv(QWA_data$rings,
+          file.path(path_out, paste0(dataset_name, '_rings.csv')),
+          row.names = FALSE)
 
+
+################################################################################
+# fill in the required metadata form via the Shiny app
+# TODO: app is work in progress
+shiny::runApp('inst/shiny_meta/meta_app.R')
 
 
 ################################################################################

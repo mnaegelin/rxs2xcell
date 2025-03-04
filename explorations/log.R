@@ -28,6 +28,13 @@
 # (not likely) library('swimplot')
 # install.packages('bslib)
 
+# usethis::use_package('bslib')
+# usethis::use_package('shiny')
+# usethis::use_package('ggiraph')
+# usethis::use_package('shinyvalidate') # add remote
+# usethis::use_package('shinyjs')
+# usethis::use_package('reactable')
+# usethis::use_package('reactable.extras')
 
 # maybe host little apps inside package, for metadata input and user selection of flagged rings
 # install.packages('shiny')

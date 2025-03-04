@@ -1,8 +1,3 @@
-# TODO: the txt files have only two digits after decimal point for many variables -> enough precision?
-# or should we read form xlsx instead?
-# TODO: make it so we could also import analyses in polar/cal-Cartesian coordinates?
-
-
 #' Read single cell output file
 #'
 #' Helper function
@@ -15,16 +10,16 @@ read_cells_output <- function(file_cells){
   # NOTE: it looks like we should have these columns for ROXAS versions
   # 3.0.285, 3.0.575, 3.0.590, 3.0.608, 3.0.620, 3.0.634, 3.0.655
   selcols_cells <- c(
-    'YEAR', 'CID', 'XPIX', 'YPIX', 'RADDISTR', 'RRADDISTR',
+    'YEAR', 'XPIX', 'YPIX', 'RADDISTR', 'RRADDISTR',
+    'NBRNO', 'NBRID',
     'LA', 'ASP', 'MAJAX', 'KH',
     'CWTPI', 'CWTBA', 'CWTLE', 'CWTRI', 'CWTTAN', 'CWTRAD', 'CWTALL',
     'RTSR', 'CTSR', 'DH', 'DRAD', 'DTAN', 'TB2', 'CWA', 'RWD'
     # not included cols are:
-    # ID, RADDIST, ANGLE, XCAL, YCAL (superfluous)
-    # TODO
-    #'NBRNO', 'NBRID', 'NBRDST' # (relates to groups of cells, relevant for non-conifers)
+    # ID, CID, RADDIST, ANGLE, XCAL, YCAL, 'NBRDST', 'AOI', (superfluous)
+
     # if all read, then  df_cells_all %>% purrr::discard(~all(is.na(.x))) might be interesting
-    # AOI (relates to areas of interest)
+    #  (relates to areas of interest)
   )
   # define any variant name mappings from old ROXAS versions
   # use format: current_name = 'old_name', current_name = 'older_name', etc.
@@ -35,14 +30,14 @@ read_cells_output <- function(file_cells){
   )
 
   # read in the raw data
-  # read in the raw data
   # catch errors: print the current filename if there are issues
   tryCatch(
     beepr::beep_on_error(
       df_raw <- readr::read_delim(file_cells, delim = "\t",
                                   col_types = readr::cols(.default="d", ID="c")) %>%
         dplyr::rename(dplyr::any_of(colname_variants)) %>%
-        dplyr::select(dplyr::all_of(selcols_cells)),
+        dplyr::select(dplyr::all_of(selcols_cells)) %>%
+        dplyr::rename_with(tolower),
       sound=2
     ),
     error = function(e){
@@ -90,8 +85,22 @@ read_rings_output <- function(file_rings){
   # NOTE: it looks like we should have these columns for ROXAS versions
   # 3.0.285, 3.0.575, 3.0.590, 3.0.608, 3.0.620, 3.0.634, 3.0.655
   selcols_rings <- c(
-    'YEAR', 'MRW', 'CWTTAN'
-    # 'CNO' (do not need bc we count cells in anyways, else we would miss the incomplete years)
+    'YEAR','RA','MRW',
+    'RVGI', 'RVSF', 'RGSGV', 'AOIAR', 'RAOIAR', 'DH', 'DH2'
+    # not included cols are:
+    # 'CNO', 'CD', 'CTA', 'RCTA', 'MLA', # we re-calculate from cells output
+    # 'ID', 'MINRW', 'MAXRW', 'MRADDIST', # not relevant
+    # and the following which could still be recalculated from cells if needed
+    # 'MINLA', 'MAXLA', 'KH', 'KS', 'CWTPI', 'CWTBA', 'CWTLE', 'CWTRI', 'CWTTAN',
+    # 'CWTRAD', 'CWTALL', 'RTSR', 'CTSR', 'DRAD', 'DTAN', 'TB2', 'CWA', 'RWD',
+    # plus other AOI / AOE related measures (not relevant)
+  )
+
+  # define any variant name mappings from old ROXAS versions
+  # use format: current_name = 'old_name', current_name = 'older_name', etc.
+  colname_variants <- c(
+    DH_W = 'DH', # DH is actually hydraulically weighted mean diameter (Kolb & Sperry, 1998)
+    DH_M = 'DH2' # while DH2 is mean hydraulic diameter (Tyree & Zimmermann, 2002)
   )
 
   # read in the raw data
@@ -100,7 +109,9 @@ read_rings_output <- function(file_rings){
     beepr::beep_on_error(
       df_raw <- readr::read_delim(file_rings, delim = "\t",
                                   col_types = readr::cols(.default="d", ID="c")) %>%
-        dplyr::select(dplyr::all_of(selcols_rings)),
+        dplyr::select(dplyr::all_of(selcols_rings)) %>%
+        dplyr::rename(dplyr::any_of(colname_variants)) %>%
+        dplyr::rename_with(tolower),
       sound=2
     ),
     error = function(e){
