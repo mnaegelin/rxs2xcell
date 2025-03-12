@@ -8,6 +8,10 @@ create_coverage_plots(df_rings, save_plot = TRUE, path_out = "./")
 }
 \arguments{
 \item{df_rings}{rings dataframe}
+
+\item{save_plot}{should the plot be written to disk under path_out}
+
+\item{path_out}{path where the plot should be saved.}
 }
 \description{
 Function to create coverage plots for all unique treecodes in the provided

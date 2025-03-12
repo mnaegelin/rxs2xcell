@@ -11,8 +11,6 @@ read_cells_output(file_cells)
 }
 \value{
 A dataframe with the raw data (relevant columns only).
-
-NBRNO', 'NBRID', 'NBRDST' # (relates to groups of cells, relevant for non-conifers)
 }
 \description{
 Helper function

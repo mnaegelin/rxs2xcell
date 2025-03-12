@@ -4,12 +4,12 @@
 \name{rxs2xcell-package}
 \alias{rxs2xcell}
 \alias{rxs2xcell-package}
-\title{rxs2xcell: What the Package Does (One Line, Title Case)}
+\title{rxs2xcell: Preprocess QWA Data (from ROXAS) and Upload to XCELL Database}
 \description{
 What the package does (one paragraph).
 }
 \author{
-\strong{Maintainer}: First Last \email{first.last@example.com} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
+\strong{Maintainer}: Mara Naegelin \email{mara.naegelin@wsl.ch} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
 
 }
 \keyword{internal}

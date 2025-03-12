@@ -125,7 +125,7 @@ extract_data_structure <- function(files) {
   # NOTE: we expect the basenames of the files to have the following structure:
   lbl_structure <- '{site}_{species}_{tree}{woodpiece}_{sample}_{image}'
   # in regex, this corresponds to the following pattern (NOTE the named groups)
-  pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:][:alnum:])(?<woodpiece>[:alpha:]*)_(?<slide>[:alnum:]+)_(?<image>[:alnum:]+)$"
+  pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:][:alnum:])(?<woodpiece>[:alnum:]*)_(?<slide>[:alnum:]+)_(?<image>[:alnum:]+)$"
 
   # remove paths and extensions from the image filenames (e.g. ".jpg")
   fnames <- basename(files$fname_image) %>%
@@ -287,7 +287,7 @@ subset_woodpiece_codes <- function(df_structure,
 #' @returns A dataframe containing the extracted data.
 #'
 # TODO: check this works on Windows? (exifr requires PERL)
-# TODO: which of these do we really need? is it robust for different image types?
+# TODO: is it robust for different image types?
 # TODO: can get date as well if we have original images? error handling for missing tags?
 collect_image_info <- function(files_images) {
   df_image_meta <- exifr::read_exif(files_images,
@@ -318,7 +318,6 @@ collect_image_info <- function(files_images) {
 #       it looks like it works for ROXAS versions
 #       3.0.285, 3.0.575, 3.0.590, 3.0.608, 3.0.620, 3.0.634, 3.0.655 (different date formats)
 # TODO: add support for ROXAS AI
-# TODO: date formatting
 extract_roxas_settings <- function(file_settings,
                                    roxas_version = 'classic') {
   # check input
@@ -384,15 +383,35 @@ extract_roxas_settings <- function(file_settings,
 #' @returns A dataframe containing the extracted data.
 #'
 collect_settings_data <- function(files_settings,
-                                  roxas_version = 'classic') {
+                                  roxas_version = 'classic',
+                                  tz = NULL) {
   df_settings_all <- files_settings %>%
     purrr::map(\(x) extract_roxas_settings(x, roxas_version = roxas_version)) %>%
     purrr::list_rbind()
 
+  # convert string columns to numeric and integer
+  df_settings_all <- df_settings_all %>%
+    dplyr::mutate(dplyr::across(c(spatial_resolution,
+                                  dbl_cwt_threshold:max_cwttan_l), as.numeric),
+                  dplyr::across(circ_lower_limit:max_cell_area, as.integer))
+
+  # convert created_at string to datetime
+  # TODO: check robustness for different date formats
+  if (is.null(tz)) {
+    tz <- Sys.timezone()
+  }
+  conv_dates <- df_settings_all$created_at %>% lubridate::mdy_hm(., tz=tz)
+  # plausibility checks: no NA and not before outmost year
+  check_dates <- any(is.na(conv_dates)) |
+    any(df_settings_all$outmost_year > lubridate::year(conv_dates))
+  if (check_dates){
+    beepr::beep(sound = 2, expr = NULL)
+    stop("Error converting dates in the settings files.")
+  }
+  df_settings_all$created_at <- conv_dates
+
   return(df_settings_all)
 }
-
-
 
 
 #' Read and combine raw metadata
@@ -401,13 +420,15 @@ collect_settings_data <- function(files_settings,
 #' combine into one dataframe with the data structure.
 #'
 #' @param df_structure Dataframe with all input filenames
-#' @param roxas_version ROXAS version (used to read the settings files)
+#' @param roxas_version ROXAS version (required to read the settings files)
+#' @param tz Timezone for date conversion of settings created at date (default: system tz)
 #'
 #' @returns A dataframe containing the extracted data.
 #' @export
-collect_metadata <- function(df_structure, roxas_version) {
+collect_metadata <- function(df_structure, roxas_version, tz = NULL) {
   df_images <- collect_image_info(df_structure$fname_image)
-  df_settings <- collect_settings_data(df_structure$fname_settings, roxas_version)
+  df_settings <- collect_settings_data(df_structure$fname_settings,
+                                       roxas_version, tz=tz)
 
   df_meta <- df_structure %>%
     dplyr::left_join(df_images, by='fname_image') %>%

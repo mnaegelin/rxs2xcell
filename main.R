@@ -34,8 +34,8 @@ df_meta <- collect_metadata(df_structure,
                             roxas_version='classic')
 
 # save metadata to file
-write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta.csv')),
-          row.names = FALSE)
+# write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta.csv')),
+#           row.names = FALSE)
 # TODO: add workflow for user input to complete metadata
 
 
@@ -48,7 +48,7 @@ QWA_data <- collect_raw_data(df_structure)
 ################################################################################
 # clean raw data
 # TODO: finalize ring flags, negative checks
-QWA_data <- validate_QWA_data(QWA_data)
+QWA_data <- validate_QWA_data(QWA_data, df_meta)
 
 # write to csv
 write.csv(QWA_data$cells,
@@ -65,7 +65,8 @@ write.csv(QWA_data$rings,
 # VARIANT A: interactively in shiny app ----------------------------------------
 # TODO: app is work in progress
 # TODO: conflict of sourcing in app vs loading the package?
-shiny::runApp('inst/shiny_YTE/yte_app.R')
+#shiny::runApp('inst/shiny_YTE/yte_app.R')
+run_coverage_app()
 
 # after running the app, reload the rings data
 # TODO: check formatting
@@ -109,6 +110,8 @@ QWA_data <- remove_outliers(QWA_data)
 # TODO: finalize
 QWA_data <- complete_cell_measures(QWA_data)
 
+# EW, LW
+# others
 
 
 
@@ -126,8 +129,8 @@ write.csv(QWA_data$rings,
 ################################################################################
 # fill in the required metadata form via the Shiny app
 # TODO: app is work in progress
-shiny::runApp('inst/shiny_meta/meta_app.R')
-
+# shiny::runApp('inst/shiny_meta/meta_app.R')
+run_metadata_app()
 
 ################################################################################
 # TODO: writing to DB
@@ -200,7 +203,7 @@ plot_coverage(trees[1], clean_data$rings, df_meta, path_plots='./')
 # for the others, based on the boundary estimated by the resp. method
 # so shouldnt these variables rather be stored in the ring df???
 
-# proflie calculation needs an EWLW estimate
+# profile calculation needs an EWLW estimate
 
 # for the profile calculation, a method is selected (with the resp. 3 EWLW cols)
 # and then moving averages are calculated along the "time" direction for a specified bandwidth ???

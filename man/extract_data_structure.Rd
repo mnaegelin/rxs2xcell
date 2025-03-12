@@ -15,8 +15,14 @@ A dataframe containing the filenames and data structure.
 \description{
 Extract the structure of the data (i.e., which images belong to which slide,
 woodpiece, tree, site) from the filenames of the input data into a dataframe.
-This requires that all files follow the same labeling pattern of
-\code{site_species_treewoodpiece_sample_image}
+This requires that all files follow the same labeling pattern.
+NOTE: At the moment, we assume that all images are named according to the
+following pattern:
+\verb{\{site\}_\{species\}_\{tree\}\{woodpiece\}_\{sample\}_\{image\}}
+where tree is assumed to be a two-character code, and woodpiece is optional.
 NOTE: we already checked that all output filenames match, so it is ok
 to do the pattern extraction on the image filenames only.
+NOTE: no matter the pattern, we use site, species, tree, woodpiece, sample,
+image joined by underscores as identifiers for each level of the data structure
+for the subsequent calculations (e.g. tree_code = {site}\emph{{species}}{tree}).
 }

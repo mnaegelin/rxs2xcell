@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_raw_metadata.R
 \name{extract_roxas_settings}
 \alias{extract_roxas_settings}
-\title{Extract data from ROXAS settings file}
+\title{Extract data from a ROXAS settings file}
 \usage{
 extract_roxas_settings(file_settings, roxas_version = "classic")
 }
@@ -15,5 +15,6 @@ extract_roxas_settings(file_settings, roxas_version = "classic")
 A dataframe containing the extracted data.
 }
 \description{
-Helper function to read and extract the metadata from a single ROXAS settings file
+Helper function to read and extract the relevant metadata from a single ROXAS
+settings file
 }

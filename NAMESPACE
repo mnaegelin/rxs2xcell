@@ -2,10 +2,11 @@
 
 export(collect_metadata)
 export(collect_raw_data)
+export(create_coverage_plots)
 export(extract_data_structure)
 export(get_input_files)
 export(plot_woodpiece_coverage)
-export(subset_treecodes)
+export(subset_woodpiece_codes)
 export(validate_QWA_data)
 importFrom(data.table,":=")
 importFrom(data.table,.BY)

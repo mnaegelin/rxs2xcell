@@ -1,12 +1,12 @@
 Package: rxs2xcell
-Title: Preprocess QWA Data (from ROXAS) and Upload to XCELL Database
+Title: Preprocess ROXAS Data for XCELL
 Version: 0.0.0.9000
 Authors@R: 
     person("Mara", "Naegelin", , "mara.naegelin@wsl.ch", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+           comment = c(ORCID = "0000-0002-0490-7510"))
+Description: This package contains the functionalities to preprocess and prepare
+    the ROXAS output files for upload to the XCELL database.
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
@@ -22,6 +22,7 @@ Imports:
     ggnewscale,
     ggplot2,
     ggstance,
+    lubridate,
     magrittr,
     reactable,
     reactable.extras,

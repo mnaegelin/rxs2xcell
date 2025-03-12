@@ -4,23 +4,12 @@
 \alias{plot_woodpiece_coverage}
 \title{Plot overview of annual coverage of images}
 \usage{
-plot_woodpiece_coverage(
-  woodpiece,
-  df_rings,
-  save_plot = FALSE,
-  path_out = "./"
-)
+plot_woodpiece_coverage(woodpiece, df_rings)
 }
 \arguments{
 \item{woodpiece}{the woodpiece (core) for which the plot should be created}
 
 \item{df_rings}{the dataframe containing the rings data (including flags)}
-
-\item{save_plot}{should the plot be written to disk under path_out}
-
-\item{path_out}{path where the plot should be saved.}
-
-\item{show_plot}{should the plot be shown}
 }
 \description{
 For a single tree, each image covers a span of years. This function allows
