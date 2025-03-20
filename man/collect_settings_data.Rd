@@ -4,7 +4,7 @@
 \alias{collect_settings_data}
 \title{Read and combine ROXAS settings data}
 \usage{
-collect_settings_data(files_settings, roxas_version = "classic")
+collect_settings_data(files_settings, roxas_version = "classic", tz = NULL)
 }
 \arguments{
 \item{files_settings}{Vector/list of ROXAS settings filenames}

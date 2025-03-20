@@ -12,7 +12,7 @@
 #'
 complete_rings_log <- function(QWA_data){
   # get a list of all annual rings in cells data (distinct image_code, YEAR),
-  # with added cell counts per ring
+  # with added cell counts and mean cwttan per ring
   df_rings_log <- QWA_data$cells %>%
     dplyr::group_by(image_code, year) %>%
     dplyr::summarise(cno = dplyr::n(),
@@ -56,7 +56,7 @@ check_cwt_estimates <- function(df_rings_log){
     beepr::beep(sound = 2, expr = NULL)
     warning('The following woodpieces have images without cell wall thickness estimation: \n',
             paste0(unique(df_rings_log[df_rings_log$no_cwt, 'woodpiece_code']), collapse=', '),
-            '\nIf the data is from conifers, please ensure that all included images have CWT estimates.')
+            '\nIf the data is from conifers, please ensure that all included images have CWT estimates and restart the process.')
   }
 
   return(df_rings_log)
@@ -223,7 +223,7 @@ check_incomplete_innermost <- function(cells.innermost, res){
 #' This function determines which of the inner- and outermost rings of each
 #' image are incomplete (i.e. extend across the image boundaries).
 #' For the innermost rings, we rely on the position and shape of the estimated
-#' inner ring border (see helper function check_incomplete_innermost). For the
+#' inner ring border (see helper function `check_incomplete_innermost`). For the
 #' outermost rings, we check the MRW value, since ROXAS only estimates an MRW if
 #' it can detect an outer ring boundary.
 #'
@@ -419,17 +419,31 @@ add_user_flags <- function(QWA_data, years_to_flag){
 }
 
 
+finalize_flags <- function(QWA_data){
+  df_rings <- QWA_data$rings
+  if (!('other_issues' %in% colnames(df_rings))){
+    df_rings$other_issues <- FALSE
+  }
+  # TODO: fix the duplicate flags
+  # TODO: set incomplete rings measures to 0
+  # TODO: check missing ring has no cell data
+
+  return(
+    stats::setNames(
+      list(QWA_data$cells, df_rings_log),
+      c('cells','rings')
+    ))
+}
+
 
 # handle outliers
-# TODO: finalize
+# TODO: finalize: sel cols, warn about how many are replaced? check that cols cannot have neg values
 remove_outliers <- function(QWA_data){
-  # negative values?
-  # too high values?
   df_cells <- QWA_data$cells %>%
-    dplyr::mutate(dplyr::across(tidyselect::where(is.numeric), ~ if_else(.x < 0, NA_real_, .x)))
+    dplyr::mutate(dplyr::across(raddistr:rwd, ~ if_else(.x < 0, NA_real_, .x)))
 
-  # TODO: also for rings?
-  df_rings <- QWA_data$rings
+  df_rings <- QWA_data$rings %>%
+    dplyr::mutate(dplyr::across(ra:dh_m, ~ if_else(.x < 0, NA_real_, .x)))
 
   return(
     stats::setNames(
@@ -440,75 +454,142 @@ remove_outliers <- function(QWA_data){
 
 
 
+max_na_inf <- function(x){
+  x_na <- is.na(x)
+  if(all(x_na)) -Inf else max(x[!x_na])
+}
+
 # calculate additional measures (see rxs complete)
 # TODO: finalize
-complete_cell_measures <- function(df_cells_clean){
+complete_cell_measures <- function(QWA_data){
 
-  df_cells_compl <- df_cells_clean %>%
+  df_cells <- QWA_data$cells %>%
     # need MRW for some calculations
     dplyr::left_join(QWA_data$rings %>%
-                       dplyr::select(image_code, YEAR, MRW), by=c('image_code', 'YEAR')) %>%
+                       dplyr::select(image_code, year, mrw), by=c('image_code', 'year')) %>%
 
     dplyr::mutate(
-
-      # helpers to find CWA, RWD outliers (CWAmax is 2 * the area that would be achieved by the max valid CWT of the four walls)
-      CWTmax = pmax(CWTPI, CWTBA, CWTLE, CWTRI, na.rm=TRUE), # automatically neglects the negative outliers
-      LR = sqrt(LA / pi),
-      CWAmax = 2 * (pi * (LR + CWTmax)^2 - LA), # why the factor 2?
-      # CWA, RWD: replace too high values with NA (so some negative outliers might be sign flipped rather than removed)
-      # NOTE: CWA from Roxas can have negative values to indicate outliers
-      CWA = ifelse(abs(CWA) > CWAmax, NA, CWA),
-      RWD = ifelse(abs(CWA) > CWAmax, NA, RWD),
-
       # new:
-      TCA = ifelse(CWA > 0, LA + CWA, ifelse(is.na(CWA), NA, -(LA-CWA))), # if CWA negative, also make it negative? LA seems to be always > 0
-
-      # DH recalculation:
-      # mostly agrees with ROXAS output, except for rounding errors. is it not available for earlier versions?
-      # helper:
-      a = 2*sqrt(ASP*LA/pi),
-      b = a/ASP,
-      # new / replace???
-      DH = sqrt((2*a^2*b^2)/(a^2+b^2)), # TODO: why not from Roxas?
-
-      # new:
-      RWD2 = CWTRAD/DRAD,
+      tca = la + cwa,
+      rwd2 = cwtrad/drad,
 
       # Add CWT-based density:
       # assume a circular lumen area with homogenous cell wall thickness around it;
       # for latewood-like cells, take overall average CWT,
       # for earlywood-like cells, only consider CWTTAN, which avoids pit artefacts
       # helper:
-      WA = ifelse(RTSR < 1, (LR + CWTTAN)^2 * pi - LA, (LR + CWTALL)^2 * pi - LA),
+      lr = sqrt(la / pi),
+      wa = ifelse(rtsr < 1, (lr + cwttan)^2 * pi - la, (lr + cwtall)^2 * pi - la),
       # new:
-      DCWT = WA / (LA + WA),
+      dcwt = wa / (la + wa),
 
       # get ring width at tangential position of each cell ??
       # new:
-      RADDISTR.ST = RRADDISTR * MRW / 100,
+      raddistr.st = raddistr * mrw / 100,
 
       # Add mean CWT: mean of radial and tangential CWT if Mork index latewood-like,
       # in earlywood-like cells take CWTTAN
       # new:
-      CWTALL.ADJ = ifelse(RTSR < 1,  CWTTAN,  CWTALL),
-      CDRAD = DRAD + 2*CWTTAN,
-      CDTAN = DTAN + 2*CWTRAD,
-      CDRATIO = CDRAD/CDTAN
+      cwtall.adj = ifelse(rtsr < 1,  cwttan,  cwtall),
+      cdrad = drad + 2*cwttan,
+      cdtan = dtan + 2*cwtrad,
+      cdratio = cdrad/cdtan
 
     ) %>%
-
-
-
-
-
     # remove unwanted parameters
-    dplyr::select(-MRW, -MAX.CWT, -LR, -MAX.CWA, -a, -b, -WA, -RW.CELL)
+    dplyr::select(-mrw, -lr, -wa)
 
 
+  # TODO: check that we really don't need grouping?
+  df_cells <- df_cells %>%
+    dplyr::mutate(
+      sector100 = as.numeric(cut(rraddistr,
+                             b = seq(from=0, to=100, by= 1),
+                             labels = 1:100,
+                             include.lowest = T))) %>%
+  # round for data just above the RRADDISTR of class 100 otherwise just leave NA
+    dplyr::mutate(sector100 = if_else(rraddistr > 100 & rraddistr <= 101, 100, sector100))
 
-  return(df_cells_compl)
+  mork <- 1
+  df_cells_ewlw <- df_cells %>%
+      # need MRW for some calculations
+      dplyr::left_join(QWA_data$rings %>%
+                         dplyr::select(woodpiece_code, slide_code, image_code, year, mrw), by=c('image_code', 'year')) %>%
+      dplyr::filter(!is.na(rtsr)) %>%  # remove cells that do not have a measured CWT
+    # TODO: check grouping
+      dplyr::group_by(woodpiece_code, year, slide_code, sector100) %>%
+      dplyr::summarise(RTSR.MEAN = mean(rtsr, na.rm = TRUE),
+                       MRW = mean(mrw, na.rm = TRUE), .groups = 'drop') %>%
+      dplyr::group_by(woodpiece_code, year, slide_code) %>%
+      dplyr::mutate(ROLLMEAN = zoo::rollmean(RTSR.MEAN, 9, fill = c(NA, NA, 10)),
+                    TO.EWLW = ifelse(sector100 <= max_na_inf(sector100[ROLLMEAN <= mork]), "EW", "LW")) %>%
+    #   # filter(plot_treecode=="YAM_2756", YEAR ==1940) %>%
+    #   # ggplot(aes(x=SECTOR100,y=ROLLMEAN, group = paste0(plot_treecode,YEAR), colour= TO.EWLW)) + geom_line()
+      dplyr::group_by(woodpiece_code, year, slide_code) %>%
+      dplyr::summarise(MRW = mean(MRW),
+                       EWW = ifelse(any(TO.EWLW == "EW", na.rm = TRUE),
+                                    max_na_inf(sector100[TO.EWLW == "EW"] * MRW/100),
+                                    0),
+                       LWW = MRW - EWW, .groups = 'drop')
+
+    df_rings <- QWA_data$rings %>%
+      dplyr::left_join(df_cells_ewlw %>% dplyr::select(-MRW),  by = c("woodpiece_code", "year", "slide_code"))
+
+    # TODO: what about NAs?
+    df_cells <- df_cells %>%
+      # need MRW for some calculations
+      dplyr::left_join(QWA_data$rings %>%
+                         dplyr::select(woodpiece_code, slide_code, image_code, year), by=c('image_code', 'year')) %>%
+      dplyr::left_join(df_cells_ewlw %>% dplyr::select(-MRW), by = c("woodpiece_code", "year", "slide_code")) %>%
+      dplyr::mutate(TO.EWLW = ifelse(raddistr.st >= EWW, "LW", "EW")) %>%
+      dplyr::select(-EWW, -LWW, -woodpiece_code, -slide_code)
+    # add EWW, LWW to df_rings
+    # tbl_out <- tbl_rxs_hmgz %>%
+    #   dplyr::left_join(tbl_YEAR %>% select(-MRW),  by = c("plot_treecode", "YEAR", "slide")) %>%
+    #   dplyr::mutate(TO.EWLW = ifelse(RADDISTR.ST >= EWW, "LW", "EW"))
+
+
+  return(
+    stats::setNames(
+      list(df_cells, QWA_data$rings),
+      c('cells','rings')
+    ))
 }
 
+# tbl_rxs_hmgz <- tbl_rxs_v3 %>%
+# dplyr::group_by(image_code, YEAR) %>%
+#   dplyr::mutate(
+#     # Add SECTORS100
+#     # TO.SECTORS = as.numeric(cut(RADDISTR.ST, b=seq(from= 0, to=100, by= 100/(NSECTOR[1])), labels=1:(NSECTOR[1]))),
+#     SECTOR100 = as.numeric(cut(RRADDISTR,
+#                                b = seq(from=0, to=100, by= 1),
+#                                labels = 1:100,
+#                                include.lowest = T)))  %>%
+#   dplyr::ungroup() %>%
+#
+#   # round for data just above the RRADDISTR of class 100 otherwise just leave NA
+#   dplyr::mutate(SECTOR100 = if_else(RRADDISTR > 100 & RRADDISTR <= 101, 100, SECTOR100))
+
+# tbl_YEAR <- tbl_rxs_hmgz %>%
+#   dplyr::filter(!is.na(RTSR)) %>%  # remove cells that do not have a measured CWT
+#   dplyr::group_by(plot_treecode, YEAR, slide, SECTOR100) %>%
+#   dplyr::summarise(RTSR.MEAN = mean(RTSR, na.rm = TRUE),
+#                    MRW = mean(MRW, na.rm = TRUE), .groups = 'drop') %>%
+#   dplyr::group_by(plot_treecode, YEAR, slide) %>%
+#   dplyr::mutate(ROLLMEAN = zoo::rollmean(RTSR.MEAN, 9, fill = c(NA, NA, 10)),
+#                 TO.EWLW = ifelse(SECTOR100 <= max_na_inf(SECTOR100[ROLLMEAN <= mork]), "EW", "LW")) %>%
+#   # filter(plot_treecode=="YAM_2756", YEAR ==1940) %>%
+#   # ggplot(aes(x=SECTOR100,y=ROLLMEAN, group = paste0(plot_treecode,YEAR), colour= TO.EWLW)) + geom_line()
+#   dplyr::group_by(plot_treecode, YEAR, slide) %>%
+#   dplyr::summarise(MRW = mean(MRW),
+#                    EWW = ifelse(any(TO.EWLW == "EW", na.rm = TRUE),
+#                                 max_na_inf(SECTOR100[TO.EWLW == "EW"] * MRW/100),
+#                                 0),
+#                    LWW = MRW - EWW, .groups = 'drop')
+
+# tbl_out <- tbl_rxs_hmgz %>%
+#   dplyr::left_join(tbl_YEAR %>% select(-MRW),  by = c("plot_treecode", "YEAR", "slide")) %>%
+#   dplyr::mutate(TO.EWLW = ifelse(RADDISTR.ST >= EWW, "LW", "EW"))
 
 
 # TODO: set raddist and rraddist to NA for incomplete rings (are only already NA for outermost incomplete rings)

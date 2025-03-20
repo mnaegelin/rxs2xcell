@@ -1,14 +1,16 @@
 #' Get list of input files
 #'
-#' Given a path_in, get the paths and filenames of the ROXAS files to be processed.
+#' Given a path_in, get the paths and filenames of the (ROXAS) input files to be
+#'  processed.
 #'
 #' @param path_in path of the input directory.
 #'
-#' @returns A list of lists containing filepaths of images and ROXAS output files.
+#' @returns A list of lists containing filepaths of images and ROXAS output
+#'          files (cells, rings, settings).
 #' @export
 get_input_files <- function(path_in) {
 
-  # Regex pattern to be matched by the different ROXAS files
+  # Regex patterns to be matched by the different ROXAS files
   # NOTE: in addition to the original images (IMGNAME.jpg), the ROXAS output
   # might include annotated images, etc. These are filtered out with keywords.
   pattern_cell_files = "_Output_Cells\\.txt$"
@@ -91,10 +93,10 @@ get_input_files <- function(path_in) {
 
   # return all the file paths we need as lists
   return(list(
+    fname_image = files_images,
     fname_cells = files_cells,
     fname_rings = files_rings,
-    fname_settings = files_settings,
-    fname_image = files_images
+    fname_settings = files_settings
     )
   )
 }
@@ -105,15 +107,19 @@ get_input_files <- function(path_in) {
 #' Extract the structure of the data (i.e., which images belong to which slide,
 #' woodpiece, tree, site) from the filenames of the input data into a dataframe.
 #' This requires that all files follow the same labeling pattern.
+#'
 #' NOTE: At the moment, we assume that all images are named according to the
 #' following pattern:
-#' `{site}_{species}_{tree}{woodpiece}_{sample}_{image}`
+#' `{site}_{species}_{tree}{woodpiece}_{sample}_{image}`,
 #' where tree is assumed to be a two-character code, and woodpiece is optional.
-#' NOTE: we already checked that all output filenames match, so it is ok
-#' to do the pattern extraction on the image filenames only.
-#' NOTE: no matter the pattern, we use site, species, tree, woodpiece, sample,
-#' image joined by underscores as identifiers for each level of the data structure
-#' for the subsequent calculations (e.g. tree_code = {site}_{species}_{tree}).
+#'
+#' NOTE: we already checked that all output filenames match in `get_input_files`,
+#' so it is ok to do the pattern extraction on the image filenames only.
+#'
+#' NOTE: no matter the original labeling pattern, we then use site, species,
+#' tree, woodpiece, sample, image joined by underscores as identifiers for each
+#' level of the data structure for the subsequent calculations
+#' (e.g. `tree_code = {site}_{species}_{tree}`).
 #'
 #' @param files The list of lists with all input filenames.
 #'
@@ -136,7 +142,7 @@ extract_data_structure <- function(files) {
   if (length(duplicates > 0)) {
     beepr::beep(sound = 2, expr = NULL)
     stop(
-      "There are duplicate image files, please remove:", "\n",
+      "There are duplicate image files, please remove or rename:", "\n",
       paste(paste0("  ", grep(paste(duplicates, collapse ='|'),
                               files$fname_image, value = TRUE)),
             collapse = "\n")
@@ -190,6 +196,7 @@ extract_data_structure <- function(files) {
 #' labeling pattern followed by the original image filenames, we reconstruct
 #' the filenames.
 #' This requires that all files follow the same labeling pattern.
+#'
 #' NOTE: At the moment, only tested with following pattern:
 #' `{site}_{species}_{tree}{woodpiece}_{sample}_{image}`
 #' where tree is assumed to be a two-character code, and woodpiece is optional.

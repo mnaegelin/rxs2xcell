@@ -17,6 +17,7 @@ Imports:
     checkmate,
     data.table,
     dplyr,
+    DT,
     exifr,
     ggiraph,
     ggnewscale,
@@ -24,14 +25,17 @@ Imports:
     ggstance,
     lubridate,
     magrittr,
+    plotly,
     reactable,
     reactable.extras,
     readr,
     shiny,
+    shinyalert,
     shinyjs,
     shinyvalidate,
     stringr,
-    tidyr
+    tidyr,
+    zoo
 Remotes:
     mnaegelin/shinyvalidate@remove_rules
 Suggests: 

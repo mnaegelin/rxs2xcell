@@ -1,13 +1,14 @@
-library(plotly)
-library(bslib)
-library(shiny)
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(reactable)
-library(reactable.extras)
-library(ggiraph)
-library(DT)
+
+# library(plotly)
+# library(bslib)
+# library(shiny)
+# library(dplyr)
+# library(tidyr)
+# library(stringr)
+# library(reactable)
+# library(reactable.extras)
+# library(ggiraph)
+# library(DT)
 # TODO: as separate package? and imports?
 
 
@@ -32,9 +33,20 @@ library(DT)
 
 # UI
 ui <- page_sidebar(
+  shinyjs::useShinyjs(), # newly added
   # theme = "bootstrap_wsl.css",
-  theme = bs_theme(primary = "#006268", secondary = "#00919A",
-                   font_scale = 0.8, preset = "cosmo"),
+  theme = bs_theme(primary = "#006268", secondary = "#69004F",
+                   font_scale = 0.8, preset = "cosmo") %>%
+    bs_add_rules(
+      sass::as_sass(
+        # " table.dataTable tbody tr.active td { background: pink !important; }"
+        " table.dataTable thead tr { background: #CCE0E0 !important; }"
+        )),
+  # tags$style(HTML(
+  #   ".dt-row-group {
+  #     background-color: green !important;
+  #   }"
+  # )),
 
   # tags$head(
   #   # Note the wrapping of the string in HTML(),
@@ -82,16 +94,24 @@ ui <- page_sidebar(
     HTML("<hr>"),
 
     # RESET BUTTON -------------------------------------------------------------
-    p("Reset the flags from the current woodpiece"),
-    actionButton("btn_reset", "Reset flags",
+    p("Reset the flags for the current woodpiece"),
+    actionButton("btn_reset", "Reset current flags",
                  class = "btn btn-primary"),
 
     HTML("<hr>"),
 
+    # SUBMIT BUTTON -------------------------------------------------------------
+    # p("Save the changes made for the current woodpiece and go to next"),
+    # actionButton("btn_submit", "Next",
+    #              class = "btn btn-primary"),
+    # textOutput("progress_txt"),
+    #
+    # HTML("<hr>"),
+
     # SAVE BUTTON --------------------------------------------------------------
-    p("Once all the flags are set, save to a file"),
-    actionButton("btn_save", "Save user flags",
-                 class = "btn btn-primary"),
+    p("Once all the flags are set for all woodpieces, export the data and close the app."),
+    downloadButton("btn_save", "Export and close app",
+                   class = "btn btn-primary"),
 
 
 
@@ -107,28 +127,29 @@ ui <- page_sidebar(
     open = c("Coverage plot", 'Data'),
 
     # COVERAGE PLOT ------------------------------------------------------------
-    accordion_panel(
-      "Coverage plot",
-      girafeOutput("covPlot")
-    ),
+    # accordion_panel(
+    #   "Coverage plot",
+    #   girafeOutput("covPlot")
+    # ),
 
     # COVERAGE PLOT ------------------------------------------------------------
     accordion_panel(
-      "Coverage plot2",
-      plotlyOutput("covPlot2")
+      "Coverage plot",
+      plotly::plotlyOutput("covPlot")
+    ),
+
+    # DATA TABLE ---------------------------------------------------------------
+    accordion_panel(
+      "Data",
+      DT::DTOutput('tbl')
     ),
 
     # DF TABLE -----------------------------------------------------------------
     # accordion_panel(
-    #   "Data",
+    #   "Data2",
     #   reactable.extras::reactable_extras_dependency(),
-    #   reactableOutput("reactTable")
-    # ),
-
-    accordion_panel(
-      "Data",
-      DTOutput('tbl')
-    ),
+    #   reactable::reactableOutput("reactTable")
+    # )
 
   ) # end of accordion
 

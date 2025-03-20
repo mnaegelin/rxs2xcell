@@ -9,6 +9,30 @@ library(reactable)
 library(reactable.extras)
 library(shinyvalidate) # NOTE: need remote mnaegelin/shinyvalidate@remove_rules
 
+# Aggregating df_rings to get the required data for the editable datatable
+df_edit <- QWA_data$rings %>%
+  group_by(tree_code) %>%
+  summarise(n_samples = n()) %>%
+  ungroup() %>%
+  mutate(species = NA, dbh = NA, age = NA, height = NA, origin = NA)
+
+callback <- c(
+  "var tbl = $(table.table().node());",
+  "var id = tbl.closest('.datatables').attr('id');",
+  "table.on('autoFill', function(e, datatable, cells){",
+  "  var out = Array(cells.length);",
+  "  for(var i=0; i<cells.length; ++i){",
+  "    var c = cells[i][0];",
+  "    var value = c.set === null ? '' : c.set;", # null causes problem in R
+  "    out[i] = {row: c.index.row+1, col: c.index.column, value: value};",
+  # if you want a color for the autofilled cells:
+  "    $(table.cell(c.index.row, c.index.column).node())",
+  "      .css('background-color', 'yellow');",
+  "  }",
+  "  Shiny.setInputValue(id + '_cells_filled:DT.cellInfo', out);",
+  "  table.rows().invalidate();", # this updates the column type
+  "});"
+)
 
 # allow to create new options in dropdown select:
 # selectizeInput(
@@ -123,8 +147,22 @@ ui <- fluidPage(
         uiOutput('contact_person')),
 
       verbatimTextOutput("check_val"),
-      next_button('nex_btn_general')
+      next_button('next_btn_general')
       ),
+
+
+
+    nav_panel("Sites",
+              uiOutput("site_inputs"),
+              verbatimTextOutput("site_data"),
+              next_button('next_btn_sites')
+              ),
+
+    nav_panel("Trees",
+              DTOutput("tree_table"),
+              next_button('next_btn_trees')
+    ),
+
 
     # TAB: study details -------------------------------------------------------
     nav_panel("Study Details",
@@ -248,6 +286,66 @@ server <- function(input, output, session) {
   # Next button
   observeEvent(input$nex_btn_general, {
     nav_select(id = 'tabs', selected = "Study Details")
+  })
+
+
+unique_sites <- unique(df_meta$site)
+
+  # Dynamic UI generation for each unique site_code
+  output$site_inputs <- renderUI({
+    lapply(unique_sites, function(site_code) {
+      fluidRow(
+        column(12, tags$h3(paste("Site Code:", site_code))),
+        column(6, textInput(paste0("name_", site_code), "Site Name")),
+        column(6, textInput(paste0("country_", site_code), "Country")),
+        column(12, textAreaInput(paste0("description_", site_code), "Description")),
+        column(4, numericInput(paste0("longitude_", site_code), "Longitude", value = NA)),
+        column(4, numericInput(paste0("latitude_", site_code), "Latitude", value = NA)),
+        column(4, numericInput(paste0("elevation_", site_code), "Elevation", value = NA)),
+        hr()
+      )
+    })
+  })
+
+  # Collect and display the input data
+  output$site_data <- renderPrint({
+    site_data <- lapply(unique_sites, function(site_code) {
+      list(
+        site_code = site_code,
+        name = input[[paste0("name_", site_code)]],
+        country = input[[paste0("country_", site_code)]],
+        description = input[[paste0("description_", site_code)]],
+        longitude = input[[paste0("longitude_", site_code)]],
+        latitude = input[[paste0("latitude_", site_code)]],
+        elevation = input[[paste0("elevation_", site_code)]]
+      )
+    })
+    site_data <- bind_rows(site_data)
+    print(site_data)
+  })
+
+
+  # Render editable datatable
+  output$tree_table <- renderDT({
+    dtable <- datatable(df_edit,
+                        editable = list(target = "cell"),
+                        selection = "none",
+                        extensions = "AutoFill",
+                        callback = JS(callback),
+                        options = list(
+                          autoFill = list(horizontal = FALSE)
+                        )
+    )
+  }, server = FALSE)
+
+  Data <- reactive({
+    info <- rbind(input[["tree_table_cells_filled"]], input[["tree_table_cell_edit"]])
+    if(!is.null(info)){
+      info <- unique(info)
+      info$value[info$value==""] <- NA
+      df_edit <<- editData(df_edit, info)
+    }
+    df_edit
   })
 
 

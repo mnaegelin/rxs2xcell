@@ -4,12 +4,12 @@
 \name{rxs2xcell-package}
 \alias{rxs2xcell}
 \alias{rxs2xcell-package}
-\title{rxs2xcell: Preprocess QWA Data (from ROXAS) and Upload to XCELL Database}
+\title{rxs2xcell: Preprocess ROXAS Data for XCELL}
 \description{
-What the package does (one paragraph).
+This package contains the functionalities to preprocess and prepare the ROXAS output files for upload to the XCELL database.
 }
 \author{
-\strong{Maintainer}: Mara Naegelin \email{mara.naegelin@wsl.ch} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
+\strong{Maintainer}: Mara Naegelin \email{mara.naegelin@wsl.ch} (\href{https://orcid.org/0000-0002-0490-7510}{ORCID})
 
 }
 \keyword{internal}

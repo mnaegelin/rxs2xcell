@@ -65,7 +65,7 @@ collect_cells_data <- function(df_structure){
     dplyr::select(-fname_cells)
 
   # beep successful ending of the function
-  message("The raw Roxas cells output files have been read successfully!")
+  message("The raw ROXAS cells output files have been read successfully!")
   beepr::beep(sound = 1, expr = NULL)
 
   return(df_cells_all)
@@ -138,7 +138,7 @@ collect_rings_data <- function(df_structure){
     dplyr::select(-fname_rings)
 
   # beep successful ending of the function
-  message("The raw Roxas rings output files have been read successfully!")
+  message("The raw ROXAS rings output files have been read successfully!")
   beepr::beep(sound = 1, expr = NULL)
 
   return(df_rings_all)
@@ -150,8 +150,8 @@ collect_rings_data <- function(df_structure){
 #' Read and combine data from all cells and ring output files
 #'
 #' @param df_structure Dataframe containing filenames and data structure.
-#' @returns QWA_data, i.e. a named list containing the combined raw data
-#' for cells and rings in two dataframes under $cells and $rings, respectively.
+#' @returns `QWA_data`, i.e. a named list containing the combined raw data
+#' for cells and rings in two dataframes under `$cells` and `$rings`, respectively.
 #' @export
 collect_raw_data <- function(df_structure){
   df_cells_all <- collect_cells_data(df_structure)

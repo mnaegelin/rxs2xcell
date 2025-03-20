@@ -4,12 +4,14 @@
 \alias{collect_metadata}
 \title{Read and combine raw metadata}
 \usage{
-collect_metadata(df_structure, roxas_version)
+collect_metadata(df_structure, roxas_version, tz = NULL)
 }
 \arguments{
 \item{df_structure}{Dataframe with all input filenames}
 
-\item{roxas_version}{ROXAS version (used to read the settings files)}
+\item{roxas_version}{ROXAS version (required to read the settings files)}
+
+\item{tz}{Timezone for date conversion of settings created at date (default: system tz)}
 }
 \value{
 A dataframe containing the extracted data.

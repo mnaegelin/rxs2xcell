@@ -51,12 +51,12 @@ QWA_data <- collect_raw_data(df_structure)
 QWA_data <- validate_QWA_data(QWA_data, df_meta)
 
 # write to csv
-write.csv(QWA_data$cells,
-          file.path(path_out, paste0(dataset_name, '_cells.csv')),
-          row.names = FALSE)
-write.csv(QWA_data$rings,
-          file.path(path_out, paste0(dataset_name, '_rings.csv')),
-          row.names = FALSE)
+# write.csv(QWA_data$cells,
+#           file.path(path_out, paste0(dataset_name, '_cells.csv')),
+#           row.names = FALSE)
+# write.csv(QWA_data$rings,
+#           file.path(path_out, paste0(dataset_name, '_rings.csv')),
+#           row.names = FALSE)
 
 
 ################################################################################
@@ -66,13 +66,13 @@ write.csv(QWA_data$rings,
 # TODO: app is work in progress
 # TODO: conflict of sourcing in app vs loading the package?
 #shiny::runApp('inst/shiny_YTE/yte_app.R')
-run_coverage_app()
+launch_coverage_app()
 
 # after running the app, reload the rings data
 # TODO: check formatting
-QWA_data$rings <- read.csv(
-  file.path(path_out, paste0(dataset_name, '_rings.csv')),
-  stringsAsFactors = FALSE)
+# QWA_data$rings <- read.csv(
+#   file.path(path_out, paste0(dataset_name, '_rings.csv')),
+#   stringsAsFactors = FALSE)
 
 # VARIANT B: in script / manually ----------------------------------------------
 # use create_coverage_plots and to create and save the plots of the yearly
@@ -89,14 +89,14 @@ QWA_data$rings <- read.csv(
 
 # after inspecting the plots, and given their own knowledge from the data
 # generation process, the user can provide input on which rings to flag
-years_to_flag <- tibble::tribble(
-  ~image_code, ~YEAR,
-  # for example:
-  # 'POG_PISY_02B_4_1', 1962,
-  # 'POG_PISY_02B_4_1', 1964,
-  # 'POG_PISY_02B_4_2', 1961
-)
-QWA_data <- add_user_flags(QWA_data, years_to_flag)
+# years_to_flag <- tibble::tribble(
+#   ~image_code, ~YEAR,
+#   # for example:
+#   # 'POG_PISY_02B_4_1', 1962,
+#   # 'POG_PISY_02B_4_1', 1964,
+#   # 'POG_PISY_02B_4_2', 1961
+# )
+# QWA_data <- add_user_flags(QWA_data, years_to_flag)
 
 
 ################################################################################
@@ -130,7 +130,7 @@ write.csv(QWA_data$rings,
 # fill in the required metadata form via the Shiny app
 # TODO: app is work in progress
 # shiny::runApp('inst/shiny_meta/meta_app.R')
-run_metadata_app()
+launch_metadata_app()
 
 ################################################################################
 # TODO: writing to DB
