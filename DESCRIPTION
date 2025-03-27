@@ -16,6 +16,8 @@ Imports:
     bslib,
     checkmate,
     data.table,
+    data.tree,
+    dendextend,
     dplyr,
     DT,
     exifr,
@@ -25,6 +27,7 @@ Imports:
     ggstance,
     lubridate,
     magrittr,
+    networkD3,
     plotly,
     reactable,
     reactable.extras,
@@ -32,12 +35,13 @@ Imports:
     shiny,
     shinyalert,
     shinyjs,
+    shinyTree,
     shinyvalidate,
     stringr,
     tidyr,
     zoo
 Remotes:
-    mnaegelin/shinyvalidate@remove_rules
+    mnaegelin/shinyvalidate@remove_rules 
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

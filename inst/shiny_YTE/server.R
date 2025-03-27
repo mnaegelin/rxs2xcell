@@ -1,35 +1,31 @@
 
 
-# globals
-# TODO: what if data is not available in environment?
-df_structure <- df_structure
+# globals ----------------------------------------------------------------------
 
-df_rings <- QWA_data$rings
-# duplicate_sel is the one with best duplicate_rank out of all per
-# woodpiece_code and year group, prioritizing non missing / incomplete rings
-df_rings <- df_rings %>%
-  dplyr::group_by(woodpiece_code, year) %>%
-  dplyr::mutate(
-    dupl_candidates = dplyr::if_else(!missing_ring & !incomplete_ring,
-                             duplicate_rank, 100+duplicate_rank), # penalty for issues
-    duplicate_sel = dplyr::if_else(dupl_candidates == min(dupl_candidates),
-                           TRUE, FALSE)) %>%
-  dplyr::select(-dupl_candidates) %>%
-  dplyr::ungroup()
-# initialize the other issues cols
-df_rings <- df_rings %>%
-  dplyr::mutate(other_issues = FALSE,
-                other_reason = NA_character_) %>%
-  dplyr::select(woodpiece_code, slide_code, image_code,
-                year, cno, mrw, missing_ring, duplicate_ring,
-                duplicate_sel, incomplete_ring, other_issues, other_reason,
-                duplicate_rank)
+# the validation check function
+# TODO: add check that there is always a selected duplicate per group
+validate_user_flags <- function(df_wp){
+  # one selected duplicate per group of duplicates?
+  unique_best_duplicate <- df_wp %>%
+    dplyr::filter(duplicate_sel) %>%
+    dplyr::count(woodpiece_code,year) %>% dplyr::filter(n>1) %>% nrow() == 0
+  # are there user comments for all other_reason flags?
+  no_missing_comments <- df_wp %>%
+    dplyr::filter(other_issues & (is.na(other_reason) | other_reason == "")) %>%
+    nrow() == 0
+  # are there any comments without the corresponding other_reason flag?
+  no_superfluous_comments <- df_wp %>%
+    dplyr::filter(!other_issues & !is.na(other_reason) & other_reason != "") %>%
+    nrow() == 0
 
-# reformat data for plot
+  return(c(unique_best_duplicate, no_missing_comments, no_superfluous_comments))
+
+}
+
+# the plot generation function
 shiny_cov_plot <- function(df){
-  #woodpiece <- df$woodpiece_code[1]
 
-  # reformat data for the plot
+    # reformat data for the plot
   df_plot <- df %>%
     dplyr::mutate(
       # set duplicate to FALSE if duplicate_sel is TRUE (we plot duplicate_sel instead)
@@ -111,167 +107,154 @@ shiny_cov_plot <- function(df){
 }
 
 
-# Server
+# Server -----------------------------------------------------------------------
 server <- function(input, output, session) {
 
-  # Reactive logics -----------------------------------------------------------
+  # output$testing <- renderPrint({
+  #   combined_df()
+  # })
 
-  # initialize list of reactive values to store the data for each woodpiece_code
+  # REACTIVE VALUES ------------------------------------------------------------
+
+  # get df_rings either from environment or input
+  input_data <- reactiveValues(
+    df_rings = if (exists('QWA_data')) QWA_data$rings else NULL,
+    source = ifelse(exists('QWA_data'),
+                    'Using rings data available in R environment.',
+                    'Please provide input file with validated QWA rings data.'))
+
+  observeEvent(input$file_upload, {
+    input_data$df_rings <- read.csv(input$file_upload$datapath, stringsAsFactors = FALSE)
+    input_data$source <- paste('Using provided file',input$file_upload$name)
+  })
+
+  # initialize list of reactive dfs to store the data for each woodpiece_code
+  # separately, re-initialize if new input file or reset button click
   df_yte_list <- reactiveValues()
-  for (sel_wp in unique(df_rings$woodpiece_code)){
-    df_yte_list[[sel_wp]] <- df_rings %>%
-        dplyr::filter(woodpiece_code == sel_wp) %>%
-        dplyr::arrange(desc(image_code), year)
-    }
+  observeEvent({
+      input$file_upload
+      input$btn_reset},
+    {
+      req(input_data$df_rings)
+      # reformat df_rings
+      df_rings <- input_data$df_rings
 
+      # TODO: put the following into function for readability, make sure
+      # the alerts work as expected, add more descriptive message for alerts
 
-  # reset the dataframe for the current woodpiece_code when RESET btn is clicked
-  reset_df_yte <- observeEvent(input$btn_reset, {
-    sel_wp <- input$woodpiece
-    df_yte_list[[sel_wp]] <- df_rings %>%
-      dplyr::filter(woodpiece_code == sel_wp) %>%
-      dplyr::arrange(desc(image_code), year)
-  })
+      # check that we have the right columns
+      req_columns <- c(
+        'tree_code', 'woodpiece_code', 'slide_code', 'image_code', 'year',
+        'cno', 'ra', 'mrw', 'rvgi', 'rvsf', 'rgsgv', 'aoiar', 'raoiar', 'dh_w', 'dh_m',
+        'incomplete_ring',  'missing_ring', 'duplicate_ring', 'duplicate_rank')
 
-  # update the table when cells in flag columns are clicked
-  observeEvent(req(input$tbl_cells_selected), {
-    sel_wp <- input$woodpiece
-    # df <- get_df_yte()
-    df <- df_yte_list[[sel_wp]]
-    cell <- input$tbl_cells_selected
-    if (!is.null(cell)) {
-      row <- cell[1]
-      col <- cell[2]
-
-      if (col %in% c(6,7,8)) { # make changes only for flags columns
-        # NOTE: the column index is 0-based bc of JS, and +2 for removed woodpiece_code, slide_code columns
-        df[row, col+3] <- !df[row, col+3] # toggle the value
-
-        df_yte_list[[sel_wp]] <- df # update the reactive value
-
-        # from trying to avoid a table refresh on edit (did not help)
-        # #Send proxy (no need to refresh whole table)
-        # df_tbl()[row,col+1] <- isolate(DT::coerceValue(val, df_tbl()[row+1,col+1]))
-        #output$testing <- renderPrint({c(row, col, val, df_tbl$df[row,col+1])})
-        #df_tbl$df[row, col+1] <<- DT::coerceValue(val, df_tbl$df[row, col+1])
-        #df_tbl$df[row, col+1] <- isolate(DT::coerceValue(val, df_tbl$df[row, col+1]))
-        #DT::replaceData(proxy, df_tbl$df, resetPaging = FALSE)
-        # df_tbl()[row,col+1] <- isolate(DT::coerceValue(val, df_tbl()[row,col+1]))
-        # df_tbl() <- isolate(DT::editData(df_tbl(), info = list(list(row = row, col = col+1, value = val)), proxy = proxy))
-        #DT::replaceData(proxy, df_tbl(), resetPaging = FALSE)
+      if (!checkmate::test_subset(req_columns,colnames(df_rings))) {
+        shinyalert::shinyalert(
+          title='Input data invalid',
+          text='The provided rings dataframe is missing some required columns.
+            Please provide a valid input file containing QWA rings data as generated by
+            rxs2xcell::validate_QWA_data.',
+          type = 'error')
+          input_data$source <- 'Please provide input file with validated QWA rings data.'
+        return()
       }
-    }
-  })
 
-  # The proxy to update the DT (for avoiding reload on edit, but didn't help)
-  # proxy <- DT::dataTableProxy('tbl')
-
-
-  # update the table when comment cells are edited
-  observeEvent(req(input$tbl_cell_edit), {
-    sel_wp <- input$woodpiece
-    # df <- get_df_yte()
-    df <- df_yte_list[[sel_wp]]
-    info <- input$tbl_cell_edit
-    if (!is.null(info)) {
-      row <- info$row
-      col <- info$col
-      val <- info$value
-
-      if (col == 9) { # make changes only for comment column
-        df[row, col+3] <- val # update the value
-        df_yte_list[[sel_wp]] <- df
+      # check if there are already duplicate_sel, other_issues, other_reason
+      # columns in df_rings (e.g. from previous runs), else initialize them
+      if (!('duplicate_sel' %in% colnames(df_rings))) {
+        df_rings <- df_rings %>%
+          dplyr::group_by(woodpiece_code, year) %>%
+          dplyr::mutate(
+            dupl_candidates = dplyr::if_else(!missing_ring & !incomplete_ring,
+                                             duplicate_rank, 100+duplicate_rank), # penalty for issues
+            duplicate_sel = dplyr::if_else(dupl_candidates == min(dupl_candidates),
+                                           TRUE, FALSE)) %>%
+          dplyr::select(-dupl_candidates) %>%
+          dplyr::ungroup()
       }
-    }
+      # initialize the other issues and comments cols
+      if (!checkmate::test_subset(c('other_issues','other_reason'),colnames(df_rings))){
+        df_rings <- df_rings %>%
+          dplyr::mutate(other_issues = FALSE,
+                        other_reason = NA_character_)
+      }
+
+      # check that the columns have the right format
+      char_cols <- c('tree_code', 'woodpiece_code', 'slide_code', 'image_code')
+      num_cols <- c('year', 'cno', 'mrw',  'duplicate_rank') # 'ra', 'rvgi', 'rvsf', 'rgsgv', 'aoiar', 'raoiar', 'dh_w', 'dh_m',
+      logi_cols <- c('incomplete_ring', 'missing_ring', 'duplicate_ring', 'other_issues')
+      checks <- c(
+        # check types and missing
+        checkmate::test_data_frame(df_rings[char_cols],
+                                   types = 'character', any.missing = FALSE),
+        checkmate::test_data_frame(df_rings[num_cols],
+                                   types = 'numeric'), # can have NA here
+        checkmate::test_data_frame(df_rings['year'],
+                                   types = 'numeric', any.missing = FALSE),
+        checkmate::test_data_frame(df_rings[logi_cols],
+                                   types = 'logical', any.missing = FALSE),
+        checkmate::test_data_frame(df_rings['duplicate_sel'],
+                                   types = 'logical'), # can have NA here
+        # TODO: other_reason should be character but might also be all NA (-> seen as logi)
+        #checkmate::test_data_frame(df_rings['other_reason'], types = 'character'),
+        # unique (image_code, year)
+        !any(duplicated(df_rings[c("image_code", "year")])),
+        # duplicate_ring is FALSE iff duplicate_sel, duplicate_rank are NA
+        all((!df_rings$duplicate_ring) == (is.na(df_rings$duplicate_sel) & is.na(df_rings$duplicate_rank)))
+      )
+
+      if (!all(checks)) {
+        shinyalert::shinyalert(
+          title='Input data invalid',
+          text='The provided rings dataframe is not in the correct format.
+            Please provide a valid input file containing QWA rings data as generated by
+            rxs2xcell::validate_QWA_data.',
+          type = 'error')
+        input_data$source <- 'Please provide input file with validated QWA rings data.'
+        return()
+      }
+
+      # TODO: need to store also the not needed columns so that we can rejoin them when saving?
+
+      # initialize the list of reactive dfs
+      for (sel_wp in unique(df_rings$woodpiece_code)){
+        df_yte_list[[sel_wp]] <- df_rings %>%
+          dplyr::select(woodpiece_code, slide_code, image_code,
+                        year, cno, mrw, missing_ring, duplicate_ring,
+                        duplicate_sel, incomplete_ring, other_issues, other_reason,
+                        duplicate_rank) %>%
+          dplyr::filter(woodpiece_code == sel_wp) %>%
+          dplyr::arrange(desc(image_code), year)
+      }
+
+      # initialize the selectInput based on the list of woodpieces
+      updateSelectInput(session, "woodpiece",
+                        choices = unique(df_rings$woodpiece_code),
+                        selected = unique(df_rings$woodpiece_code)[1])
+    },
+    ignoreNULL = FALSE # to ensure it runs on app start
+  )
+
+
+
+  # DATA SOURCE ----------------------------------------------------------------
+  output$data_source <- renderText({
+    input_data$source
   })
 
+  # VALIDITY CHECK -------------------------------------------------------------
+  # ensure that the manual inputs are valid
 
-  # VALIDITY CHECK when changing the selected woodpiece
-  # the validation check function
-  validate_data <- function(df_wp){
-    comments_for_all_userflags <- df_wp %>%
-      dplyr::filter(other_issues & (is.na(other_reason) | other_reason == "")) %>%
-      nrow() == 0
-    comments_only_for_userflags <- df_wp %>%
-      dplyr::filter(!other_issues & !is.na(other_reason) & other_reason != "") %>%
-      nrow() == 0
-    one_sel_dupl_group <- df_wp %>%
-      dplyr::filter(duplicate_sel) %>%
-      dplyr::count(woodpiece_code,year) %>% dplyr::filter(n>1) %>% nrow() == 0
-
-    return(comments_for_all_userflags & comments_only_for_userflags & one_sel_dupl_group)
-  }
-
-  # # keep track of the previous and current sel_wp
-  # old_value <- reactiveVal(NULL)
-  # disable_observer <- reactiveVal(FALSE)
-  #
-  # observeEvent(input$woodpiece, {
-  #   # abort if the observer is disabled (to avoid re-triggering alert with updateSelectInput)
-  #   if (disable_observer()) {
-  #     disable_observer(FALSE)
-  #     return()
-  #   }
-  #
-  #   # if we are on first woodpiece, just store the value
-  #   if (is.null(old_value())) {
-  #     old_value(input$woodpiece)
-  #     return()
-  #   }
-  #
-  #   # run the check
-  #   val_check <- validate_data(df_yte_list[[old_value()]])
-  #
-  #   if (!val_check) {
-  #     # TODO: update error message based on the failed checks
-  #     shinyalert::shinyalert("Invalid flags!",
-  #                            "Please check the flags for the current woodpiece.",
-  #                            type = "error")
-  #     disable_observer(TRUE)
-  #     updateSelectInput(session, "woodpiece", selected = old_value())
-  #     return()
-  #   } else {
-  #     old_value(input$woodpiece)
-  #   }
-  #
-  # })
-
-  # save the current flags
-  # TODO:
-  # observeEvent(input$btn_submit, {
-  #   check validty
-  #   save to a fixed df?
-  # })
-
-  # output$progress_txt <- renderText({
-  #   paste(unique(df_rings$woodpiece_code), collapse = '\n')
-  # })
-
-  # save the data to a file
-  # TODO:
-  # observeEvent(input$btn_save, {
-  #   get_df_yte() %>%
-  #     write.csv('test_rings.csv', row.names = FALSE)
-  # })
-
-  # TODO: disable download button if validation fails
-  # df_all <- reactiveValuesToList(df_yte_list) %>% dplyr::bind_rows()
-  # val_check <- validate_data(df_all)
-  # if (!val_check) {
-  #   shinyalert::shinyalert("Invalid flags!",
-  #                          "Please check the flags for all woodpieces.",
-  #                          type = "error")
-  #   return()
-  # } else {
-
-  combined_df <- reactive({
-    reactiveValuesToList(df_yte_list) %>% dplyr::bind_rows()
-  })
-
-  # TODO: add message on what checks are failed
+  # enable/disable the woodpiece filter and save button based on validity check
+  # or if we have not data
   observe({
-    val_check <- validate_data(combined_df())
-    if(!val_check) {
+    # req(df_yte_list[[input$woodpiece]])
+    val_checks <- FALSE
+    if (!is.null(df_yte_list[[input$woodpiece]])) {
+      val_checks <- validate_user_flags(df_yte_list[[input$woodpiece]])
+    }
+    if(!all(val_checks)) {
+      # NOTE: there seems to be a bug here that makes it impossible to disable the download button at the start? but works for validation checks?
       shinyjs::disable('btn_save')
       shinyjs::disable('woodpiece')
     } else {
@@ -280,6 +263,39 @@ server <- function(input, output, session) {
     }
   })
 
+  # output of the validity check result as html list
+  output$flags_check <- renderUI({
+    req(df_yte_list[[input$woodpiece]])
+    val_checks <- validate_user_flags(df_yte_list[[input$woodpiece]])
+
+    texts <- c('One ring selected per overlap group.',
+      'Comments provided for all other issues.',
+      'Comments only for rings with user issue flag.')
+    colors <- ifelse(val_checks, "#006268", "red")
+    icons <- ifelse(val_checks, "fa-solid fa-check", "fa-solid fa-xmark")
+
+    # create a list with different icons
+    html <- paste0(
+      "<ul class=\"fa-ul\">",
+      paste(
+        paste0(
+          "<li><span class=\"fa-li\" style=\"color: ", colors,
+          "\"><i class=\"", icons,
+          "\"></i></span>", texts, "</li>"),
+        collapse = ""),
+      "</ul>")
+    HTML(html)
+
+  })
+
+  # SAVE BUTTON ----------------------------------------------------------------
+  # the reactive df for all woodpieces combined
+  combined_df <- reactive({
+    req(input_data$df_rings)
+    reactiveValuesToList(df_yte_list) %>% dplyr::bind_rows()
+  })
+
+  # TODO: should go back to QWA_data$rings format
   output$btn_save <- downloadHandler(
     filename = function() {
       paste0(Sys.Date(),"_QWA_rings_with_flags.csv")
@@ -289,30 +305,21 @@ server <- function(input, output, session) {
     }
   )
 
-
-  # the plot -----------------------------------------------------------
-  df_plot <- reactive({
-    df_yte_list[[input$woodpiece]]
+  # COVERAGE PLOT --------------------------------------------------------------
+  output$covPlot <- plotly::renderPlotly({
+    req(df_yte_list[[input$woodpiece]])
+    shiny_cov_plot(df_yte_list[[input$woodpiece]])
   })
 
-  output$covPlot <- plotly::renderPlotly(
-    shiny_cov_plot(df_plot())
-    # plotly::ggplotly(
-    #   shiny_cov_plot(df_plot()),
-    #   tooltip = "text")
-    #%>% plotly::layout(yaxis = list(automargin = FALSE, title = list(standoff = 200)))
-    # %>% plotly::layout(yaxis = list(tickfont = list(size = 8))), would need to specify for all facets
-  )
 
-  # the table -----------------------------------------------------------
+  # DATA TABLE -----------------------------------------------------------------
   df_tbl <- reactive({
     sel_wp <- input$woodpiece
     df_yte_list[[sel_wp]] %>% dplyr::select(-woodpiece_code, -slide_code)
   })
 
-  # render the table
   output$tbl <- DT::renderDT({
-    #sel_wp <- input$woodpiece
+    req(df_yte_list[[input$woodpiece]])
     DT::datatable(df_tbl(),
                   style = 'default',
                   extensions = c('RowGroup'),
@@ -348,6 +355,12 @@ server <- function(input, output, session) {
                       list(targets = c(10), visible = FALSE) # hide duplicate_rank column from view
                     )
                   )
+                  # to collapse group, potentially (does not work, and would likely also jump back):
+                  # callback = DT::JS("
+                  #               $('#DataTables_Table_0 tbody').on('click', 'tr.dtrg-group', function () {
+                  #                   var rowsCollapse = $(this).nextUntil('.dtrg-group');
+                  #                   $(rowsCollapse).toggleClass('hidden');
+                  #                });")
     ) %>% DT::formatStyle(
       columns = c('image_code', 'year'),
       backgroundColor = '#CCE0E0'
@@ -360,13 +373,102 @@ server <- function(input, output, session) {
     )
   })
 
-  # output$testing <- renderPrint({
-  #   req(input$tbl_cells_selected)
-  #   df_yte_list[[input$woodpiece]] %>%
-  #     dplyr::select(image_code, year, missing_ring, other_issues)
-  # })
+  ## TABLE REACTIVES
+  # update the table when cells in flag columns are clicked
+  observeEvent(req(input$tbl_cells_selected), {
+    sel_wp <- input$woodpiece
+    # df <- get_df_yte()
+    df <- df_yte_list[[sel_wp]]
+    cell <- input$tbl_cells_selected
+    if (!is.null(cell)) {
+      row <- cell[1]
+      col <- cell[2]
 
-}
+      if (col %in% c(6,7,8)) { # make changes only for flags columns
+        # NOTE: the column index is 0-based bc of JS, and +2 for removed woodpiece_code, slide_code columns
+        df[row, col+3] <- !df[row, col+3] # toggle the value
+
+        df_yte_list[[sel_wp]] <- df # update the reactive value
+
+        # old, from trying to avoid a table refresh on edit (did not help)
+        # #Send proxy (no need to refresh whole table)
+        # df_tbl()[row,col+1] <- isolate(DT::coerceValue(val, df_tbl()[row+1,col+1]))
+        #output$testing <- renderPrint({c(row, col, val, df_tbl$df[row,col+1])})
+        #df_tbl$df[row, col+1] <<- DT::coerceValue(val, df_tbl$df[row, col+1])
+        #df_tbl$df[row, col+1] <- isolate(DT::coerceValue(val, df_tbl$df[row, col+1]))
+        #DT::replaceData(proxy, df_tbl$df, resetPaging = FALSE)
+        # df_tbl()[row,col+1] <- isolate(DT::coerceValue(val, df_tbl()[row,col+1]))
+        # df_tbl() <- isolate(DT::editData(df_tbl(), info = list(list(row = row, col = col+1, value = val)), proxy = proxy))
+        #DT::replaceData(proxy, df_tbl(), resetPaging = FALSE)
+      }
+    }
+  })
+  # The proxy to update the DT (for avoiding reload on edit, but didn't help)
+  # proxy <- DT::dataTableProxy('tbl')
+
+  # update the table when comment cells are edited
+  observeEvent(req(input$tbl_cell_edit), {
+    sel_wp <- input$woodpiece
+    # df <- get_df_yte()
+    df <- df_yte_list[[sel_wp]]
+    info <- input$tbl_cell_edit
+    if (!is.null(info)) {
+      row <- info$row
+      col <- info$col
+      val <- info$value
+
+      if (col == 9) { # make changes only for comment column
+        df[row, col+3] <- val # update the value
+        df_yte_list[[sel_wp]] <- df
+      }
+    }
+  })
+
+} # end of server
+
+
+
+
+
+
+# # keep track of the previous and current sel_wp
+# old_value <- reactiveVal(NULL)
+# disable_observer <- reactiveVal(FALSE)
+#
+# observeEvent(input$woodpiece, {
+#   # abort if the observer is disabled (to avoid re-triggering alert with updateSelectInput)
+#   if (disable_observer()) {
+#     disable_observer(FALSE)
+#     return()
+#   }
+#
+#   # if we are on first woodpiece, just store the value
+#   if (is.null(old_value())) {
+#     old_value(input$woodpiece)
+#     return()
+#   }
+#
+#   # run the check
+#   val_check <- validate_data(df_yte_list[[old_value()]])
+#
+#   if (!val_check) {
+#     # TODO: update error message based on the failed checks
+#     shinyalert::shinyalert("Invalid flags!",
+#                            "Please check the flags for the current woodpiece.",
+#                            type = "error")
+#     disable_observer(TRUE)
+#     updateSelectInput(session, "woodpiece", selected = old_value())
+#     return()
+#   } else {
+#     old_value(input$woodpiece)
+#   }
+#
+# })
+
+
+# output$progress_txt <- renderText({
+#   paste(unique(df_rings$woodpiece_code), collapse = '\n')
+# })
 
 
   # # new try ------

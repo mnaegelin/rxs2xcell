@@ -24,24 +24,26 @@
 # df_rings <-  read.csv(file.path(path_data, 'QWA_Arzac2024_rings.csv'))
 
 
-
-
-# add button to update df_rings and cov_plot (-> make reactive)
 # add button to open image
 # save flags to file
 # save cov plots to file
 
 # UI
 ui <- page_sidebar(
-  shinyjs::useShinyjs(), # newly added
+  shinyjs::useShinyjs(),
   # theme = "bootstrap_wsl.css",
   theme = bs_theme(primary = "#006268", secondary = "#69004F",
                    font_scale = 0.8, preset = "cosmo") %>%
     bs_add_rules(
       sass::as_sass(
         # " table.dataTable tbody tr.active td { background: pink !important; }"
-        " table.dataTable thead tr { background: #CCE0E0 !important; }"
+        " table.dataTable thead tr { background: #CCE0E0 !important; }" # color for table header
         )),
+  # tags$head(
+  #   tags$style(HTML(
+  #     ".done {list-style-type:square}
+  #      .notdone {list-style-type:circle}"
+  #   ))),
   # tags$style(HTML(
   #   ".dt-row-group {
   #     background-color: green !important;
@@ -82,25 +84,62 @@ ui <- page_sidebar(
   # SIDEBAR  -------------------------------------------------------------------
   sidebar = sidebar(
 
-    # INPUT WOODPIECE ----------------------------------------------------------
-    p("Select woodpiece (core) to inspect"),
-    selectInput(
-      "woodpiece",
-      label = NULL,
-      choices = unique(df_structure$woodpiece_code),
-      selected = unique(df_structure$woodpiece_code)[1]
+    # INPUT DATA ---------------------------------------------------------------
+    card(
+      card_header("Input data"),
+      span("If QWA data is available in the current R environment, it will be used directly.
+        Alternatively, you can browse for a saved QWA data file."),
+      fileInput("file_upload", "Load QWA data from file (csv)", accept = ".csv"),
+      strong('Source of shown data:'),
+      textOutput("data_source")
     ),
 
-    HTML("<hr>"),
+    # ANALYSIS CONTROLS --------------------------------------------------------
+    card(
+      card_header("Analysis controls"),
 
-    # RESET BUTTON -------------------------------------------------------------
-    p("Reset the flags for the current woodpiece"),
-    actionButton("btn_reset", "Reset current flags",
-                 class = "btn btn-primary"),
+      # INPUT WOODPIECE --------------------------------------------------------
+      selectInput(
+        "woodpiece",
+        label = 'Select woodpiece (core) to inspect:',
+        choices = "No data yet"
+      ),
 
-    HTML("<hr>"),
+      HTML("<hr>"),
 
-    # SUBMIT BUTTON -------------------------------------------------------------
+      # RESET BUTTON -----------------------------------------------------------
+      span("Reset the flags for the current woodpiece back to input data:"),
+      actionButton("btn_reset", "Reset current flags",
+                   class = "btn btn-secondary"),
+
+      HTML("<hr>"),
+
+      # USER FLAG VALIDATION ---------------------------------------------------
+      strong("Validity check for the manual changes:"),
+      span("The following conditions need to be met for user input to be valid:"),
+      uiOutput("flags_check")
+
+    ),
+
+
+    # # INPUT WOODPIECE --------------------------------------------------------
+    # p("Select woodpiece (core) to inspect"),
+    # selectInput(
+    #   "woodpiece",
+    #   label = NULL,
+    #   choices = unique(df_structure$woodpiece_code),
+    #   selected = unique(df_structure$woodpiece_code)[1]
+    # ),
+    #
+    # HTML("<hr>"),
+    #
+    # # RESET BUTTON -----------------------------------------------------------
+    # p("Reset the flags for the current woodpiece"),
+    # actionButton("btn_reset", "Reset current flags",
+    #              class = "btn btn-primary"),
+    #
+    #
+    # SUBMIT BUTTON ------------------------------------------------------------
     # p("Save the changes made for the current woodpiece and go to next"),
     # actionButton("btn_submit", "Next",
     #              class = "btn btn-primary"),
@@ -108,19 +147,21 @@ ui <- page_sidebar(
     #
     # HTML("<hr>"),
 
+
     # SAVE BUTTON --------------------------------------------------------------
-    p("Once all the flags are set for all woodpieces, export the data and close the app."),
-    downloadButton("btn_save", "Export and close app",
-                   class = "btn btn-primary"),
+    card(
+      card_header("Save data"),
+      p("Once all the flags are set for all woodpieces, export the data and
+        close the app."),
+      downloadButton("btn_save", "Export and close app",
+                     class = "btn btn-primary")
+    ),
 
-
-
-    verbatimTextOutput('testing')
-
-
-
+    # TEXT OUTPUT FOR TESTING
+    verbatimTextOutput('testing'),
 
   ), # end of sidebar
+
 
   # MAIN PANEL -----------------------------------------------------------------
   accordion(
