@@ -1,3 +1,17 @@
+# THEME ------
+# define the names of the tabs
+tab_start <- '1: Start'
+tab_general <- '2: General'
+
+# define color range
+prim_col <- "#006268"
+sec_col <- "#69004F"
+tert_col <- "#00206E"
+prim_col_grad <- c("#338585", "#66A3A3", "#99C2C2", "#CCE0E0", "#E6F0F0", "#F2F7F7")
+sec_col_grad <- c("#853270", "#A36794", "#C299B8", "#E0CCDB", "#F0E6ED", "#F7F2F6")
+tert_col_grad <- c("#324a85", "#6778a3", "#99a5c2", "#ccd2e0", "#e6e9f0", "#f2f4f7")
+
+
 next_button <- function(btn_id) {
   card(
     class="border border-0",
@@ -5,6 +19,7 @@ next_button <- function(btn_id) {
       fillable = FALSE,
       actionButton(btn_id, 'Next', icon = icon('angle-double-right')))
   )}
+
 
 get_country_codes <- function(){
   file_path <- system.file("extdata", "country_ISO3166-1-alpha-2_20241205.csv", package = "rxs2xcell")
@@ -32,6 +47,22 @@ max_char_limit <- function(value, limit) {
   if (nchar(value) > limit) paste0("Input exceeds ", limit, " characters.")
 }
 
+
+# start tab, server, shinyTree ----
+# helper to get the list of all selected images in the shinyTree
+get_selected_imgs <- function(tree, selected = c()) { #ancestry = "",
+  for (leaf in names(tree)){
+    if (is.null(names(tree[[leaf]]))) {
+      a <- attr(tree[[leaf]], 'stselected', TRUE)
+      if (!is.null(a) && a == TRUE) {
+        selected <- c(selected, leaf) # paste0(ancestry, "/", leaf) # since image_codes are unique, we don't need the path
+      }
+    } else {
+      selected <- get_selected_imgs(tree[[leaf]], selected) #paste0(ancestry, "/", leaf)
+    }
+  }
+  return(selected)
+}
 
 
 # # Aggregating df_rings to get the required data for the editable datatable

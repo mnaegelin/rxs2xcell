@@ -23,48 +23,90 @@
 
 
 
+theme <- NULL
+theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
+                  info = tert_col, font_scale = 0.8, preset = "zephyr") %>%
+  bs_add_rules(HTML(paste0("
+    .btn-secondary {
+      color: white;
+    }
+    .sidebar {
+      background-color: ", prim_col_grad[6], " !important;
+    }
+    .bslib-navs-card-title {
+      background-color: ", prim_col, ";
+      color: white;
+      font-size: 12pt;
+    }
+    .nav-link {
+      font-size: 10pt;
+      color: ", prim_col_grad[3], ";
+      --bs-nav-link-hover-color: white;
+      --bs-nav-underline-link-active-color: white;
+    }
+    .jstree-proton .jstree-clicked {
+      background: ", prim_col, " !important;
+    }
+    .accordion .accordion-header {
+      --bs-accordion-active-bg: ", prim_col_grad[2], " !important;
+    }
+    .accordion-button {
+      background-color: ", prim_col_grad[5], ";
+    }
+    .accordion-secondary .accordion-header {
+      --bs-accordion-active-bg: ", tert_col_grad[2], " !important;
+    }
+    .dataTables_wrapper .dataTable td {
+      padding: 2px 2px !important;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+      padding: 2px 2px !important;  /* Adjust padding to make buttons smaller */
+    }
+    ol.custom-indent {
+      padding-left: 10px; /* Adjust the left padding to reduce indentation */
+    }
+    .handsontable th {
+      background-color: ", sec_col_grad[5], " !important;
+    }
+  ")))
+
+# ".jstree-default .jstree-clicked {
+#   background: #C299B8 !important;
+#   background: -webkit-linear-gradient(top, #E0CCDB 0%, #C299B8 100%) !important;
+#                                         background: linear-gradient(to bottom, #E0CCDB 0%, #C299B8 100%) !important;
+# }
+# .jstree-default .jstree-wholerow-clicked {
+#   background: #C299B8 !important;
+#   background: -webkit-linear-gradient(top, #E0CCDB 0%, #C299B8 100%) !important;
+#                                         background: linear-gradient(to bottom, #E0CCDB 0%, #C299B8 100%) !important;
+# }"
 
 
 # Define UI --------------------------------------------------------------------
 ui <- page_fluid(
+
   # preliminaries
   shinyjs::useShinyjs(),  # Include shinyjs
   #reactable.extras::reactable_extras_dependency(),  # Include reactable.extras
 
   # theme
-  theme = bs_theme(primary = "#006268", secondary = "#69004F", # navbar_bg = 'darkslategrey',
-                   font_scale = 0.8, preset = "cosmo"),
+  theme = theme,
 
-  tags$head(
-    tags$style(HTML(
-      ".jstree-proton .jstree-clicked {
-        background: #006268 !important;
-      }
-      .accordion .accordion-secondary .accordion-header {
-        --bs-accordion-active-bg: #99a5c2 !important;
-      }"
-      # ".jstree-default .jstree-clicked {
-      #   background: #C299B8 !important;
-      #   background: -webkit-linear-gradient(top, #E0CCDB 0%, #C299B8 100%) !important;
-      #                                         background: linear-gradient(to bottom, #E0CCDB 0%, #C299B8 100%) !important;
-      # }
-      # .jstree-default .jstree-wholerow-clicked {
-      #   background: #C299B8 !important;
-      #   background: -webkit-linear-gradient(top, #E0CCDB 0%, #C299B8 100%) !important;
-      #                                         background: linear-gradient(to bottom, #E0CCDB 0%, #C299B8 100%) !important;
-      # }"
-  ))),
+  # additional style vars
+  # tags$head(
+  #   tags$style(HTML(
+  #     ""))),
 
 
   # MAIN PANEL -----------------------------------------------------------------
-  navset_card_pill( # navset_card_pill, page_navbar?
+  navset_card_underline( # navset_card_pill, page_navbar?
     id = 'tabs',
-    selected = "General", # TODO: for testing, set to "Start"
+    selected = tab_general, # TODO: for testing, set to tab_start
     # navbar_options = navbar_options(collapsible = FALSE),
     # fillable = FALSE,
 
     # TITLE --------------------------------------------------------------------
-    title = HTML('<h4 style="color: #006268; font-weight: bold;">rxs2xcell: Contribute metadata</h4>'),
+    title = "rxs2xcell: Contribute metadata", #HTML('<h4 style="color: #006268; font-weight: bold;">rxs2xcell: Contribute metadata</h4>'),
 
     # SIDEBAR ------------------------------------------------------------------
     # sidebar = sidebar(
@@ -75,35 +117,43 @@ ui <- page_fluid(
 
     # TAB: prefill metadata ----------------------------------------------------
     nav_panel(
-      title = 'Start',
+      title = tab_start,
 
       layout_sidebar(
 
         # sidebar: Input data
         sidebar = sidebar(
           card(
-            card_header('Input data'),
-            span("If QWA metadata is available in the current R environment,
-                 it will be used directly. Alternatively, you can browse for a
-                 saved QWA metadata file."),
-            fileInput("file_upload", "Load metadata from file (csv)", accept = ".csv"),
+            card_header(
+              class = 'bg-secondary',
+              'Input data'),
             span(
-              span('Source of shown data:', style="font-weight:bold; color: #006268"),
+              icon("info", style = paste("color:", sec_col)),
+              "If QWA metadata is available in the current R environment,
+              it will be used directly. Alternatively, you can browse for a
+              saved QWA metadata file."),
+            span(
+              span('Source of shown data:', style=paste("font-weight:bold; color:", sec_col)),
               htmlOutput("file_status")
-            )
+            ),
+            fileInput("file_upload", "Load metadata from file (csv)", accept = ".csv"),
             #textOutput("file_status") #span(textOutput("file_status"), style="font-weight:bold; color: #006268"),
           ),
+          hr(),
+          span('If the structure and metadata shown on the right are as you
+               would expect them for your dataset, click the button below to
+               proceed to the next tab.'),
           actionButton('btn_next_meta', 'Next', icon = icon('angle-double-right'))
         ),
 
         # main content
-        h5('Overview of input metadata',style="font-weight:bold; color: #006268"),
+        h5('Overview of input metadata'),
         accordion(
           open = c("Data structure", 'DT Available metadata'),
 
           accordion_panel(
             title = "Data structure",
-            p( "Use this data.tree to explore the inferred structure of the
+            p("Use this data.tree to explore the inferred structure of the
                provided dataset and filter the metadata table below."),
             #verbatimTextOutput("testing1"),
             #networkD3::diagonalNetworkOutput("radial_network"),
@@ -128,20 +178,33 @@ ui <- page_fluid(
           #   #   card_header('Overview of input metadata'),
           # )
 
-        )
-
-      )
-    ),
+        ) # end of accordion
+      ) # end of layout_sidebar
+    ), # end of nav_panel
 
     # TAB: general -------------------------------------------------------------
     nav_panel(
-      title = "General",
+      title = tab_general,
 
       layout_sidebar(
 
         # sidebar
         sidebar = sidebar(
           verbatimTextOutput("testing2"),
+          card(
+            card_header(
+              class = 'bg-secondary',
+              span(icon("info", style = "color: white"),'Instructions')),
+            tags$ol(
+              class = 'custom-indent',
+              tags$li("Please provide a name and description of your dataset."),
+              tags$li("Please list all authors (data owners) of the dataset. Use the
+              ROR search tool to find the Research Organization Registry ID of
+              an affiliation.")
+            ),
+            span("Note that the order of authors provided here will be used as
+              the order of authorship.", class = "text-secondary"),
+          ),
           layout_columns(
             actionButton('btn_prev_general', 'Previous', icon = icon('angle-double-left')),
             actionButton('btn_next_general', 'Next', icon = icon('angle-double-right'))
@@ -155,11 +218,13 @@ ui <- page_fluid(
           ## Dataset info
           accordion_panel(
             "Dataset: General Info",
-            textInput("ds_name", "Dataset name", value = NA,
-                      placeholder = "Specify a name for your dataset (max 64 char.)"),
-            textAreaInput("ds_desc", "Description", rows = 4,
-                          placeholder = "Describe your dataset"),
-            ),
+            layout_columns(
+              textInput("ds_name", "Dataset name", value = NA,
+                        placeholder = "Specify a name for your dataset (max 64 char.)"),
+              textAreaInput("ds_desc", "Description", rows = 4,
+                            placeholder = "Describe your dataset")
+            )
+          ),
 
           ## Authors
           accordion_panel(
@@ -182,21 +247,47 @@ ui <- page_fluid(
                     #shiny::selectizeInput("result_choice", "Select Result:", choices = NULL)
                   ),
                   card(
-                    h4('ROR search results:'),
+                    h6('ROR search results:'),
                     DT::DTOutput("ror_results"),
-                    max_height = '400px'
+                    max_height = '350px'
                   ),
                   col_widths = c(3,9)
                 )
               )
             ),
 
+            ## ROR search tool
             hr(),
-            p(span("Please list all authors (data owners) of the dataset. Use the
-            ROR search tool to find the Research Organization Registry ID of
-            an affiliation."),
-            strong("Note that the order of authors provided here will be used as
-                 the order of authorship.")),
+            h5('Author information:', style = 'color: #69004F'),
+
+            div(style='float: right',
+                fileInput('file_authors', "Load author data from file", accept = ".csv")),
+
+            div(style='display: flex; justify-content: flex-start; margin-top: 30pt',
+                actionButton("add_author_btn", "Add author", style = "width: 120px",
+                             class = "btn btn-secondary"),
+                actionButton("del_author_btn", "Delete author", style = "width: 120px",
+                             class = "btn btn-danger")),
+
+            br(),
+            rhandsontable::rHandsontableOutput("author_table"),
+            br(),
+
+            actionButton('save_authors_btn', "Save author data", icon = icon('save'))
+
+            # card(
+            #   class="border border-0",
+            #   card_body(
+            #     fillable = FALSE,
+            #     actionButton("add_author_btn", "Add author", style = "width: 100px",
+            #                  class = "btn btn-primary"),
+            #     actionButton("del_author_btn", "Delete author", style = "width: 100px",
+            #                  class = "btn btn-danger"),
+            #     actionButton('save_authors_btn', "Save data", icon = icon('save'), style = "width: 100px"),
+            #
+            #   )
+            # )
+
 
             # layout_column_wrap(
             #   card(
@@ -215,20 +306,6 @@ ui <- page_fluid(
             #   style = css(grid_template_columns = "1fr 3fr")
             # ),
 
-            rhandsontable::rHandsontableOutput("author_table"),
-
-            card(
-              class="border border-0",
-              card_body(
-                fillable = FALSE,
-                actionButton("add_author_btn", "Add author", style = "width: 100px",
-                             class = "btn btn-primary"),
-                actionButton("del_author_btn", "Delete author", style = "width: 100px",
-                             class = "btn btn-danger"),
-                actionButton('save_authors_btn', "Save data", icon = icon('save'), style = "width: 100px"),
-                fileInput('file_authors', "Import data", accept = ".csv")
-              )
-            )
           )
 
 

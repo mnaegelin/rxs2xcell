@@ -1,31 +1,13 @@
 
+# reactable_theme <- reactable::reactableTheme(
+#   backgroundColor = "#dfe7e8"
+# )
 
-reactable_theme <- reactable::reactableTheme(
-  backgroundColor = "#dfe7e8"
-)
-
-
-
-# helper to get all selected images in the tree
-get_selected_imgs <- function(tree, selected = c()) { #ancestry = "",
-  for (leaf in names(tree)){
-    if (is.null(names(tree[[leaf]]))) {
-      a <- attr(tree[[leaf]], 'stselected', TRUE)
-      if (!is.null(a) && a == TRUE) {
-        selected <- c(selected, leaf) # paste0(ancestry, "/", leaf) # since image_codes are unique, we don't need the path
-      }
-    } else {
-      selected <- get_selected_imgs(tree[[leaf]], selected) #paste0(ancestry, "/", leaf)
-    }
-  }
-  return(selected)
-}
 
 # server -----------------------------------------------------------------------
 server <- function(input, output, session) {
-
-
-  # TAB: prefill metadata
+  # ----------------------------------------------------------------------------
+  # TAB: prefill metadata ----
   # ----------------------------------------------------------------------------
 
   # Get already available metadata from env or file
@@ -134,7 +116,6 @@ server <- function(input, output, session) {
       )
     )
   ))
-  #print(sketch)
 
   output$DTmeta <- DT::renderDT({
     req(filt_meta())
@@ -142,7 +123,6 @@ server <- function(input, output, session) {
                   style = 'default',
                   rownames = FALSE,
                   container = sketch,
-                  #filter = 'top',
                   selection = 'none',
                   extensions = "FixedColumns",
                   options = list(
@@ -157,8 +137,6 @@ server <- function(input, output, session) {
         columns = c(2:6,12:31) , backgroundColor = color2)
   })
 
-
-
   # output$testing1 <- renderPrint({
   #   tree <- input$tree
   #   req(tree)
@@ -167,8 +145,6 @@ server <- function(input, output, session) {
   #   get_selected_imgs(tree)
   #   #tree
   # })
-
-
 
   # Preprocess partial metadata
   # partial_meta_out <- reactive({
@@ -192,14 +168,25 @@ server <- function(input, output, session) {
   })
   # functionality: switch to next tab
   observeEvent(input$btn_next_meta, {
-    nav_select(id = 'tabs', selected = "General")
+    nav_select(id = 'tabs', selected = tab_general)
   })
 
 
 
-  # TAB: general ---------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # TAB: general ----
+  # ----------------------------------------------------------------------------
 
-  # toggle: only enable in case we have a country and search string
+  iv_gen <- shinyvalidate::InputValidator$new()
+
+  # DATASET INPUT --------------------------------------------------------------
+  # add validator rules for dataset inputs
+  iv_gen$add_rule("ds_name", shinyvalidate::sv_required())
+  iv_gen$add_rule("ds_name", max_char_limit, limit = 64)
+
+
+  # ROR SEARCH -----------------------------------------------------------------
+  # toggle search button: only enable if we have a country and search string
   shiny::observe({
     shinyjs::toggleState(id = "search_ror",
                          condition = !((input$search_string=="") &&
@@ -222,11 +209,6 @@ server <- function(input, output, session) {
       ror_data <- jsonlite::fromJSON(rawToChar(ror_res$content))
 
       if (ror_data$number_of_results > 0) {
-
-        # output$testing2 <- renderPrint({
-        #   ror_data$items$names %>%
-        #     dplyr::bind_rows()
-        # })
         # get the names (assuming that there is always exactly one ror_display name)
         res_names <- ror_data$items$names %>%
           dplyr::bind_rows() %>%
@@ -246,7 +228,13 @@ server <- function(input, output, session) {
 
         #updateSelectizeInput(session, "result_choice", choices = res_names)
         output$ror_results <- DT::renderDT({
-          DT::datatable(res_df, rownames = FALSE)
+          DT::datatable(res_df,
+                        style = 'default',
+                        rownames = FALSE, selection = "none",
+                        options = list(
+                          pageLength = 5
+                          )
+                        )
         })
       } else {
         showNotification("No ROR results found. Try again.", type = "message")
@@ -256,58 +244,54 @@ server <- function(input, output, session) {
     }
 
   })
-  iv_gen <- shinyvalidate::InputValidator$new()
-
-  iv_gen$add_rule("ds_name", shinyvalidate::sv_required())
-  iv_gen$add_rule("ds_name", max_char_limit, limit = 64)
-
-  iv_gen$add_rule("autname_1", shinyvalidate::sv_required())
-  iv_gen$add_rule("autmail_1", shinyvalidate::sv_required())
-
-  # Keep track of the number of authors
-  author_count <- reactiveVal(1)
-
-  # Enable delete button only if there are more than 1 authors
-  observe({
-    shinyjs::toggleState(id = "del_author_btn", condition = author_count() > 1)
-  })
-
-  # Add author input if button is clicked
-  observeEvent(input$add_author_btn, {
-    author_count(author_count() + 1)
-    author_id <- paste0('aut', author_count())
-    insertUI(
-      selector = "#author_inputs",
-      where = "beforeBegin",
-      ui = div(id = author_id,
-               author_input(author_count()))
-    )
-    iv_gen$add_rule(paste0('autname_',author_count()), shinyvalidate::sv_required())
-  })
-
-  # Delete author input
-  observeEvent(input$del_author_btn, {
-    removeUI(selector = paste0("#aut", author_count()))
-    iv_gen$remove_rules(paste0('autname_',author_count()))
-    author_count(author_count() - 1)
-
-  })
-
-  # Dynamic selection of contact person
-  output$contact_person <- renderUI({
-    radioButtons("contact_person", NULL,
-                 choices = paste("Author", 1:author_count()))
-  })
-
-  iv_gen$enable()
 
 
-  output$check_val <- renderPrint({
-    iv_gen$validate()
 
-  })
+  # iv_gen$add_rule("autname_1", shinyvalidate::sv_required())
+  # iv_gen$add_rule("autmail_1", shinyvalidate::sv_required())
+  #
+  # # Keep track of the number of authors
+  # author_count <- reactiveVal(1)
+  #
+  # # Enable delete button only if there are more than 1 authors
+  # observe({
+  #   shinyjs::toggleState(id = "del_author_btn", condition = author_count() > 1)
+  # })
+  #
+  # # Add author input if button is clicked
+  # observeEvent(input$add_author_btn, {
+  #   author_count(author_count() + 1)
+  #   author_id <- paste0('aut', author_count())
+  #   insertUI(
+  #     selector = "#author_inputs",
+  #     where = "beforeBegin",
+  #     ui = div(id = author_id,
+  #              author_input(author_count()))
+  #   )
+  #   iv_gen$add_rule(paste0('autname_',author_count()), shinyvalidate::sv_required())
+  # })
+  #
+  # # Delete author input
+  # observeEvent(input$del_author_btn, {
+  #   removeUI(selector = paste0("#aut", author_count()))
+  #   iv_gen$remove_rules(paste0('autname_',author_count()))
+  #   author_count(author_count() - 1)
+  #
+  # })
 
-  # rhandsontable
+  # # Dynamic selection of contact person
+  # output$contact_person <- renderUI({
+  #   radioButtons("contact_person", NULL,
+  #                choices = paste("Author", 1:author_count()))
+  # })
+
+
+
+
+
+
+
+  # AUTHOR RHANDSONTABLE -------------------------------------------------------
   # Initialize data frame
   author_data <- reactiveVal(data.frame(
     firstname = character(1),
@@ -321,8 +305,14 @@ server <- function(input, output, session) {
 
   # Render editable table
   output$author_table <- rhandsontable::renderRHandsontable({
-    rhandsontable::rhandsontable(author_data(), rowHeaders = NULL) %>%
-      rhandsontable::hot_col("contactperson", type = "checkbox")
+    rhandsontable::rhandsontable(
+      author_data(),
+      rowHeaders = T,
+      stretchH = "all",
+      colHeaders = c('First name', 'Last name', 'University',
+                     'Email address', 'ORCID', 'Contact person')) %>%
+      rhandsontable::hot_col("Contact person", type = "checkbox") %>%
+      hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
   })
 
   # Observe add row button
@@ -428,13 +418,23 @@ server <- function(input, output, session) {
   })
 
 
-
-
-
   # Next button
   observeEvent(input$nex_btn_general, {
+    iv_gen$enable()
     nav_select(id = 'tabs', selected = "Study Details")
   })
+
+  # Previous button
+  observeEvent(input$btn_prev_general, {
+    iv_gen$enable()
+    nav_select(id = 'tabs', selected = tab_start)
+  })
+
+
+  output$check_val <- renderPrint({
+    iv_gen$validate()
+  })
+
 
 
   # unique_sites <- unique(df_meta$site)
