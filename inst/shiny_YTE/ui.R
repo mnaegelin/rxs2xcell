@@ -1,82 +1,44 @@
-
-# library(plotly)
-# library(bslib)
 # library(shiny)
-# library(dplyr)
-# library(tidyr)
-# library(stringr)
-# library(reactable)
-# library(reactable.extras)
-# library(ggiraph)
+# library(bslib)
+# library(sass)
+# library(shinyjs)
 # library(DT)
-# TODO: as separate package? and imports?
+# library(ggplot2)
+# library(plotly)
+# library(checkmate)
+# library(shinyalert)
 
-
-#source('../../R/clean_raw_data.R')
-
-#https://forum.posit.co/t/shiny-app-matrix-checkbox/108251/3
-#https://rstudio.github.io/DT/extensions.html
-
-# get necessary data
-# TODO: should be read from file? or ok bc already in environment?
-# path_data <- './out'
-# df_structure <- read.csv(file.path(path_data, 'QWA_Arzac2024_meta.csv'))
-# df_rings <-  read.csv(file.path(path_data, 'QWA_Arzac2024_rings.csv'))
-
-
+# TODO:
 # add button to open image
 # save flags to file
 # save cov plots to file
+# validity check: at least one sel flag per overlap
 
-# UI
 ui <- page_sidebar(
+  # preliminaries
   shinyjs::useShinyjs(),
-  # theme = "bootstrap_wsl.css",
+
+  # theme
   theme = bs_theme(primary = "#006268", secondary = "#69004F",
                    font_scale = 0.8, preset = "cosmo") %>%
     bs_add_rules(
       sass::as_sass(
-        # " table.dataTable tbody tr.active td { background: pink !important; }"
         " table.dataTable thead tr { background: #CCE0E0 !important; }" # color for table header
         )),
-  # tags$head(
-  #   tags$style(HTML(
-  #     ".done {list-style-type:square}
-  #      .notdone {list-style-type:circle}"
-  #   ))),
-  # tags$style(HTML(
-  #   ".dt-row-group {
-  #     background-color: green !important;
-  #   }"
-  # )),
 
+  # to add css directly:
   # tags$head(
-  #   # Note the wrapping of the string in HTML(),
-  #   # use the following to avoid dropdown overlapping stuff
-  #   # .selectize-control .selectize-dropdown {
-  #   #   position: static !important;
-  #   # }
-  #   tags$style(HTML("
-  #     .sidebar {
-  #       height: 90vh;
-  #       display: flex;
-  #       flex-direction: column;
-  #       justify-content: space-between;
-  #       width: 250px; /* Adjust based on the width of the sidebar */
-  #
-  #       position: fixed;
-  #     }
-  #     .sidebar-content {
-  #       flex-grow: 1;
-  #     }
-  #     .sidebar-footer {
-  #       margin-bottom: 20px;
-  #     }
-  #     .main {
-  #       margin-left: 270px; /* Adjust based on the width of the sidebar */
-  #     }
-  #   "))
-  # ),
+  #   tags$style(HTML( ... )))
+  # list icon styles
+  #   ".done {list-style-type:square}
+  #      .notdone {list-style-type:circle}"
+  # dt styling
+  #   ".dt-row-group {
+  #     background-color: green !important;}"
+  # to avoid dropdown overlapping stuff
+  # ".selectize-control .selectize-dropdown {
+  #   position: static !important;}"
+
 
   # TITLE ----------------------------------------------------------------------
   title = "rxs2xcell: Inspect Yearly Coverage",
@@ -121,33 +83,6 @@ ui <- page_sidebar(
 
     ),
 
-
-    # # INPUT WOODPIECE --------------------------------------------------------
-    # p("Select woodpiece (core) to inspect"),
-    # selectInput(
-    #   "woodpiece",
-    #   label = NULL,
-    #   choices = unique(df_structure$woodpiece_code),
-    #   selected = unique(df_structure$woodpiece_code)[1]
-    # ),
-    #
-    # HTML("<hr>"),
-    #
-    # # RESET BUTTON -----------------------------------------------------------
-    # p("Reset the flags for the current woodpiece"),
-    # actionButton("btn_reset", "Reset current flags",
-    #              class = "btn btn-primary"),
-    #
-    #
-    # SUBMIT BUTTON ------------------------------------------------------------
-    # p("Save the changes made for the current woodpiece and go to next"),
-    # actionButton("btn_submit", "Next",
-    #              class = "btn btn-primary"),
-    # textOutput("progress_txt"),
-    #
-    # HTML("<hr>"),
-
-
     # SAVE BUTTON --------------------------------------------------------------
     card(
       card_header("Save data"),
@@ -168,16 +103,16 @@ ui <- page_sidebar(
     open = c("Coverage plot", 'Data'),
 
     # COVERAGE PLOT ------------------------------------------------------------
-    # accordion_panel(
-    #   "Coverage plot",
-    #   girafeOutput("covPlot")
-    # ),
-
-    # COVERAGE PLOT ------------------------------------------------------------
     accordion_panel(
       "Coverage plot",
       plotly::plotlyOutput("covPlot")
     ),
+
+    # accordion_panel(
+    #   "Coverage plot",
+    # first try with girafe plot for clickable images, but does not resize properly
+    #   girafeOutput("covPlot")
+    # ),
 
     # DATA TABLE ---------------------------------------------------------------
     accordion_panel(
@@ -185,9 +120,9 @@ ui <- page_sidebar(
       DT::DTOutput('tbl')
     ),
 
-    # DF TABLE -----------------------------------------------------------------
     # accordion_panel(
-    #   "Data2",
+    #   "Data",
+    # first try with reactable for collapsible groups, but with DT can click cells to edit
     #   reactable.extras::reactable_extras_dependency(),
     #   reactable::reactableOutput("reactTable")
     # )

@@ -307,6 +307,130 @@ server <- function(input, output, session) {
 
   })
 
+  # rhandsontable
+  # Initialize data frame
+  author_data <- reactiveVal(data.frame(
+    firstname = character(1),
+    lastname = character(1),
+    university = character(1),
+    email = character(1),
+    orcid = character(1),
+    contactperson = logical(1),
+    stringsAsFactors = FALSE
+  ))
+
+  # Render editable table
+  output$author_table <- rhandsontable::renderRHandsontable({
+    rhandsontable::rhandsontable(author_data(), rowHeaders = NULL) %>%
+      rhandsontable::hot_col("contactperson", type = "checkbox")
+  })
+
+  # Observe add row button
+  observeEvent(input$add_author_btn, {
+    new_row <- data.frame(
+      firstname = "", lastname = "", university = "", email = "",
+      orcid = "", contactperson = FALSE, stringsAsFactors = FALSE
+    )
+    author_data(rbind(author_data(), new_row))
+  })
+
+  # Observe delete row button
+  observeEvent(input$del_author_btn, {
+    req(nrow(author_data()) > 1)
+    author_data(author_data()[-nrow(author_data()), ])
+  })
+
+  # Update data frame on table edit
+  observe({
+    if (!is.null(input$author_table)) {
+      updated_data <- rhandsontable::hot_to_r(input$author_table)
+      author_data(updated_data)
+    }
+  })
+
+  # Email validation function
+  validateEmail <- function(email) {
+    grepl("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", email)
+  }
+
+  # Observe import button
+  # Observe file input for importing CSV
+  observeEvent(input$file_authors, {
+    req(input$file_authors)
+    imported_data <- read.csv(input$file_authors$datapath, stringsAsFactors = FALSE)
+    if (all(c("firstname", "lastname", "university", "email", "orcid", "contactperson") %in% colnames(imported_data))) {
+      imported_data <- imported_data %>% # ensure correct column order
+        dplyr::select(firstname, lastname, university, email, orcid, contactperson)
+      author_data(imported_data)
+    } else {
+      showModal(modalDialog(
+        title = "Validation Error",
+        "The CSV file does not have the required columns.",
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    }
+  })
+
+  # Observe save button
+  observeEvent(input$save_authors_btn, {
+    data <- author_data()
+
+    # Validation checks
+    if (any(!sapply(data$firstname, is.character)) || any(!sapply(data$lastname, is.character))) {
+      showModal(modalDialog(
+        title = "Validation Error",
+        "First name and last name must be characters.",
+        easyClose = TRUE,
+        footer = NULL
+      ))
+      return(NULL)
+    }
+
+    if (any(!validateEmail(data$email))) {
+      showModal(modalDialog(
+        title = "Validation Error",
+        "Invalid email addresses.",
+        easyClose = TRUE,
+        footer = NULL
+      ))
+      return(NULL)
+    }
+
+    if (sum(data$contactperson) != 1) {
+      showModal(modalDialog(
+        title = "Validation Error",
+        "Exactly one contact person must be selected.",
+        easyClose = TRUE,
+        footer = NULL
+      ))
+      return(NULL)
+    }
+
+    # Save to CSV
+    write.csv(data, file = "author_data.csv", row.names = FALSE)
+    showModal(modalDialog(
+      title = "Success",
+      "Data saved successfully!",
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+
+  # TODO:
+  # validations
+  # read data from file: append?
+  # next submits data? needed? or just validation checks as well?
+  # from / to csv or xslx? sheets? explanations? vs universal
+
+  output$testing2 <- renderPrint({
+    author_data()
+  })
+
+
+
+
+
   # Next button
   observeEvent(input$nex_btn_general, {
     nav_select(id = 'tabs', selected = "Study Details")

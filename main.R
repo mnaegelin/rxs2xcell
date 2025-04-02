@@ -63,18 +63,16 @@ QWA_data <- validate_QWA_data(QWA_data, df_meta)
 # provide user input on ring flags
 
 # VARIANT A: interactively in shiny app ----------------------------------------
-# TODO: app is work in progress
-# TODO: conflict of sourcing in app vs loading the package?
-#shiny::runApp('inst/shiny_YTE/yte_app.R')
 launch_coverage_app()
 
 # after running the app, reload the rings data
-# TODO: check formatting
-# QWA_data$rings <- read.csv(
-#   file.path(path_out, paste0(dataset_name, '_rings.csv')),
-#   stringsAsFactors = FALSE)
+filepath <- file.choose()
+QWA_data$rings <- tibble::as_tibble(read.csv(
+  filepath,
+  stringsAsFactors = FALSE))
 
 # VARIANT B: in script / manually ----------------------------------------------
+# TODO: update plot function and manual input, workflow with changes in csv
 # use create_coverage_plots and to create and save the plots of the yearly
 # coverage and issues (generates one plot per woodpiece)
 # create_coverage_plots(QWA_data$rings,
@@ -98,6 +96,15 @@ launch_coverage_app()
 # )
 # QWA_data <- add_user_flags(QWA_data, years_to_flag)
 
+# QWA_data$rings <- QWA_data$rings %>%
+#   dplyr::mutate(
+#     duplicate_sel = dplyr::if_else(duplicate_rank == 1, TRUE, FALSE),
+#     other_issues = FALSE,
+#     other_reason = NA_character_
+#   )
+
+
+# TODO: check formatting on import?
 
 ################################################################################
 # remove outliers
@@ -109,10 +116,6 @@ QWA_data <- remove_outliers(QWA_data)
 # complete cell measures
 # TODO: finalize
 QWA_data <- complete_cell_measures(QWA_data)
-
-# EW, LW
-# others
-
 
 
 
@@ -132,16 +135,10 @@ write.csv(QWA_data$rings,
 # shiny::runApp('inst/shiny_meta/meta_app.R')
 launch_metadata_app()
 
+
+
 ################################################################################
 # TODO: writing to DB
-
-
-
-
-
-
-
-
 
 
 

@@ -465,69 +465,69 @@
 # shinyApp(ui, server)
 
 
-library(shiny)
-library(shinyTree)
-library(shinyjs)
-
-#' Define UI for application that demonstrates a simple Tree editor
-#' @author Jeff Allen \email{jeff@@trestletech.com}
-ui <- shinyUI(
-  pageWithSidebar(
-    # Application title
-    headerPanel("shinyTree with checkbox controls"),
-
-    sidebarPanel(
-      helpText(HTML("An example of a shinyTree with the <code>checkbox</code> parameter enabled to allow users to more easily make multiple selections in the tree.
-                  <hr>Created using <a href = \"http://github.com/trestletech/shinyTree\">shinyTree</a>."))
-    ),
-    mainPanel(
-      # Show a simple table.
-      shinyTree("tree123", checkbox = TRUE, tie_selection = TRUE, whole_node = FALSE, three_state = TRUE, contextmenu = FALSE),
-      verbatimTextOutput("sel_names"),
-      verbatimTextOutput("sel_slices"),
-      verbatimTextOutput("sel_classid")
-    ))
-)
-server <- shinyServer(function(input, output, session) {
-  log <- c(paste0(Sys.time(), ": Interact with the tree to see the logs here..."))
-
-
-  print_tree <- function(tree) {
-    if (is(tree, "Node")) {
-      do.call(print, c(x = tree, as.list(tree$fieldsAll)))
-    } else {
-      str(tree)
-    }
-  }
-
-  output$tree123 <- renderTree({
-    nested_list <- list(
-      root1 = structure(list(leaf0=""), stselected = TRUE, stopened = TRUE),
-      root2 = structure(list(
-        SubListA = structure(list(leaf1 = "", leaf2 = "", leaf3=""), stselected = TRUE, stopened = TRUE),
-        SubListB = structure(list(leafA = "", leafB = ""))), stopened = TRUE)
-    )
-    # shinyTree::treeToJSON(dtree, pretty = TRUE)
-  })
-
-  output$sel_names <- renderPrint({
-    tree <- input$tree123
-    req(tree)
-    get_selected(tree)
-  })
-
-  output$sel_slices <- renderPrint({
-    tree <- input$tree123
-    str(tree)
-  })
-  output$sel_classid <- renderPrint({
-    tree <- input$tree123
-    req(tree)
-    get_selected(tree, format = "classid")
-  })
-})
-
-shinyApp(ui, server)
+#' library(shiny)
+#' library(shinyTree)
+#' library(shinyjs)
+#'
+#' #' Define UI for application that demonstrates a simple Tree editor
+#' #' @author Jeff Allen \email{jeff@@trestletech.com}
+#' ui <- shinyUI(
+#'   pageWithSidebar(
+#'     # Application title
+#'     headerPanel("shinyTree with checkbox controls"),
+#'
+#'     sidebarPanel(
+#'       helpText(HTML("An example of a shinyTree with the <code>checkbox</code> parameter enabled to allow users to more easily make multiple selections in the tree.
+#'                   <hr>Created using <a href = \"http://github.com/trestletech/shinyTree\">shinyTree</a>."))
+#'     ),
+#'     mainPanel(
+#'       # Show a simple table.
+#'       shinyTree("tree123", checkbox = TRUE, tie_selection = TRUE, whole_node = FALSE, three_state = TRUE, contextmenu = FALSE),
+#'       verbatimTextOutput("sel_names"),
+#'       verbatimTextOutput("sel_slices"),
+#'       verbatimTextOutput("sel_classid")
+#'     ))
+#' )
+#' server <- shinyServer(function(input, output, session) {
+#'   log <- c(paste0(Sys.time(), ": Interact with the tree to see the logs here..."))
+#'
+#'
+#'   print_tree <- function(tree) {
+#'     if (is(tree, "Node")) {
+#'       do.call(print, c(x = tree, as.list(tree$fieldsAll)))
+#'     } else {
+#'       str(tree)
+#'     }
+#'   }
+#'
+#'   output$tree123 <- renderTree({
+#'     nested_list <- list(
+#'       root1 = structure(list(leaf0=""), stselected = TRUE, stopened = TRUE),
+#'       root2 = structure(list(
+#'         SubListA = structure(list(leaf1 = "", leaf2 = "", leaf3=""), stselected = TRUE, stopened = TRUE),
+#'         SubListB = structure(list(leafA = "", leafB = ""))), stopened = TRUE)
+#'     )
+#'     # shinyTree::treeToJSON(dtree, pretty = TRUE)
+#'   })
+#'
+#'   output$sel_names <- renderPrint({
+#'     tree <- input$tree123
+#'     req(tree)
+#'     get_selected(tree)
+#'   })
+#'
+#'   output$sel_slices <- renderPrint({
+#'     tree <- input$tree123
+#'     str(tree)
+#'   })
+#'   output$sel_classid <- renderPrint({
+#'     tree <- input$tree123
+#'     req(tree)
+#'     get_selected(tree, format = "classid")
+#'   })
+#' })
+#'
+#' shinyApp(ui, server)
 
 # library(shiny)
 # library(networkD3)
@@ -560,3 +560,464 @@ shinyApp(ui, server)
 # )
 #
 # shinyApp(ui = ui, server = server)
+
+
+# # # editbl example ----
+# library(shiny)
+# library(editbl)
+#
+# # hover: https://stackoverflow.com/questions/74792847/hover-tooltip-popover-for-dynamic-column-headers-in-dt-datatable-for-shiny-app
+# # https://www.r-bloggers.com/2020/02/tooltips-for-the-headers-of-a-datatable-in-shiny/
+#
+# # not_default_row <- function(row){
+# #   if (!is.na(row[,'first_name']) & row[,'first_name'] == "First Name") {
+# #     FALSE
+# #   } else {
+# #     TRUE
+# #   }
+# # }
+#
+# # JavaScript code
+# js_code <- "
+# Shiny.addCustomMessageHandler('colDisplayText', function(colDisplayText) {
+#   var table = $('#example').DataTable();
+#
+#   $('#example').on('mousemove', 'th', function(e) {
+#      var headerText = $(this).text();
+#      var displayText = colDisplayText[headerText] || headerText;
+#      $('#tooltip').text(displayText).animate({ left: e.pageX, top: e.pageY }, 1);
+#      if (!$('#tooltip').is(':visible')) $('#tooltip').show();
+#   });
+#
+#   $('#example').on('mouseleave', 'th', function(e) {
+#     $('#tooltip').hide();
+#   });
+# });
+# "
+#
+# col_display_text <- list(
+#   first_name = "First Name Display",
+#   last_name = "Last Name Display"
+# )
+#
+# col_display_text_json <- jsonlite::toJSON(col_display_text, auto_unbox = TRUE)
+#
+# default_data <- dplyr::as_tibble(data.frame(
+#   first_name = NA_character_,
+#   last_name = NA_character_,
+#   email = NA_character_,
+#   orcid = NA_character_,
+#   org_name = NA_character_,
+#   rorid = NA_character_,
+#   department = NA_character_,
+#   address = NA_character_,
+#   stringsAsFactors = FALSE
+# ))
+#
+# ui <- fluidPage(
+#   eDTOutput('data'),
+#   DT::dataTableOutput('data_table'),
+#   tags$div(id = "tooltip", style = "position: absolute; display: none; background: lightgray; padding: 5px; border-radius: 5px;")
+# )
+#
+# ui <- tagList(
+#   ui,
+#   tags$script(HTML(js_code))
+# )
+#
+# server <- function(input, output, session) {
+#   modifiedData <- eDT(
+#     id = 'data',
+#     data = default_data,
+#     # canEditRow = not_default_row,
+#     # canDeleteRow = not_default_row,
+#     )
+#
+#   observe({
+#     # Data when 'save' is clicked
+#     print('result')
+#     print(modifiedData$result())
+#   })
+#
+#   observe({
+#     # Data as it's being modified
+#     print('state')
+#     print(modifiedData$state())
+#   })
+#
+#   output$data_table <- DT::renderDT({
+#     DT::datatable(default_data,
+#                   rownames = FALSE,
+#                   options = list(ordering =F))
+#   })
+#   # Pass the named vector to JavaScript
+#   session$sendCustomMessage(type = 'colDisplayText', col_display_text)
+#
+# }
+#
+# shinyApp(ui, server)
+
+## rhandsontable example --------
+# library(rhandsontable)
+# library(shiny)
+#
+# DF <- data.frame(Value = 1:10, Status = TRUE, Name = LETTERS[1:10],
+#                  Date = seq(from = Sys.Date(), by = "days", length.out = 10),
+#                  stringsAsFactors = FALSE)
+# outdir <- getwd()
+# outfilename <- "table"
+#
+# ui <- shinyUI(fluidPage(
+#
+#   titlePanel("Edit and save a table"),
+#   sidebarLayout(
+#     sidebarPanel(
+#       helpText("Shiny app based on an example given in the rhandsontable package.",
+#                "Right-click on the table to delete/insert rows.",
+#                "Double-click on a cell to edit"),
+#
+#       wellPanel(
+#         h3("Table options"),
+#         radioButtons("useType", "Use Data Types", c("TRUE", "FALSE"))
+#       ),
+#       br(),
+#
+#       wellPanel(
+#         h3("Save table"),
+#         div(class='row',
+#             div(class="col-sm-6",
+#                 actionButton("save", "Save")),
+#             div(class="col-sm-6",
+#                 radioButtons("fileType", "File type", c("ASCII", "RDS")))
+#         )
+#       )
+#
+#     ),
+#
+#     mainPanel(
+#       wellPanel(
+#         uiOutput("message", inline=TRUE)
+#       ),
+#
+#       actionButton("cancel", "Cancel last action"),
+#       br(), br(),
+#
+#       rHandsontableOutput("hot"),
+#       br(),
+#
+#       wellPanel(
+#         h3("Add a column"),
+#         div(class='row',
+#             div(class="col-sm-5",
+#                 uiOutput("ui_newcolname"),
+#                 actionButton("addcolumn", "Add")),
+#             div(class="col-sm-4",
+#                 radioButtons("newcolumntype", "Type", c("integer", "double", "character"))),
+#             div(class="col-sm-3")
+#         )
+#       )
+#
+#     )
+#   )
+# ))
+#
+# server <- shinyServer(function(input, output) {
+#
+#   values <- reactiveValues()
+#
+#   ## Handsontable
+#   observe({
+#     if (!is.null(input$hot)) {
+#       values[["previous"]] <- isolate(values[["DF"]])
+#       DF = hot_to_r(input$hot)
+#     } else {
+#       if (is.null(values[["DF"]]))
+#         DF <- DF
+#       else
+#         DF <- values[["DF"]]
+#     }
+#     values[["DF"]] <- DF
+#   })
+#
+#   output$hot <- renderRHandsontable({
+#     DF <- values[["DF"]]
+#     if (!is.null(DF))
+#       rhandsontable(DF, useTypes = as.logical(input$useType), stretchH = "all")
+#   })
+#
+#   ## Save
+#   observeEvent(input$save, {
+#     fileType <- isolate(input$fileType)
+#     finalDF <- isolate(values[["DF"]])
+#     if(fileType == "ASCII"){
+#       dput(finalDF, file=file.path(outdir, sprintf("%s.txt", outfilename)))
+#     }
+#     else{
+#       saveRDS(finalDF, file=file.path(outdir, sprintf("%s.rds", outfilename)))
+#     }
+#   }
+#   )
+#
+#   ## Cancel last action
+#   observeEvent(input$cancel, {
+#     if(!is.null(isolate(values[["previous"]]))) values[["DF"]] <- isolate(values[["previous"]])
+#   })
+#
+#   ## Add column
+#   output$ui_newcolname <- renderUI({
+#     textInput("newcolumnname", "Name", sprintf("newcol%s", 1+ncol(values[["DF"]])))
+#   })
+#   observeEvent(input$addcolumn, {
+#     DF <- isolate(values[["DF"]])
+#     values[["previous"]] <- DF
+#     newcolumn <- eval(parse(text=sprintf('%s(nrow(DF))', isolate(input$newcolumntype))))
+#     values[["DF"]] <- setNames(cbind(DF, newcolumn, stringsAsFactors=FALSE), c(names(DF), isolate(input$newcolumnname)))
+#   })
+#
+#   ## Message
+#   output$message <- renderUI({
+#     if(input$save==0){
+#       helpText(sprintf("This table will be saved in folder \"%s\" once you press the Save button.", outdir))
+#     }else{
+#       outfile <- ifelse(isolate(input$fileType)=="ASCII", "table.txt", "table.rds")
+#       fun <- ifelse(isolate(input$fileType)=="ASCII", "dget", "readRDS")
+#       list(helpText(sprintf("File saved: \"%s\".", file.path(outdir, outfile))),
+#            helpText(sprintf("Type %s(\"%s\") to get it.", fun, outfile)))
+#     }
+#   })
+#
+# })
+#
+# ## run app
+# runApp(list(ui=ui, server=server))
+
+# # DT example ----------------
+# library(shiny)
+# library(DT)
+#
+# # UI
+# ui <- fluidPage(
+#   titlePanel("Author Information Submission"),
+#   sidebarLayout(
+#     sidebarPanel(
+#       actionButton("add_row", "Add Row"),
+#       actionButton("delete_row", "Delete Row"),
+#       actionButton("save_data", "Save Data")
+#     ),
+#     mainPanel(
+#       dataTableOutput("author_table")
+#     )
+#   )
+# )
+#
+# # Server
+# server <- function(input, output, session) {
+#   # Initialize data frame
+#   author_data <- reactiveVal(data.frame(
+#     firstname = character(1),
+#     lastname = character(1),
+#     university = character(1),
+#     email = character(1),
+#     orcid = character(1),
+#     contactperson = logical(1),
+#     stringsAsFactors = FALSE
+#   ))
+#
+#   # Render editable table
+#   output$author_table <- renderDataTable({
+#     datatable(author_data(), editable = TRUE, extensions = 'AutoFill', options = list(
+#       autoFill = TRUE
+#     ))
+#   }, server = FALSE)
+#
+#   # Observe add row button
+#   observeEvent(input$add_row, {
+#     new_row <- data.frame(
+#       firstname = "", lastname = "", university = "", email = "",
+#       orcid = "", contactperson = FALSE, stringsAsFactors = FALSE
+#     )
+#     author_data(rbind(author_data(), new_row))
+#   })
+#
+#   # Observe delete row button
+#   observeEvent(input$delete_row, {
+#     req(nrow(author_data()) > 1)
+#     author_data(author_data()[-nrow(author_data()), ])
+#   })
+#
+#   # Update data frame on cell edit
+#   observeEvent(input$author_table_cell_edit, {
+#     info <- input$author_table_cell_edit
+#     str(info)
+#     temp_data <- author_data()
+#     temp_data[info$row, info$col] <- info$value
+#     author_data(temp_data)
+#   })
+#
+#   # Email validation function
+#   validateEmail <- function(email) {
+#     grepl("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", email)
+#   }
+#
+#   # Observe save button
+#   observeEvent(input$save_data, {
+#     data <- author_data()
+#
+#     # Validation checks
+#     if (any(!sapply(data$firstname, is.character)) || any(!sapply(data$lastname, is.character))) {
+#       showModal(modalDialog(
+#         title = "Validation Error",
+#         "First name and last name must be characters.",
+#         easyClose = TRUE,
+#         footer = NULL
+#       ))
+#       return(NULL)
+#     }
+#
+#     if (any(!validateEmail(data$email))) {
+#       showModal(modalDialog(
+#         title = "Validation Error",
+#         "Invalid email addresses.",
+#         easyClose = TRUE,
+#         footer = NULL
+#       ))
+#       return(NULL)
+#     }
+#
+#     if (sum(data$contactperson) != 1) {
+#       showModal(modalDialog(
+#         title = "Validation Error",
+#         "Exactly one contact person must be selected.",
+#         easyClose = TRUE,
+#         footer = NULL
+#       ))
+#       return(NULL)
+#     }
+#
+#     # Save to CSV
+#     write.csv(data, file = "author_data.csv", row.names = FALSE)
+#     showModal(modalDialog(
+#       title = "Success",
+#       "Data saved successfully!",
+#       easyClose = TRUE,
+#       footer = NULL
+#     ))
+#   })
+# }
+#
+# # Run the application
+# shinyApp(ui = ui, server = server)
+
+library(shiny)
+library(rhandsontable)
+
+# UI
+ui <- fluidPage(
+  titlePanel("Author Information Submission"),
+  sidebarLayout(
+    sidebarPanel(
+      actionButton("add_row", "Add Row"),
+      actionButton("delete_row", "Delete Row"),
+      actionButton("save_data", "Save Data")
+    ),
+    mainPanel(
+      rHandsontableOutput("author_table")
+    )
+  )
+)
+
+# Server
+server <- function(input, output, session) {
+  # Initialize data frame
+  author_data <- reactiveVal(data.frame(
+    firstname = character(1),
+    lastname = character(1),
+    university = character(1),
+    email = character(1),
+    orcid = character(1),
+    contactperson = logical(1),
+    stringsAsFactors = FALSE
+  ))
+
+  # Render editable table
+  output$author_table <- renderRHandsontable({
+    rhandsontable(author_data(), rowHeaders = NULL) %>%
+      hot_col("contactperson", type = "checkbox")
+  })
+
+  # Observe add row button
+  observeEvent(input$add_row, {
+    new_row <- data.frame(
+      firstname = "", lastname = "", university = "", email = "",
+      orcid = "", contactperson = FALSE, stringsAsFactors = FALSE
+    )
+    author_data(rbind(author_data(), new_row))
+  })
+
+  # Observe delete row button
+  observeEvent(input$delete_row, {
+    req(nrow(author_data()) > 1)
+    author_data(author_data()[-nrow(author_data()), ])
+  })
+
+  # Update data frame on table edit
+  observe({
+    if (!is.null(input$author_table)) {
+      updated_data <- hot_to_r(input$author_table)
+      author_data(updated_data)
+    }
+  })
+
+  # Email validation function
+  validateEmail <- function(email) {
+    grepl("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", email)
+  }
+
+  # Observe save button
+  observeEvent(input$save_data, {
+    data <- author_data()
+
+    # Validation checks
+    if (any(!sapply(data$firstname, is.character)) || any(!sapply(data$lastname, is.character))) {
+      showModal(modalDialog(
+        title = "Validation Error",
+        "First name and last name must be characters.",
+        easyClose = TRUE,
+        footer = NULL
+      ))
+      return(NULL)
+    }
+
+    if (any(!validateEmail(data$email))) {
+      showModal(modalDialog(
+        title = "Validation Error",
+        "Invalid email addresses.",
+        easyClose = TRUE,
+        footer = NULL
+      ))
+      return(NULL)
+    }
+
+    if (sum(data$contactperson) != 1) {
+      showModal(modalDialog(
+        title = "Validation Error",
+        "Exactly one contact person must be selected.",
+        easyClose = TRUE,
+        footer = NULL
+      ))
+      return(NULL)
+    }
+
+    # Save to CSV
+    write.csv(data, file = "author_data.csv", row.names = FALSE)
+    showModal(modalDialog(
+      title = "Success",
+      "Data saved successfully!",
+      easyClose = TRUE,
+      footer = NULL
+    ))
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)

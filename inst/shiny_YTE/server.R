@@ -1,14 +1,13 @@
-
-
 # globals ----------------------------------------------------------------------
 
 # the validation check function
-# TODO: add check that there is always a selected duplicate per group
 validate_user_flags <- function(df_wp){
   # one selected duplicate per group of duplicates?
   unique_best_duplicate <- df_wp %>%
-    dplyr::filter(duplicate_sel) %>%
-    dplyr::count(woodpiece_code,year) %>% dplyr::filter(n>1) %>% nrow() == 0
+    dplyr::filter(duplicate_ring) %>%
+    dplyr::group_by(woodpiece_code,year) %>%
+    dplyr::summarise(sel_count = sum(duplicate_sel == TRUE), .groups = 'drop') %>%
+    dplyr::filter(sel_count != 1) %>% nrow() == 0
   # are there user comments for all other_reason flags?
   no_missing_comments <- df_wp %>%
     dplyr::filter(other_issues & (is.na(other_reason) | other_reason == "")) %>%
@@ -19,13 +18,12 @@ validate_user_flags <- function(df_wp){
     nrow() == 0
 
   return(c(unique_best_duplicate, no_missing_comments, no_superfluous_comments))
-
 }
 
 # the plot generation function
 shiny_cov_plot <- function(df){
 
-    # reformat data for the plot
+  # reformat data for the plot
   df_plot <- df %>%
     dplyr::mutate(
       # set duplicate to FALSE if duplicate_sel is TRUE (we plot duplicate_sel instead)
@@ -57,7 +55,6 @@ shiny_cov_plot <- function(df){
   # x limits for plot
   min_year <- floor(min(df_plot$year, na.rm = TRUE) / 5) * 5
   max_year <- ceiling(max(df_plot$year, na.rm = TRUE) / 5) * 5
-  #max_cno <- ceiling(max(df_plot$cno, na.rm = TRUE) / 100) * 100
 
   # PLOTTING
   p_cov <- suppressWarnings({ # to avoid the unknown aes 'text' warning
@@ -86,9 +83,6 @@ shiny_cov_plot <- function(df){
       ggplot2::geom_point(
         ggplot2::aes(x=other_issues, y=image_code),
         color = 'gold', shape=1, stroke = 0.5, size=4, na.rm = TRUE) +
-      # ggplot2::geom_point(
-      #   ggplot2::aes(x=other_issues, y=image_code),
-      #   color = 'green', shape=1, stroke = 0.5, size=3, na.rm = TRUE) +
       # 5-year ticks on x axis
       ggplot2::scale_x_continuous(breaks = seq(min_year, max_year, by = 5)) +
       # group images of each slide together
@@ -99,7 +93,7 @@ shiny_cov_plot <- function(df){
                      axis.line.x = ggplot2::element_line(colour = "grey25"),
                      axis.text.y = ggplot2::element_text(size = 7),
                      axis.title.y = ggplot2::element_blank()) +
-      ggplot2::labs(x = "Year", fill = 'Cell count')
+      ggplot2::labs(x = "Year", fill = 'Nr of Cells')
   })
 
   p_cov <- plotly::ggplotly(p_cov, tooltip = c('x','y','labels'))
@@ -128,15 +122,16 @@ server <- function(input, output, session) {
     input_data$source <- paste('Using provided file',input$file_upload$name)
   })
 
-  # initialize list of reactive dfs to store the data for each woodpiece_code
-  # separately, re-initialize if new input file or reset button click
+
+   # initialize list of reactive dfs to store the data for each woodpiece_code
   df_yte_list <- reactiveValues()
-  observeEvent({
+  observeEvent({ # re-initialize if new input file or reset button clicked
       input$file_upload
       input$btn_reset},
     {
       req(input_data$df_rings)
-      # reformat df_rings
+
+      # reformat df_rings for plot and table
       df_rings <- input_data$df_rings
 
       # TODO: put the following into function for readability, make sure
@@ -172,16 +167,22 @@ server <- function(input, output, session) {
           dplyr::select(-dupl_candidates) %>%
           dplyr::ungroup()
       }
-      # initialize the other issues and comments cols
-      if (!checkmate::test_subset(c('other_issues','other_reason'),colnames(df_rings))){
+      if (!('other_issues' %in% colnames(df_rings))){
         df_rings <- df_rings %>%
           dplyr::mutate(other_issues = FALSE,
                         other_reason = NA_character_)
+      } else if (!('other_reason' %in% colnames(df_rings))) {
+        df_rings <- df_rings %>%
+          dplyr::mutate(other_reason = NA_character_)
+      } else {
+        df_rings <- df_rings %>%
+          dplyr::mutate(other_reason = as.character(other_reason))
       }
 
       # check that the columns have the right format
       char_cols <- c('tree_code', 'woodpiece_code', 'slide_code', 'image_code')
-      num_cols <- c('year', 'cno', 'mrw',  'duplicate_rank') # 'ra', 'rvgi', 'rvsf', 'rgsgv', 'aoiar', 'raoiar', 'dh_w', 'dh_m',
+      num_cols <- c('year', 'cno', 'mrw',  'duplicate_rank')
+      # no need to check the data cols ('ra', 'rvgi', 'rvsf', 'rgsgv', 'aoiar', 'raoiar', 'dh_w', 'dh_m')
       logi_cols <- c('incomplete_ring', 'missing_ring', 'duplicate_ring', 'other_issues')
       checks <- c(
         # check types and missing
@@ -195,8 +196,7 @@ server <- function(input, output, session) {
                                    types = 'logical', any.missing = FALSE),
         checkmate::test_data_frame(df_rings['duplicate_sel'],
                                    types = 'logical'), # can have NA here
-        # TODO: other_reason should be character but might also be all NA (-> seen as logi)
-        #checkmate::test_data_frame(df_rings['other_reason'], types = 'character'),
+        checkmate::test_data_frame(df_rings['other_reason'], types = 'character'),
         # unique (image_code, year)
         !any(duplicated(df_rings[c("image_code", "year")])),
         # duplicate_ring is FALSE iff duplicate_sel, duplicate_rank are NA
@@ -213,8 +213,6 @@ server <- function(input, output, session) {
         input_data$source <- 'Please provide input file with validated QWA rings data.'
         return()
       }
-
-      # TODO: need to store also the not needed columns so that we can rejoin them when saving?
 
       # initialize the list of reactive dfs
       for (sel_wp in unique(df_rings$woodpiece_code)){
@@ -234,7 +232,6 @@ server <- function(input, output, session) {
     },
     ignoreNULL = FALSE # to ensure it runs on app start
   )
-
 
 
   # DATA SOURCE ----------------------------------------------------------------
@@ -289,19 +286,24 @@ server <- function(input, output, session) {
   })
 
   # SAVE BUTTON ----------------------------------------------------------------
-  # the reactive df for all woodpieces combined
-  combined_df <- reactive({
-    req(input_data$df_rings)
-    reactiveValuesToList(df_yte_list) %>% dplyr::bind_rows()
-  })
-
-  # TODO: should go back to QWA_data$rings format
   output$btn_save <- downloadHandler(
     filename = function() {
       paste0(Sys.Date(),"_QWA_rings_with_flags.csv")
     },
     content = function(file) {
-        write.csv(combined_df(), file, row.names = FALSE)
+      req(input_data$df_rings)
+
+      # combine dfs from all woodpieces
+      df_updated <- reactiveValuesToList(df_yte_list) %>% dplyr::bind_rows()
+      # replace the updated columns in the orig df, while keeping row and col order
+      org_cols <- colnames(input_data$df_rings)
+      df_updated <- input_data$df_rings %>%
+        dplyr::left_join(df_updated, by = c('image_code', 'year'),
+                         suffix = c('_orig', '_new')) %>%
+        dplyr::select(-dplyr::ends_with('_orig')) %>%
+        dplyr::rename_with(~ sub("_new", "", .x)) %>%
+        dplyr::relocate(dplyr::all_of(org_cols))
+      write.csv(df_updated, file, row.names = FALSE)
     }
   )
 
@@ -325,7 +327,8 @@ server <- function(input, output, session) {
                   extensions = c('RowGroup'),
                   rownames = FALSE,
                   colnames = c('Image', 'Year', 'Nr of Cells', 'MRW',
-                              'Missing', 'Duplicate', 'Selected Dupl.', 'Incomplete', 'Other Issues', 'Comment', 'duplicate_rank'),
+                              'Missing', 'Duplicate', 'Selected Dupl.',
+                              'Incomplete', 'Other Issues', 'Comment', 'duplicate_rank'),
                   selection = list(mode = "single", target = 'cell'),
                   editable = list(target = "cell", disable = list(columns = 0:8)),
                   escape = FALSE, # to show icons
@@ -425,6 +428,9 @@ server <- function(input, output, session) {
   })
 
 } # end of server
+
+
+
 
 
 

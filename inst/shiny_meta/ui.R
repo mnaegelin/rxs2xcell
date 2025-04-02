@@ -39,6 +39,9 @@ ui <- page_fluid(
     tags$style(HTML(
       ".jstree-proton .jstree-clicked {
         background: #006268 !important;
+      }
+      .accordion .accordion-secondary .accordion-header {
+        --bs-accordion-active-bg: #99a5c2 !important;
       }"
       # ".jstree-default .jstree-clicked {
       #   background: #C299B8 !important;
@@ -52,9 +55,11 @@ ui <- page_fluid(
       # }"
   ))),
 
+
   # MAIN PANEL -----------------------------------------------------------------
   navset_card_pill( # navset_card_pill, page_navbar?
     id = 'tabs',
+    selected = "General", # TODO: for testing, set to "Start"
     # navbar_options = navbar_options(collapsible = FALSE),
     # fillable = FALSE,
 
@@ -132,67 +137,107 @@ ui <- page_fluid(
     nav_panel(
       title = "General",
 
-      ## Dataset info
-      card(
-        min_height = "300px",
-        card_header('Dataset'),
-        verbatimTextOutput("testing2"),
-        textInput("ds_name", "Dataset name", value = NA,
-                  placeholder = "Specify a name for your dataset (max 64 char.)"),
-        textAreaInput("ds_desc", "Description", rows = 4,
-                      placeholder = "Describe your dataset"),
-      ),
+      layout_sidebar(
 
-      ## Author info
-      card(
-        class = "bg-light-green p-3 border-end",
-        max_height = 400,
-        card_header('ROR search tool'),
-        layout_columns(
-          card(
-            selectInput("country_code", "Select country:",
-                        choices = c(Choose='', get_country_codes()),
-                               selectize = TRUE),
-            textInput("search_string", "Enter search string:"),
-            actionButton("search_ror", "Search for ROR", class = "btn btn-primary")
-            #shiny::selectizeInput("result_choice", "Select Result:", choices = NULL)
-          ),
-          card(
-            h4('ROR search results:'),
-            DT::DTOutput("ror_results")
-          ),
-          col_widths = c(3,9)
-        )
-      ),
-
-      card(
-        min_height = "300px",
-        card_header('Authors'),
-        p("Please list all authors (data owners) of the dataset. Note that
-           the order provided here will be used as the order of authorship."),
-        card_body(
-          #fillable = FALSE,
-          actionButton("add_author_btn", "Add author", style = "width: 100px",
-                       class = "btn btn-primary"),
-          actionButton("del_author_btn", "Delete author", style = "width: 100px",
-                       class = "btn btn-danger")
+        # sidebar
+        sidebar = sidebar(
+          verbatimTextOutput("testing2"),
+          layout_columns(
+            actionButton('btn_prev_general', 'Previous', icon = icon('angle-double-left')),
+            actionButton('btn_next_general', 'Next', icon = icon('angle-double-right'))
+          )
         ),
 
-        # first author (we always require at least one .author)
-        author_input(1),
+        # main content
+        accordion(
+          open = c('Dataset: Authors'),
 
-        # the dynamic author inputs
-        uiOutput("author_inputs"),
+          ## Dataset info
+          accordion_panel(
+            "Dataset: General Info",
+            textInput("ds_name", "Dataset name", value = NA,
+                      placeholder = "Specify a name for your dataset (max 64 char.)"),
+            textAreaInput("ds_desc", "Description", rows = 4,
+                          placeholder = "Describe your dataset"),
+            ),
 
-        # dynamic contact person
-        h5('Contact person'),
-        uiOutput('contact_person')
-      ),
+          ## Authors
+          accordion_panel(
+            'Dataset: Authors',
 
-      #verbatimTextOutput("check_val"),
-      next_button('next_btn_general')
-    )
+            ## ROR search tool
+            accordion(
+              class = "accordion-secondary",
+              open = FALSE, # does not work, to fix: https://stackoverflow.com/questions/77196229/nested-accordion-does-not-seem-adhere-to-multiple-false-parameter
+              multiple = FALSE,
+              accordion_panel(
+                'ROR search tool',
+                layout_columns(
+                  card(
+                    selectInput("country_code", "Select country:",
+                                choices = c(Choose='', get_country_codes()),
+                                selectize = TRUE),
+                    textInput("search_string", "Enter search string:"),
+                    actionButton("search_ror", "Search for ROR", class = "btn btn-primary")
+                    #shiny::selectizeInput("result_choice", "Select Result:", choices = NULL)
+                  ),
+                  card(
+                    h4('ROR search results:'),
+                    DT::DTOutput("ror_results"),
+                    max_height = '400px'
+                  ),
+                  col_widths = c(3,9)
+                )
+              )
+            ),
 
+            hr(),
+            p(span("Please list all authors (data owners) of the dataset. Use the
+            ROR search tool to find the Research Organization Registry ID of
+            an affiliation."),
+            strong("Note that the order of authors provided here will be used as
+                 the order of authorship.")),
+
+            # layout_column_wrap(
+            #   card(
+            #     # dynamic contact person
+            #     h5('Contact person'),
+            #     uiOutput('contact_person')
+            #   ),
+            #   card(
+            #     h5('Author details'),
+            #     # first author (we always require at least one .author)
+            #     author_input(1),
+            #     # the dynamic author inputs
+            #     uiOutput("author_inputs")
+            #   ),
+            #   width = NULL,
+            #   style = css(grid_template_columns = "1fr 3fr")
+            # ),
+
+            rhandsontable::rHandsontableOutput("author_table"),
+
+            card(
+              class="border border-0",
+              card_body(
+                fillable = FALSE,
+                actionButton("add_author_btn", "Add author", style = "width: 100px",
+                             class = "btn btn-primary"),
+                actionButton("del_author_btn", "Delete author", style = "width: 100px",
+                             class = "btn btn-danger"),
+                actionButton('save_authors_btn', "Save data", icon = icon('save'), style = "width: 100px"),
+                fileInput('file_authors', "Import data", accept = ".csv")
+              )
+            )
+          )
+
+
+
+        ) # end of main content
+      ) # end of layout_sidebar
+    ) # end of tab
+
+    # TAB: new
 
       # nav_panel("Sites",
       #           uiOutput("site_inputs"),
