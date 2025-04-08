@@ -34,8 +34,8 @@ df_meta <- collect_metadata(df_structure,
                             roxas_version='classic')
 
 # save metadata to file
-# write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta.csv')),
-#           row.names = FALSE)
+write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta.csv')),
+          row.names = FALSE)
 # TODO: add workflow for user input to complete metadata
 
 

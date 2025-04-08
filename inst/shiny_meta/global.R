@@ -1,7 +1,15 @@
+source('start_ui.R')
+source('start_server.R')
+source('dataset_ui.R')
+source('dataset_server.R')
+source('site_ui.R')
+source('site_server.R')
+
 # THEME ------
 # define the names of the tabs
 tab_start <- '1: Start'
 tab_general <- '2: General'
+tab_site <- '3: Sites'
 
 # define color range
 prim_col <- "#006268"
@@ -11,6 +19,9 @@ prim_col_grad <- c("#338585", "#66A3A3", "#99C2C2", "#CCE0E0", "#E6F0F0", "#F2F7
 sec_col_grad <- c("#853270", "#A36794", "#C299B8", "#E0CCDB", "#F0E6ED", "#F7F2F6")
 tert_col_grad <- c("#324a85", "#6778a3", "#99a5c2", "#ccd2e0", "#e6e9f0", "#f2f4f7")
 
+# reactable_theme <- reactable::reactableTheme(
+#   backgroundColor = "#dfe7e8"
+# )
 
 next_button <- function(btn_id) {
   card(
@@ -24,7 +35,7 @@ next_button <- function(btn_id) {
 get_country_codes <- function(){
   file_path <- system.file("extdata", "country_ISO3166-1-alpha-2_20241205.csv", package = "rxs2xcell")
   iso_countries <- read.csv(file_path, stringsAsFactors = FALSE, na.strings=c(""))
-  country_list <- setNames(iso_countries$Code,
+  country_list <- stats::setNames(iso_countries$Code,
                            paste(iso_countries$Name, "  (",
                                  iso_countries$Code, ")", sep = ""))
   return(country_list)
