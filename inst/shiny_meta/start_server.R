@@ -25,7 +25,7 @@ start_server <- function(id, main_session) {
       }
     })
 
-    # RENDER SHINYTREE -----------------------------------------------------------
+    # RENDER SHINYTREE ---------------------------------------------------------
     # create data.tree and shinyTree compatible JSON of data structure
     dtree_json <- reactive({
       req(prefilled_meta()$df)
@@ -62,7 +62,7 @@ start_server <- function(id, main_session) {
 
     output$tree <- shinyTree::renderTree(dtree_json())
 
-    # RENDER DT ------------------------------------------------------------------
+    # RENDER DT ----------------------------------------------------------------
     # Preprocess partial metadata
     filt_meta <- reactive({
       req(prefilled_meta()$df)
@@ -159,10 +159,10 @@ start_server <- function(id, main_session) {
     # Next button
     # toggle: only enable in case we have df_meta
     observe({
-      shinyjs::toggleState(id = "btn_next_meta", condition = !is.null(prefilled_meta()$df))
+      shinyjs::toggleState(id = "btn_next", condition = !is.null(prefilled_meta()$df))
     })
     # functionality: switch to next tab
-    observeEvent(input$btn_next_meta, {
+    observeEvent(input$btn_next, {
       nav_select(id = 'tabs', selected = tab_general, session = main_session)
     })
 

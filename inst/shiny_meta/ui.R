@@ -1,14 +1,5 @@
 # library(shiny)
-# library(shinysurveys)
-# library(shinyjs)
 # library(bslib)
-# library(dplyr)
-# library(tidyr)
-# library(stringr)
-# library(reactable)
-# library(reactable.extras)
-# library(shinyvalidate) # NOTE: need remote mnaegelin/shinyvalidate@remove_rules
-
 
 # allow to create new options in dropdown select:
 # selectizeInput(
@@ -25,7 +16,8 @@
 
 theme <- NULL
 theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
-                  info = tert_col, font_scale = 0.8, preset = "zephyr") %>%
+                  info = tert_col, font_scale = 0.8, preset = "zephyr",
+                  "focus-ring-color" = sec_col_grad[4]) %>%
   bs_add_rules(HTML(paste0("
     .btn-secondary {
       color: white;
@@ -102,8 +94,12 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
     .custom-indent .li {
       margin-bottom: 0px;
     }
+    // change header color of ht
     .handsontable th {
       background-color: ", sec_col_grad[5], " !important;
+    }
+    .form-control:focus {
+      border-color: ", sec_col, " !important;
     }
   ")))
 
@@ -142,10 +138,20 @@ ui <- page_fluid(
   # theme
   theme = theme,
 
-  # additional style vars here (or in theme)
+  # add additional style or script vars here
   # tags$head(
   #   tags$style(HTML(
   #     ""))),
+  tags$head(
+    tags$style(HTML("
+      .handsontable td.htInvalid {
+        background-color: pink !important;
+      }
+    ")),
+    # for the tippy tooltip
+    tags$script(src = "https://unpkg.com/@popperjs/core@2"),
+    tags$script(src = "https://unpkg.com/tippy.js@6")
+  ),
 
 
   # MAIN PANEL -----------------------------------------------------------------
@@ -172,10 +178,22 @@ ui <- page_fluid(
       dataset_ui('ds')
     ),
 
-    # TAB: sites ---------------------------------------
+    # TAB: sites ---------------------------------------------------------------
     nav_panel(
       title = tab_site,
       site_ui('site')
+    ),
+
+    # TAB: trees ---------------------------------------------------------------
+    nav_panel(
+      title = tab_tree,
+      tree_ui('tree')
+    ),
+
+    # TAB: summary -------------------------------------------------------------
+    nav_panel(
+      title = tab_summary,
+      summary_ui('summary')
     )
 
   ) # end of tabs

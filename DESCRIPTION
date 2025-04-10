@@ -25,6 +25,7 @@ Imports:
     ggnewscale,
     ggplot2,
     ggstance,
+    leaflet,
     lubridate,
     magrittr,
     networkD3,

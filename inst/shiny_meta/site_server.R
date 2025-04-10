@@ -1,7 +1,7 @@
 # get country ISO codes
 countries_list <- unname(get_country_codes())
 
-site_table_str <- data.frame(
+site_tbl_str <- data.frame(
   sitecode = character(0),
   sitename = character(0),
   country = factor(character(0), levels = countries_list),
@@ -11,14 +11,20 @@ site_table_str <- data.frame(
   sitedesc = character(0),
   stringsAsFactors = FALSE
 )
-site_table_cols <- c(
-  "sitecode" = "Site Code",
-  "sitename" = "Site Name",
-  "country" = "Country",
-  "latitude" = "Latitude",
-  "longitude" = "Longitude",
-  "n_tree" = "Nr of Trees",
-  "sitedesc" = "Site Description"
+
+site_tbl_config <- list(
+# NOTE: order matters for colHeaders (needs to be same as in df)
+  colHeaders = c(sitecode = "Site Code", sitename = "Site Name",
+    country = "Country", latitude = "Latitude", longitude = "Longitude",
+    n_tree = "Nr of Trees", sitedesc = "Site Description"
+  ),
+  sitecode = list(type = 'character', readOnly = TRUE),
+  sitename = list(type = 'character', required = TRUE, unique = TRUE),
+  country = list(type = 'autocomplete', required = TRUE, options = countries_list),
+  latitude = list(type = 'numeric', required = TRUE, min = -90, max = 90),
+  longitude = list(type = 'numeric', required = TRUE, min = -180, max = 180),
+  n_tree = list(type = 'numeric', readOnly = TRUE),
+  sitedesc = list(type = 'character', required = FALSE)
 )
 
 # Custom JS code for cell rendering
@@ -40,7 +46,7 @@ site_server <- function(id, main_session, prefilled_meta) {
 
     # initialize site_data reactives
     site_data <- reactiveValues(
-      df_in = site_table_str,
+      df_in = site_tbl_str,
       df_out = NULL
     )
 
@@ -64,47 +70,126 @@ site_server <- function(id, main_session, prefilled_meta) {
 
     # Render editable table
     output$site_table <- rhandsontable::renderRHandsontable({
+      # rhandsontable::rhandsontable(
+      #   site_data$df_in,
+      #   rowHeaders = TRUE,
+      #   #stretchH = "all",
+      #   height = '150',
+      #   overflow = "visible",
+      #   colHeaders = c("Site Code", "Site Name", "Country", "Latitude",
+      #                  "Longitude", "Nr of Trees", "Site Description")
+      #   ) %>%
+      # rhandsontable::hot_col("Site Code", readOnly = TRUE) %>%
+      # rhandsontable::hot_col("Site Name", renderer = renderer_no_dupl) %>%
+      # rhandsontable::hot_col("Country", allowInvalid = TRUE) %>%
+      # rhandsontable::hot_validate_numeric('Latitude', min = -90, max = 90) %>%
+      # rhandsontable::hot_validate_numeric('Longitude', min = -180, max = 180) %>%
+      # rhandsontable::hot_col('Nr of Trees', readOnly = TRUE) %>%
+      # rhandsontable::hot_cols(fixedColumnsLeft = 1)
+
       rhandsontable::rhandsontable(
         site_data$df_in,
         rowHeaders = TRUE,
-        #stretchH = "all",
-        height = '150',
-        overflow = "visible",
-        colHeaders = c("Site Code", "Site Name", "Country", "Latitude",
-                       "Longitude", "Nr of Trees", "Site Description")
-        ) %>%
-      rhandsontable::hot_col("Site Code", readOnly = TRUE) %>%
-      rhandsontable::hot_col("Site Name", renderer = renderer_no_dupl) %>%
-      rhandsontable::hot_col("Country", allowInvalid = TRUE) %>%
-      rhandsontable::hot_validate_numeric('Latitude', min = -90, max = 90) %>%
-      rhandsontable::hot_validate_numeric('Longitude', min = -180, max = 180) %>%
-      rhandsontable::hot_col('Nr of Trees', readOnly = TRUE) %>%
-      rhandsontable::hot_cols(fixedColumnsLeft = 1)
-
-
-      # rhandsontable::rhandsontable(
-      #   site_data(),
-      #   rowHeaders = T,
-      #   stretchH = "all",
-      #   colHeaders = c('Site Code', 'Site Name', 'Country',
-      #                  'Latitude', 'Longitude', 'Nr of Trees')) %>%
-      #   rhandsontable::hot_col('country', type = 'select',
-      #                          source = unname(countries_list), allowInvalid = TRUE) %>%
-      #   rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE)
+        contextMenu = FALSE,
+        stretchH = "all",
+        #overflow = "visible",
+        height = 300,
+        colHeaders = unname(site_tbl_config$colHeaders)) %>%
+        #rhandsontable::hot_cols(fixedColumnsLeft = 1) %>%
+        # custom validation checks renderers for all cols based on tbl_config
+        purrr::reduce(
+          names(site_tbl_config$colHeaders), # names in df
+          function(ht, col) {
+            config <- site_tbl_config[[col]]
+            colName <- site_tbl_config$colHeaders[col] # name in ht
+            hot_col_wrapper(ht, colName, config)
+          },
+          .init = .
+        )
     })
 
 
-
     # Update data frame on table edit
-    # observe({
-    #   if (!is.null(input$site_table)) {
-    #     updated_data <- rhandsontable::hot_to_r(input$site_table)
-    #     site_data(updated_data)
-    #   }
-    # })
+    observeEvent(input$site_table, {
+      site_data$df_out <- rhandsontable::hot_to_r(input$site_table)
+    })
+
+    # Observe import button
+    observeEvent(input$file_sites, {
+      # try to load the file
+      imported_data <- tryCatch({
+        read.csv(input$file_sites$datapath, stringsAsFactors = FALSE, encoding = 'UTF-8')
+      }, error = function(e) {
+        showModal(modalDialog(
+          title = "Error importing file",
+          paste("An error occurred while reading the file:", e$message),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+        return(NULL)
+      })
+      # try to convert data to right structure
+      converted_data <- tryCatch({
+        align_to_structure(site_tbl_str, imported_data)
+      }, error = function(e) {
+        showModal(modalDialog(
+          title = "Error loading data",
+          paste("Data could not be aligned with required structure:", e$message),
+          easyClose = TRUE,
+          footer = NULL
+        ))
+        return(NULL)
+      })
+      # updated input data, report any missing columns
+      site_data$df_in <- converted_data$data
+      if (length(converted_data$missing_cols) > 0) {
+        showNotification(
+          paste("Missing columns filled with NA:",
+                paste(converted_data$missing_cols, collapse = ", ")),
+          type = "message")
+      }
+    })
+
+
+    # VALIDATION CHECKS
+    # TODO:
+
+
+    # Observe save data button
+    # TODO:
+
+
+
+    # Render Leaflet map when file is uploaded
+    output$site_map <- leaflet::renderLeaflet({
+
+      lng <- site_data$df_out$longitude
+      lat <- site_data$df_out$latitude
+
+      leaflet::leaflet() %>%
+        leaflet::setView(lng = 8.44256, lat = 47.35515, zoom = 8) %>%
+        leaflet::addTiles() %>%
+        leaflet::addMarkers(lng = lng, lat = lat)
+
+
+    })
+
+
+    # Next button
+    observeEvent(input$btn_next, {
+      #iv_gen$enable()
+      nav_select(id = 'tabs', selected = tab_tree, session = main_session)
+    })
+
+    # Previous button
+    observeEvent(input$btn_prev, {
+      #iv_gen$enable()
+      nav_select(id = 'tabs', selected = tab_general, session = main_session)
+    })
+
 
     output$testing <- renderPrint({
-      input$site_table
+      site_data$df_out$longitude
     })
   })
 }

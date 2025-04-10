@@ -28,16 +28,17 @@ dataset_ui <- function(id) {
       card(
         class = 'card-note',
         card_header(
+          id = ns('val_check_header'),
           class = 'bg-primary',
           span(icon("exclamation", style = "color: white"),'Validation check summary')),
         uiOutput(ns('validation_check')),
       ),
       hr(),
       layout_columns(
-        actionButton(ns('btn_prev_general'), 'Previous', icon = icon('angle-double-left')),
-        actionButton(ns('btn_next_general'), 'Next', icon = icon('angle-double-right'))
+        actionButton(ns('btn_prev'), 'Previous', icon = icon('angle-double-left')),
+        actionButton(ns('btn_next'), 'Next', icon = icon('angle-double-right'))
       ),
-      verbatimTextOutput(ns("testing2")),
+      verbatimTextOutput(ns("testing")),
     ),
 
     # main content
@@ -85,7 +86,7 @@ dataset_ui <- function(id) {
           )
         ),
 
-        ## ROR search tool
+        ## Authors input table
         hr(),
         h5('Author information:', style = paste0('color: ',  sec_col)),
 
@@ -101,43 +102,46 @@ dataset_ui <- function(id) {
         br(),
         rhandsontable::rHandsontableOutput(ns("author_table")),
         br(),
+        # rhandsontable::rHandsontableOutput(ns("author_table2")),
 
         actionButton(ns('save_authors_btn'), "Save author data", icon = icon('save'))
 
-        # card(
-        #   class="border border-0",
-        #   card_body(
-        #     fillable = FALSE,
-        #     actionButton("add_author_btn", "Add author", style = "width: 100px",
-        #                  class = "btn btn-primary"),
-        #     actionButton("del_author_btn", "Delete author", style = "width: 100px",
-        #                  class = "btn btn-danger"),
-        #     actionButton('save_authors_btn', "Save data", icon = icon('save'), style = "width: 100px"),
-        #
-        #   )
-        # )
-
-
-        # layout_column_wrap(
-        #   card(
-        #     # dynamic contact person
-        #     h5('Contact person'),
-        #     uiOutput('contact_person')
-        #   ),
-        #   card(
-        #     h5('Author details'),
-        #     # first author (we always require at least one .author)
-        #     author_input(1),
-        #     # the dynamic author inputs
-        #     uiOutput("author_inputs")
-        #   ),
-        #   width = NULL,
-        #   style = css(grid_template_columns = "1fr 3fr")
-        # ),
 
       )
     )
 
   ) # end of layout_sidebar
 }
+
+
+# card(
+#   class="border border-0",
+#   card_body(
+#     fillable = FALSE,
+#     actionButton("add_author_btn", "Add author", style = "width: 100px",
+#                  class = "btn btn-primary"),
+#     actionButton("del_author_btn", "Delete author", style = "width: 100px",
+#                  class = "btn btn-danger"),
+#     actionButton('save_authors_btn', "Save data", icon = icon('save'), style = "width: 100px"),
+#
+#   )
+# )
+
+
+# layout_column_wrap(
+#   card(
+#     # dynamic contact person
+#     h5('Contact person'),
+#     uiOutput('contact_person')
+#   ),
+#   card(
+#     h5('Author details'),
+#     # first author (we always require at least one .author)
+#     author_input(1),
+#     # the dynamic author inputs
+#     uiOutput("author_inputs")
+#   ),
+#   width = NULL,
+#   style = css(grid_template_columns = "1fr 3fr")
+# ),
 

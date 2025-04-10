@@ -1,15 +1,10 @@
-source('start_ui.R')
-source('start_server.R')
-source('dataset_ui.R')
-source('dataset_server.R')
-source('site_ui.R')
-source('site_server.R')
-
 # THEME ------
 # define the names of the tabs
 tab_start <- '1: Start'
 tab_general <- '2: General'
 tab_site <- '3: Sites'
+tab_tree <- '4: Trees'
+tab_summary <- '5: Summary'
 
 # define color range
 prim_col <- "#006268"
@@ -23,35 +18,37 @@ tert_col_grad <- c("#324a85", "#6778a3", "#99a5c2", "#ccd2e0", "#e6e9f0", "#f2f4
 #   backgroundColor = "#dfe7e8"
 # )
 
-next_button <- function(btn_id) {
-  card(
-    class="border border-0",
-    card_body(
-      fillable = FALSE,
-      actionButton(btn_id, 'Next', icon = icon('angle-double-right')))
-  )}
 
+# UI ELEMENTS ------
+# next_button <- function(btn_id) {
+#   card(
+#     class="border border-0",
+#     card_body(
+#       fillable = FALSE,
+#       actionButton(btn_id, 'Next', icon = icon('angle-double-right')))
+#   )}
+#
+#
+# author_input <- function(author_nr){
+#   tagList(
+#     span(paste0('Author ', author_nr)), #,style="font-weight:bold; color: #006268"
+#     layout_columns(
+#       textInput(paste0('autname_', author_nr), NULL, "", placeholder = "Last name, first name"),
+#       textInput(paste0('autmail_', author_nr), NULL, "", placeholder = "name@example.com"),
+#       textInput(paste0('autror_', author_nr), NULL, "", placeholder = "https://ror.org/05a28rw58"),
+#       textInput(paste0('autaff_', author_nr), NULL, "", placeholder = "University of ABC")
+#     )
+#   )
+# }
 
+# UTILS ------
 get_country_codes <- function(){
   file_path <- system.file("extdata", "country_ISO3166-1-alpha-2_20241205.csv", package = "rxs2xcell")
   iso_countries <- read.csv(file_path, stringsAsFactors = FALSE, na.strings=c(""))
   country_list <- stats::setNames(iso_countries$Code,
-                           paste(iso_countries$Name, "  (",
-                                 iso_countries$Code, ")", sep = ""))
+                                  paste(iso_countries$Name, "  (",
+                                        iso_countries$Code, ")", sep = ""))
   return(country_list)
-}
-
-# move to global
-author_input <- function(author_nr){
-  tagList(
-    span(paste0('Author ', author_nr)), #,style="font-weight:bold; color: #006268"
-    layout_columns(
-      textInput(paste0('autname_', author_nr), NULL, "", placeholder = "Last name, first name"),
-      textInput(paste0('autmail_', author_nr), NULL, "", placeholder = "name@example.com"),
-      textInput(paste0('autror_', author_nr), NULL, "", placeholder = "https://ror.org/05a28rw58"),
-      textInput(paste0('autaff_', author_nr), NULL, "", placeholder = "University of ABC")
-    )
-  )
 }
 
 max_char_limit <- function(value, limit) {
@@ -74,6 +71,24 @@ get_selected_imgs <- function(tree, selected = c()) { #ancestry = "",
   }
   return(selected)
 }
+
+source('input_tables_utils.R')
+source('ht_render_utils.R')
+
+
+
+
+# LOAD MODULES -----
+source('start_ui.R')
+source('start_server.R')
+source('dataset_ui.R')
+source('dataset_server.R')
+source('site_ui.R')
+source('site_server.R')
+source('tree_ui.R')
+source('tree_server.R')
+source('summary_ui.R')
+source('summary_server.R')
 
 
 # # Aggregating df_rings to get the required data for the editable datatable
@@ -100,4 +115,3 @@ get_selected_imgs <- function(tree, selected = c()) { #ancestry = "",
 #   "  table.rows().invalidate();", # this updates the column type
 #   "});"
 # )
-

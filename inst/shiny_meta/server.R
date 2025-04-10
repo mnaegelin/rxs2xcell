@@ -1,14 +1,18 @@
 # server -----------------------------------------------------------------------
 server <- function(input, output, session) {
 
-    prefilled_meta <- start_server('start', session)
+  prefilled_meta <- start_server('start', session)
 
-    dataset_server('ds', session)
+  dataset_server('ds', session)
 
-    site_server('site', session, prefilled_meta)
+  site_server('site', session, prefilled_meta)
 
+  tree_server('tree', session, prefilled_meta)
+
+  summary_server('summary', session)
 
 }
+
 
 
 # RADIALNETWORK TRY

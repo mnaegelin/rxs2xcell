@@ -44,20 +44,25 @@ site_ui <- function(id) {
       open = c('Sites'),
 
       accordion_panel(
+        "Map",
+        leaflet::leafletOutput(ns("site_map"))
+      ),
+
+      accordion_panel(
         'Sites',
 
         h5('Site information:', style = paste0('color: ',  sec_col)),
 
-
-        br(),
         # card(
         #   height = 300,
         #   card_body(
         #     fillable = FALSE,
-        div(style = "margin-right: 5px !important; height = 100px;",
-            rhandsontable::rHandsontableOutput(ns("site_table"))
+        div(style='float: right',
+            fileInput(ns('file_sites'), "Load site data from file", accept = ".csv")),
+
+        rhandsontable::rHandsontableOutput(ns("site_table")),
           # )
-        ),
+
         br(),
 
         actionButton(ns('save_btn'), "Save site data", icon = icon('save')),

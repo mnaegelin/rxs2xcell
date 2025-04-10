@@ -24,7 +24,7 @@ start_ui <- function(id) {
       span('If the structure and metadata shown on the right are as you
             expect them for your dataset, click the button below to
             proceed to the next tab.'),
-      actionButton(ns('btn_next_meta'), 'Next', icon = icon('angle-double-right'))
+      actionButton(ns('btn_next'), 'Next', icon = icon('angle-double-right'))
     ),
 
     # main content
