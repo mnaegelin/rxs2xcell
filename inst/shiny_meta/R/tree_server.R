@@ -7,10 +7,32 @@ tree_tbl_str <- data.frame(
   leafhabit = character(0),
   ring_structure = character(0),
   tree_treatment = character(0),
-  n_wp = integer(0),
   treedesc = character(0),
+  n_wp = integer(0),
   stringsAsFactors = FALSE
 )
+
+tree_tbl_config <- list(
+  # NOTE: order matters for colHeaders (needs to be same as in df)
+  colHeaders = c(treecode = "Tree Code", sitecode = "Site Code",
+                 speciescode = "Species Code", speciesname = 'Species',
+                 woodtype = "wood type", leafhabit = "leaf habit",
+                 ring_structure = "ring structure",
+                 tree_treatment = "treatment", treedesc = "description",
+                 n_wp = "Nr of Pieces"),
+  treecode = list(type = 'character', readOnly = TRUE),
+  sitecode = list(type = 'character', readOnly = TRUE),
+  speciescode = list(type = 'character', required = TRUE, options = c('ABSP','PISY')),
+  speciesname = list(type = 'autocomplete', required = TRUE, options = c('Abies Mill. fir','Pinus sylvestris L.')),
+  woodtype = list(type = 'dropdown', required = FALSE, options = c("gymnosperm", "angiosperm")),
+  leafhabit = list(type = 'dropdown', required = FALSE, options = c("evergreen", "deciduous")),
+  ring_structure = list(type = 'dropdown', required = FALSE, options = c("conifer", "diffuse-porous", 'ring-porous')),
+  tree_treatment = list(type = 'dropdown', required = FALSE,
+                      options = c("control", "treatment")),
+  treedesc = list(type = 'character', required = FALSE),
+  n_wp = list(type = 'numeric', readOnly = TRUE)
+)
+
 
 wp_tbl_str <- data.frame(
   wpcode = character(0),
@@ -34,7 +56,7 @@ slide_tbl_str <- data.frame(
   cuttingplane = character(0),
   img_cap_system = character(0),
   data_structure = character(0),
-  n_imgs = numeric(0),
+  n_imgs = integer(0),
   stringsAsFactors = FALSE
 )
 
@@ -94,28 +116,58 @@ tree_server <- function(id, main_session, prefilled_meta) {
       }
     })
 
-    output$tree_table <- renderRHandsontable({
+    output$tree_table <- rhandsontable::renderRHandsontable({
       rhandsontable::rhandsontable(
         tree_data$df_in,
         rowHeaders = TRUE,
         contextMenu = FALSE,
-        stretchH = "all")
+        stretchH = "all",
+        colHeaders = unname(tree_tbl_config$colHeaders)) %>%
+        #rhandsontable::hot_cols(fixedColumnsLeft = 1) %>%
+        # custom validation checks renderers for all cols based on tbl_config
+        purrr::reduce(
+          names(tree_tbl_config$colHeaders), # names in df
+          function(ht, col) {
+            config <- tree_tbl_config[[col]]
+            colName <- tree_tbl_config$colHeaders[col] # name in ht
+            hot_col_wrapper(ht, colName, config)
+          },
+          .init = .
+        )
     })
 
-    output$wp_table <- renderRHandsontable({
+    output$wp_table <- rhandsontable::renderRHandsontable({
       rhandsontable::rhandsontable(
         wp_data$df_in,
         rowHeaders = TRUE,
         contextMenu = FALSE,
-        stretchH = "all")
+        stretchH = "all") %>%
+      rhandsontable::hot_col(
+        'sampledate',
+        renderer = renderer_date(required = FALSE),
+        type = 'date',
+        dateFormat = "YYYY-MM-DD"
+        )
+
     })
 
-    output$slide_table <- renderRHandsontable({
+    output$slide_table <- rhandsontable::renderRHandsontable({
       rhandsontable::rhandsontable(
         slide_data$df_in,
         rowHeaders = TRUE,
         contextMenu = FALSE,
         stretchH = "all")
+    })
+
+    # Update data frame on table edit
+    observeEvent(input$tree_table, {
+      tree_data$df_out <- rhandsontable::hot_to_r(input$tree_table)
+    })
+    observeEvent(input$wp_table, {
+      wp_data$df_out <- rhandsontable::hot_to_r(input$wp_table)
+    })
+    observeEvent(input$slide_table, {
+      slide_data$df_out <- rhandsontable::hot_to_r(input$slide_table)
     })
 
     # Next button
@@ -129,7 +181,18 @@ tree_server <- function(id, main_session, prefilled_meta) {
     })
 
     output$testing <- renderPrint({
-      'test'
+      wp_data$df_out
     })
+
+    return(
+      reactive(
+        list(
+          tree_data = tree_data$df_out,
+          wp_data = wp_data$df_out,
+          slide_data = slide_data$df_out
+        )
+      )
+    )
+
   })
 }

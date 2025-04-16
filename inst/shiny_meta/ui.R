@@ -17,6 +17,7 @@
 theme <- NULL
 theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
                   info = tert_col, font_scale = 0.8, preset = "zephyr",
+                  "body-bg" = prim_col_grad[5], "card-border-width" = 0,
                   "focus-ring-color" = sec_col_grad[4]) %>%
   bs_add_rules(HTML(paste0("
     .btn-secondary {
@@ -26,8 +27,10 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
       background-color: ", tert_col, ";
     }
     .sidebar {
-      background-color: ", prim_col_grad[6], " !important;
+      background-color: ", prim_col_grad[4], " !important;
+      color: #212529 !important;
     }
+
     /* styling the navbar: primary bg color, white font, hover, active*/
     .bslib-navs-card-title {
       background-color: ", prim_col, ";
@@ -40,6 +43,7 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
       --bs-nav-link-hover-color: white;
       --bs-nav-underline-link-active-color: white;
     }
+
     /* class for a code style output*/
     .code-output {
       display:block;
@@ -50,11 +54,12 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
       word-break:break-all;
       word-wrap:break-word;
       white-space:pre-wrap;
-      background-color:#F5F5F5;
       border:1px solid rgba(0,0,0,0.15);
       border-radius:4px;
       font-family:monospace;
+      background-color:", prim_col_grad[5], " !important;
     }
+
     /* class for a note stlye card */
     .card-note .card-header{
       padding: 8px;
@@ -62,28 +67,39 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
     .card-note .card-body{
       padding: 8px;
     }
+
     /* styling the shinyTree resp. jstree */
     .jstree-proton .jstree-clicked {
       background: ", prim_col, " !important;
     }
-    .accordion .accordion-header {
-      --bs-accordion-active-bg: ", prim_col_grad[2], " !important;
+
+    /* styling the accoridons */
+    .accordion-button:not(.collapsed) {
+      background-color: ", prim_col_grad[1], " !important;
+      color: white !important;
     }
     .accordion-button {
-      background-color: ", prim_col_grad[5], ";
-    }
-    .accordion-tert .accordion-button {
-      background-color: ", tert_col_grad[5], ";
+      background-color: ", prim_col_grad[4], ";
     }
     .accordion-tert .accordion-button:not(.collapsed) {
       background-color: ", tert_col_grad[2], " !important;
+      color: white !important;
     }
+    .accordion-tert .accordion-button {
+      background-color: ", tert_col_grad[4], ";
+    }
+    .accordion-tert .accordion-item {
+      background-color: ", tert_col_grad[5], " !important;
+    }
+
+    /* datatable styling */
     .dataTables_wrapper .dataTable td {
       padding: 2px 2px !important;
     }
     .dataTables_wrapper .dataTables_paginate .paginate_button {
       padding: 2px 2px !important;  /* Adjust padding to make buttons smaller */
     }
+
     /* Adjust the list spacing*/
     ol.custom-indent {
       padding-left: 15px;
@@ -94,15 +110,34 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
     .custom-indent .li {
       margin-bottom: 0px;
     }
-    // change header color of ht
+
+    /* change header color of ht */
     .handsontable th {
       background-color: ", sec_col_grad[5], " !important;
     }
+
+    /* borders of selected input fields */
     .form-control:focus {
       border-color: ", sec_col, " !important;
     }
+
+    .shiny-input-container .radio input  {
+      border-color: ", sec_col, " !important;
+      background-color: ", sec_col_grad[1], " !important;
+    }
+
+    .btn-file {
+      background-color: ", tert_col, " !important;
+      border-color: ", tert_col, " !important;
+      color: white !important;
+    }
+
   ")))
 
+# bs-btn-disabled-bg: #551345;
+# .handsontable .autocompleteEditor .htMacScroll {
+#   overflow: visible !important;
+# }
 # .accordion-tert .accordion-header {
 #   --bs-accordion-active-bg: ", tert_col_grad[2], " !important;
 # }
@@ -157,7 +192,7 @@ ui <- page_fluid(
   # MAIN PANEL -----------------------------------------------------------------
   navset_card_underline( # navset_card_pill, page_navbar?
     id = 'tabs',
-    selected = tab_site, # TODO: for testing, set to tab_start
+    selected = tab_start, # TODO: for testing, set to tab_start
     # navbar_options = navbar_options(collapsible = FALSE),
     # fillable = FALSE,
 

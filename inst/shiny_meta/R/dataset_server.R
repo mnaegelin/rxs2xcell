@@ -21,36 +21,63 @@ renderer_ror_or_aff_name_addr <- "
     return td.innerHTML = value;
   }"
 
+
+countries_list <- names(get_country_codes())
+
 author_tbl_str <- data.frame(
-    lastname = character(1),
-    firstname = character(1),
+    last_name = character(1),
+    first_name = character(1),
     email = character(1),
     orcid = character(1),
-    aff_name = character(1),
-    aff_rorid = character(1),
+    org_name = character(1),
+    org_rorid = character(1),
     aff_dep = character(1),
-    aff_address = character(1),
+    aff_street = character(1),
+    aff_plz = character(1),
+    aff_city = character(1),
+    org_country = character(1),
     contactperson = logical(1),
     stringsAsFactors = FALSE)
 
 author_tbl_config <- list(
   # NOTE: order matters for colHeaders (needs to be same as in df)
-  colHeaders = c(lastname = 'Last name', firstname = 'First name',
-                  email = 'Email address', orcid = 'ORCID',
-                  aff_name = 'Affiliation Name', aff_rorid = 'Aff. ROR',
-                  aff_dep = 'Aff. department', aff_address = 'Aff. Address',
-                  contactperson = 'Contact person'),
-  lastname = list(type = 'character', required = TRUE),
-  firstname = list(type = 'character', required = TRUE),
+  colHeaders = c(last_name = 'Last name', first_name = 'First name',
+                 email = 'Email address', orcid = 'ORCID',
+                 org_name = 'Research Institution', org_rorid = 'RORID',
+                 aff_dep = 'Department', aff_street = 'Street',
+                 aff_plz = 'Postal code', aff_city = "City",
+                 org_country = "Country", contactperson = 'Contact person'),
+  last_name = list(type = 'character', required = TRUE),
+  first_name = list(type = 'character', required = TRUE),
   email = list(type = 'character', required = TRUE,
                regex_pattern = '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$',
                unique = TRUE),
   orcid = list(type = 'character', required = FALSE),
-  aff_name = list(type = 'character', required = FALSE),
-  aff_rorid = list(type = 'character', required = FALSE),
+  org_name = list(type = 'character', required = TRUE),
+  org_rorid = list(type = 'character', required = FALSE),
   aff_dep = list(type = 'character', required = FALSE),
-  aff_address = list(type = 'character', required = FALSE),
+  aff_street = list(type = 'character', required = FALSE),
+  aff_plz = list(type = 'character', required = FALSE),
+  aff_city = list(type = 'character', required = FALSE),
+  org_country = list(type = 'autocomplete', required = TRUE, options = countries_list),
   contactperson = list(type = 'checkbox', required = TRUE, max_checks = 1)
+)
+
+funding_tbl_str <- data.frame(
+  inst_name = character(1),
+  inst_rorid = character(1),
+  inst_address = character(1),
+  grantnr = character(1),
+  stringsAsFactors = FALSE)
+
+funding_tbl_config <- list(
+  # NOTE: order matters for colHeaders (needs to be same as in df)
+  colHeaders = c(inst_name = 'Funding Institution', inst_rorid = 'Inst. ROR',
+                 inst_address = 'Inst. Address', grantnr = 'Grant Nr.'),
+  inst_name = list(type = 'character', required = TRUE),
+  inst_rorid = list(type = 'character', required = FALSE),
+  inst_address = list(type = 'character', required = FALSE),
+  grantnr = list(type = 'character', required = TRUE)
 )
 
 
@@ -111,14 +138,16 @@ dataset_server <- function(id, main_session) {
             dplyr::pull(address)
 
           # a dataframe of res_locs, res_names and res_ror_ids
-          res_df <- data.frame(ROR = ror_data$items$id, Name = res_names,
+          ror_links <- paste0("<a href='",ror_data$items$id,"' target='_blank'>",ror_data$items$id,"</a>")
+          rorids <- gsub('https://ror.org/', '', ror_data$items$id)
+          res_df <- data.frame(Link = ror_links, RORID = rorids, Name = res_names,
                                Location = res_locs)
 
           #updateSelectizeInput(session, "result_choice", choices = res_names)
           output$ror_results <- DT::renderDT({
             DT::datatable(res_df,
                           style = 'default',
-                          rownames = FALSE, selection = "none",
+                          rownames = FALSE, selection = "none", escape = FALSE,
                           options = list(
                             pageLength = 5
                           )
@@ -147,6 +176,7 @@ dataset_server <- function(id, main_session) {
         rowHeaders = TRUE,
         contextMenu = FALSE,
         stretchH = "all",
+        height = 150,
         colHeaders = unname(author_tbl_config$colHeaders)) %>%
         # custom validation checks renderers for all cols based on tbl_config
         purrr::reduce(
@@ -160,18 +190,44 @@ dataset_server <- function(id, main_session) {
         )
     })
 
+    funding_data <- reactiveValues(
+      df_in = funding_tbl_str,
+      df_out = NULL)
+
+    # Render editable table
+    output$funding_table <- rhandsontable::renderRHandsontable({
+      rhandsontable::rhandsontable(
+        funding_data$df_in,
+        rowHeaders = TRUE,
+        contextMenu = FALSE,
+        stretchH = "all",
+        colHeaders = unname(funding_tbl_config$colHeaders)) %>%
+        # custom validation checks renderers for all cols based on tbl_config
+        purrr::reduce(
+          names(funding_tbl_config$colHeaders), # names in df
+          function(ht, col) {
+            config <- funding_tbl_config[[col]]
+            colName <- funding_tbl_config$colHeaders[col] # name in ht
+            hot_col_wrapper(ht, colName, config)
+          },
+          .init = .
+        )
+    })
+
+
     # Update data frame on table edit
     observeEvent(input$author_table, {
       author_data$df_out <- rhandsontable::hot_to_r(input$author_table)
     })
 
+    observeEvent(input$funding_table, {
+      funding_data$df_out <- rhandsontable::hot_to_r(input$funding_table)
+    })
+
+
     # Observe add row button
     observeEvent(input$add_author_btn, {
-      new_row <- data.frame(
-        lastname = "", firstname = "", email = "", orcid = "", aff_name = "",
-        aff_rorid = "", aff_dep = "", aff_address = "", contactperson = FALSE,
-        stringsAsFactors = FALSE
-      )
+      new_row <- author_tbl_str
       author_data$df_in <- rbind(author_data$df_out, new_row)
     })
 
@@ -180,6 +236,19 @@ dataset_server <- function(id, main_session) {
       req(nrow(author_data$df_out) > 1)
       author_data$df_in <- author_data$df_out[-nrow(author_data$df_out), ]
     })
+
+    # Observe add row button
+    observeEvent(input$add_fund_btn, {
+      new_row <- funding_tbl_str
+      funding_data$df_in <- rbind(funding_data$df_out, new_row)
+    })
+
+    # Observe delete row button
+    observeEvent(input$del_fund_btn, {
+      req(nrow(funding_data$df_out) > 1)
+      funding_data$df_in <- funding_data$df_out[-nrow(funding_data$df_out), ]
+    })
+
 
     # Observe import button
     observeEvent(input$file_authors, {
@@ -224,6 +293,12 @@ dataset_server <- function(id, main_session) {
 
       validation_results <- list()
 
+      # use the iv_gen object to validate the dataset inputs
+      validation_results$ds_info <- list(
+        ds_name = switch(is.null(iv_gen$validate()[[ns('ds_name')]]) + 1, 'invalid name', NULL),
+        ds_desc = switch(is.null(iv_gen$validate()[[ns('ds_desc')]]) + 1, 'invalid description', NULL)
+      )
+
       # column-wise validation checks on the author table
       df_out <- author_data$df_out
       validation_results$author_table <- lapply(names(df_out), function(col_name) {
@@ -231,11 +306,6 @@ dataset_server <- function(id, main_session) {
       })
       names(validation_results$author_table) <- names(df_out)
 
-      # use the iv_gen object to validate the dataset inputs
-      validation_results$ds_info <- list(
-        ds_name = switch(is.null(iv_gen$validate()[[ns('ds_name')]]) + 1, 'invalid name', NULL),
-        ds_desc = switch(is.null(iv_gen$validate()[[ns('ds_desc')]]) + 1, 'invalid description', NULL)
-      )
 
       # Use a for loop to iterate through validation_results
       issues_output <- list()
@@ -272,7 +342,7 @@ dataset_server <- function(id, main_session) {
     })
 
     # Observe save button
-    observeEvent(input$save_authors_btn, {
+    observeEvent(input$btn_save_aut, {
       data <- author_data$df_out
 
       # TODO: file download rather than predefined file?
@@ -306,6 +376,22 @@ dataset_server <- function(id, main_session) {
     # from / to csv or xslx? sheets?
     # more details on validation errors (nr characters, pattern, etc.)
     # clean up, refactor data import and validation checks into functions
+
+    return(
+      reactive(
+        list(
+          author_data = author_data$df_out,
+          funding_data = funding_data$df_out,
+          ds_data = list(
+            ds_name = input$ds_name,
+            ds_desc = input$ds_desc,
+            ds_access = input$df_access,
+            ds_license = input$ds_license,
+            ds_embargoed = input$ds_embargoed
+          )
+        )
+      )
+    )
 
   })
 }

@@ -3,9 +3,20 @@ dataset_ui <- function(id) {
 
   layout_sidebar(
 
-    # sidebar
+    # sidebar ----
     sidebar = sidebar(
       title = "Instructions",
+
+      card(
+        card_header(
+          class = 'bg-secondary',
+          'Input data'),
+        "If you would like to continue from a partially completed metadata
+        export, you can load it here.",
+        fileInput(ns("file_upload"), "Load metadata from file (json)", accept = ".json")
+      ),
+
+      hr(),
       tags$ol(
         class = 'custom-indent',
         tags$li("Please provide a name and description of your dataset.")),
@@ -41,9 +52,10 @@ dataset_ui <- function(id) {
       verbatimTextOutput(ns("testing")),
     ),
 
-    # main content
+
+    # main content ----
     accordion(
-      open = c('Dataset: General Info','Dataset: Authors'),
+      open = c('Dataset: General Info','Dataset: Authors & Funding'),
 
       ## Dataset info
       accordion_panel(
@@ -53,18 +65,42 @@ dataset_ui <- function(id) {
                     placeholder = "Specify a name for your dataset (max 64 char.)"),
           textAreaInput(ns("ds_desc"), "Description", rows = 4,
                         placeholder = "Provide a brief description of your dataset")
-        )
+        ),
+        layout_columns(
+          radioButtons(ns("ds_access"), "Dateset access rights",
+                       choices = c("Private" = "private", "Public" = "public"),
+                       selected = "private"),
+
+          div(
+            # Conditional panel for public dataset: license
+            conditionalPanel(
+              condition = "input.ds_access == 'public'",
+              selectInput(ns("ds_license"),
+                          "Select a license for the public dataset:",
+                          choices = c("CC BY 4.0", "CC BY-SA 4.0", "CC BY-NC 4.0", "CC BY-NC-SA 4.0"),
+                          selectize = TRUE,
+                          selected = "CC BY 4.0"),
+              ns=NS(id)),
+            # Conditional panel for private dataset: Embargo date
+            conditionalPanel(
+              condition = "input.ds_access == 'private'",
+              dateInput(ns("ds_embargoed"),
+                        "If applicable, select an embargo date:",
+                        value = as.Date(NA)),
+              ns=NS(id))
+          )
+        ),
       ),
 
       ## Authors
       accordion_panel(
-        'Dataset: Authors',
+        'Dataset: Authors & Funding',
 
         ## ROR search tool
         accordion(
           id = ns("ror_search_acc"),
           class = "accordion-tert",
-          open = FALSE, # does not work, fixed with panel_close event in server
+          open = FALSE, # NOTE: does not work, fixed with panel_close event in server
           accordion_panel(
             'ROR search tool',
             layout_columns(
@@ -88,7 +124,7 @@ dataset_ui <- function(id) {
 
         ## Authors input table
         hr(),
-        h5('Author information:', style = paste0('color: ',  sec_col)),
+        h5('Author information:'),
 
         div(style='float: right',
             fileInput(ns('file_authors'), "Load author data from file", accept = ".csv")),
@@ -100,18 +136,46 @@ dataset_ui <- function(id) {
                          class = "btn btn-danger")),
 
         br(),
+
         rhandsontable::rHandsontableOutput(ns("author_table")),
         br(),
-        # rhandsontable::rHandsontableOutput(ns("author_table2")),
 
-        actionButton(ns('save_authors_btn'), "Save author data", icon = icon('save'))
+        actionButton(ns('btn_save_aut'), "Save author data", icon = icon('save')),
 
+        hr(),
+
+        ## Funding info
+        h5('Funding information:'),
+
+        # another way to o
+        div(style="display: flex; justify-content: space-between; align-items: center;",
+          div(style="display: flex; gap: 10px;",
+             actionButton(ns("add_fund_btn"), "Add funding", style = "width: 120px",
+                          class = "btn btn-secondary"),
+             actionButton(ns("del_fund_btn"), "Delete funding", style = "width: 120px",
+                          class = "btn btn-danger")),
+
+            div(fileInput(ns('file_funding'), "Load funding data from file", accept = ".csv"), style = "margin-left: auto; margin-bottom: 0;")
+        ),
+
+        rhandsontable::rHandsontableOutput(ns("funding_table")),
+        br(),
+
+        actionButton(ns('btn_save_fund'), "Save funding data", icon = icon('save')),
 
       )
     )
 
   ) # end of layout_sidebar
 }
+
+
+
+
+
+
+
+
 
 
 # card(

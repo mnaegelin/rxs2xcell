@@ -103,7 +103,8 @@ renderer_drop <- function(required = NULL, options){
 
 renderer_auto <- function(required = NULL, options){
   check_required <- ifelse(is.null(required), "false", ifelse(required, "true", "false"))
-  options_js <- paste0("[", paste0(sprintf("'%s'", options), collapse = ", "), "]")
+  #options_js <- paste0("[", paste0(sprintf("'%s'", options), collapse = ", "), "]")
+  options_js <- jsonlite::toJSON(options, auto_unbox = TRUE)
 
   htmlwidgets::JS(htmltools::HTML(sprintf("
     function(instance, td, row, col, prop, value, cellProperties) {

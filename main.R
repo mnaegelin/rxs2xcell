@@ -1,6 +1,7 @@
 # TODO: put some of the data into inst/extdata, usable for testing and examples
 # TODO: remove the explorations/*, out/* and this main.R file from the package
 # TODO: add tests
+# TODO: add template workflow?
 ################################################################################
 ################################################################################
 
@@ -17,26 +18,31 @@ dataset_name <- 'QWA_Arzac2024' # used to name the resulting output files
 
 
 ################################################################################
-# get overview of data to be read
+# get overview of data to be read and extract data structure from filenames
 files <- get_input_files(path_in)
 df_structure <- extract_data_structure(files)
 
-# optional: if we want to exclude certain woodpieces or include only a subset
-# of woodpieces, we can do so here
-# df_structure <- subset_woodpiece_codes(df_structure,
-#                                        # EITHER: include_codes = c('POG_PISY_02_B'), OR
-#                                        exclude_codes = c('POG_PISY_02_B'))
+# NOTE: At the moment, we assume that all images are named according to the
+# following pattern:
+# `{site}_{species}_{tree}{woodpiece}_{sample}_{image}`,
+# where tree is assumed to be a two-character code, and woodpiece is optional.
 
 
 ################################################################################
 # read available metadata
-df_meta <- collect_metadata(df_structure,
-                            roxas_version='classic')
+df_meta <- collect_metadata_from_files(df_structure,
+                                       roxas_version='classic')
 
-# save metadata to file
-write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta.csv')),
-          row.names = FALSE)
-# TODO: add workflow for user input to complete metadata
+# save extracted metadata to file
+# write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta_extracted.csv')),
+#           row.names = FALSE)
+
+
+################################################################################
+# complete the required metadata form via the Shiny app
+# TODO: finalize
+launch_metadata_app()
+
 
 
 ################################################################################
@@ -47,22 +53,26 @@ QWA_data <- collect_raw_data(df_structure)
 
 ################################################################################
 # clean raw data
-# TODO: finalize ring flags, negative checks
+# TODO: finalize ring flags
 QWA_data <- validate_QWA_data(QWA_data, df_meta)
 
-# write to csv
-# write.csv(QWA_data$cells,
-#           file.path(path_out, paste0(dataset_name, '_cells.csv')),
-#           row.names = FALSE)
-# write.csv(QWA_data$rings,
-#           file.path(path_out, paste0(dataset_name, '_rings.csv')),
-#           row.names = FALSE)
+
+################################################################################
+# remove outliers
+# NOTE: ROXAS does some threshold based outlier checks and assigns these a
+# a negative value. Here, we replace these outliers with NAs)
+QWA_data <- remove_outliers(QWA_data)
+
+
+################################################################################
+# complete cell measures
+# TODO: finalize
+QWA_data <- complete_cell_measures(QWA_data)
 
 
 ################################################################################
 # provide user input on ring flags
-
-# VARIANT A: interactively in shiny app ----------------------------------------
+# interactively in shiny app
 launch_coverage_app()
 
 # after running the app, reload the rings data
@@ -70,6 +80,73 @@ filepath <- file.choose()
 QWA_data$rings <- tibble::as_tibble(read.csv(
   filepath,
   stringsAsFactors = FALSE))
+# TODO: check formatting on import?
+
+
+
+################################################################################
+# save preprocessed data to files
+write.csv(QWA_data$cells,
+          file.path(path_out, paste0(dataset_name, '_cells.csv')),
+          row.names = FALSE)
+
+write.csv(QWA_data$rings,
+          file.path(path_out, paste0(dataset_name, '_rings.csv')),
+          row.names = FALSE)
+
+
+
+################################################################################
+################################################################################
+################################################################################
+# TODO: writing to DB
+complete_metadata <- jsonlite::fromJSON("./inst/shiny_meta/data.json", flatten = T)
+# QWA_data <- list()
+# QWA_data$cells <- read.csv("./out/QWA_Arzac2024_cells.csv")
+# QWA_data$rings <- read.csv("./out/QWA_Arzac2024_rings.csv")
+
+
+dbcon <- DBI::dbConnect(RPostgreSQL::PostgreSQL(),
+                        dbname = "xcell",
+                        host = "pgdbtapp.wsl.ch",
+                        port = 5432,
+                        user = "naegelin",
+                        password = keyring::key_get("pgdbt_xcell", username = "naegelin"))
+schema <- 'v3'
+
+write_data_to_db(complete_metadata,
+                 QWA_data,
+                 dbcon, schema)
+
+DBI::dbDisconnect(dbcon)
+
+
+################################################################################
+# TODO: writing to S3
+# path <- "QWA_Arzac2024" # or doi?
+# for (img in files$images) {
+# aws.s3::put_object(file = img, object = paste0(path, img_basename),
+#                    bucket = "s3://xcell-public/", region = "")
+# }
+# put the json with metadata and raw ring/cells csv into bucket as well?
+# aws.s3::put_object(file = "test.png", object = "/testA/test.png",
+#                    bucket = "s3://xcell-public/", region = "")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # VARIANT B: in script / manually ----------------------------------------------
 # TODO: update plot function and manual input, workflow with changes in csv
@@ -104,41 +181,8 @@ QWA_data$rings <- tibble::as_tibble(read.csv(
 #   )
 
 
-# TODO: check formatting on import?
-
-################################################################################
-# remove outliers
-# TODO: finalize (incomplete rings, )
-QWA_data <- remove_outliers(QWA_data)
-
-
-################################################################################
-# complete cell measures
-# TODO: finalize
-QWA_data <- complete_cell_measures(QWA_data)
-
-
-
-################################################################################
-# save preprocessed data to files
-write.csv(QWA_data$cells,
-          file.path(path_out, paste0(dataset_name, '_cells.csv')),
-          row.names = FALSE)
-write.csv(QWA_data$rings,
-          file.path(path_out, paste0(dataset_name, '_rings.csv')),
-          row.names = FALSE)
-
-
-################################################################################
-# fill in the required metadata form via the Shiny app
-# TODO: app is work in progress
-# shiny::runApp('inst/shiny_meta/meta_app.R')
-launch_metadata_app()
-
-
-
-################################################################################
-# TODO: writing to DB
+# complete_QWA_data <- list()
+# complete_QWA_data$cells <- QWA_data$cells # read.csv ...
 
 
 
@@ -146,6 +190,11 @@ launch_metadata_app()
 
 
 
+# optional: if we want to exclude certain woodpieces or include only a subset
+# of woodpieces, we can do so here
+# df_structure <- subset_woodpiece_codes(df_structure,
+#                                        # EITHER: include_codes = c('POG_PISY_02_B'), OR
+#                                        exclude_codes = c('POG_PISY_02_B'))
 
 
 

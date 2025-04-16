@@ -45,6 +45,7 @@ summary_ui <- function(id) {
           card_header(
             class = 'bg-primary',
             span(icon("exclamation", style = "color: white"),'Validation check summary')),
+          "to be implemented: summary of provided data and validation checks",
           uiOutput(ns('validation_check')),
         ),
         hr(),

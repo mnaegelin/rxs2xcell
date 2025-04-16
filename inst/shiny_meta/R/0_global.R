@@ -72,23 +72,23 @@ get_selected_imgs <- function(tree, selected = c()) { #ancestry = "",
   return(selected)
 }
 
-source('input_tables_utils.R')
-source('ht_render_utils.R')
-
-
-
-
-# LOAD MODULES -----
-source('start_ui.R')
-source('start_server.R')
-source('dataset_ui.R')
-source('dataset_server.R')
-source('site_ui.R')
-source('site_server.R')
-source('tree_ui.R')
-source('tree_server.R')
-source('summary_ui.R')
-source('summary_server.R')
+# source('input_tables_utils.R')
+# source('ht_render_utils.R')
+#
+#
+#
+#
+# # LOAD MODULES -----
+# source('start_ui.R')
+# source('start_server.R')
+# source('dataset_ui.R')
+# source('dataset_server.R')
+# source('site_ui.R')
+# source('site_server.R')
+# source('tree_ui.R')
+# source('tree_server.R')
+# source('summary_ui.R')
+# source('summary_server.R')
 
 
 # # Aggregating df_rings to get the required data for the editable datatable

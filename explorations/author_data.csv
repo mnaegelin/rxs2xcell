@@ -1,2 +1,2 @@
-"firstname","lastname","university","email","orcid","contactperson"
-"Hi","L","L","abc@gmail.com","",TRUE
+"last_name","first_name","email","orcid","org_name","org_rorid","aff_dep","aff_street","aff_plz","aff_city","org_country","contactperson"
+"","","","","","","","","","","DE",FALSE

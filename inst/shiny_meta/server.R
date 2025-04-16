@@ -3,13 +3,13 @@ server <- function(input, output, session) {
 
   prefilled_meta <- start_server('start', session)
 
-  dataset_server('ds', session)
+  dataset_info <- dataset_server('ds', session)
 
-  site_server('site', session, prefilled_meta)
+  site_info <- site_server('site', session, prefilled_meta)
 
-  tree_server('tree', session, prefilled_meta)
+  tree_info <- tree_server('tree', session, prefilled_meta)
 
-  summary_server('summary', session)
+  summary_server('summary', session, prefilled_meta, dataset_info, site_info, tree_info)
 
 }
 

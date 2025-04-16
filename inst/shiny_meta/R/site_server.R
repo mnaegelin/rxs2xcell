@@ -9,6 +9,7 @@ site_tbl_str <- data.frame(
   longitude = numeric(0),
   n_tree = integer(0),
   sitedesc = character(0),
+  soildepth = character(0),
   stringsAsFactors = FALSE
 )
 
@@ -16,7 +17,7 @@ site_tbl_config <- list(
 # NOTE: order matters for colHeaders (needs to be same as in df)
   colHeaders = c(sitecode = "Site Code", sitename = "Site Name",
     country = "Country", latitude = "Latitude", longitude = "Longitude",
-    n_tree = "Nr of Trees", sitedesc = "Site Description"
+    n_tree = "Nr of Trees", sitedesc = "Site Description", soildepth = "Soil Depth"
   ),
   sitecode = list(type = 'character', readOnly = TRUE),
   sitename = list(type = 'character', required = TRUE, unique = TRUE),
@@ -24,7 +25,9 @@ site_tbl_config <- list(
   latitude = list(type = 'numeric', required = TRUE, min = -90, max = 90),
   longitude = list(type = 'numeric', required = TRUE, min = -180, max = 180),
   n_tree = list(type = 'numeric', readOnly = TRUE),
-  sitedesc = list(type = 'character', required = FALSE)
+  sitedesc = list(type = 'character', required = FALSE),
+  soildepth = list(type = 'dropdown', required = FALSE,
+                   options = c("0-100 cm", "100-200 cm", ">200 cm"))
 )
 
 # Custom JS code for cell rendering
@@ -163,14 +166,20 @@ site_server <- function(id, main_session, prefilled_meta) {
     # Render Leaflet map when file is uploaded
     output$site_map <- leaflet::renderLeaflet({
 
-      lng <- site_data$df_out$longitude
-      lat <- site_data$df_out$latitude
+      lng <- site_data$df_out$longitude %>% na.omit()
+      lat <- site_data$df_out$latitude %>% na.omit()
 
-      leaflet::leaflet() %>%
+      sitemap <- leaflet::leaflet() %>%
         leaflet::setView(lng = 8.44256, lat = 47.35515, zoom = 8) %>%
-        leaflet::addTiles() %>%
-        leaflet::addMarkers(lng = lng, lat = lat)
+        leaflet::addTiles()
 
+      if (length(lng) > 0 & length(lat) > 0 & length(lng) == length(lat)) {
+        sitemap <- sitemap %>% leaflet::addMarkers(lng = lng, lat = lat) %>%
+          leaflet::fitBounds(lng1 = min(lng)-5, lng2 = max(lng)+5,
+                             lat1 = min(lat)-5, lat2 = max(lat)+5)
+      }
+
+      sitemap
 
     })
 
@@ -191,6 +200,12 @@ site_server <- function(id, main_session, prefilled_meta) {
     output$testing <- renderPrint({
       site_data$df_out$longitude
     })
+
+    return(
+      reactive(
+        site_data$df_out
+        )
+      )
   })
 }
 

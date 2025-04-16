@@ -432,7 +432,7 @@ collect_settings_data <- function(files_settings,
 #'
 #' @returns A dataframe containing the extracted data.
 #' @export
-collect_metadata <- function(df_structure, roxas_version, tz = NULL) {
+collect_metadata_from_files <- function(df_structure, roxas_version, tz = NULL) {
   df_images <- collect_image_info(df_structure$fname_image)
   df_settings <- collect_settings_data(df_structure$fname_settings,
                                        roxas_version, tz=tz)
