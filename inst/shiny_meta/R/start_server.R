@@ -1,39 +1,43 @@
-# helper function to load input data
-load_input_data <- function(input_src, file_input, input_meta) {
+# columns required for df_meta
+cols_structure <- c('site', 'species', 'tree', 'woodpiece', 'slide', 'image')
+cols_img <- c('org_img_name', 'img_filetype', 'img_size', 'img_width', 'img_height')
+cols_settings <- c('software', 'sw_version', 'configuration_file', 'created_at',
+                   'spatial_resolution', 'origin_calibrated_x', 'origin_calibrated_y',
+                   'meas_geometry', 'circ_lower_limit', 'circ_upper_limit',
+                   'outmost_year', 'min_cell_area', 'max_cell_area', 'dbl_cwt_threshold',
+                   'max_cwtrad_s', 'max_cwtrad_l', 'relwidth_cwt_window',
+                   'maxrel_opp_cwt', 'max_cwttan_s', 'max_cwttan_l')
+# TODO: ROXAS AI
+# if XXXX in colnames (->assume ROXAS AI), then cols_settings <- cols_ai
+cols_paths <- c('fname_image', 'fname_cells', 'fname_rings', 'fname_settings')
+cols_other <- c('image_code', 'tree_code', 'woodpiece_code', 'slide_code')
 
-  # from environment
-  if (input_src == 'df_meta_env') {
-    if (exists('df_meta')) {
-      input_meta$df <- df_meta
-      input_meta$source <- 'df_meta from R environment'
-    } else {
-      showModal(modalDialog(
-        title = "Error",
-        span("No", code('df_meta'), "available in the R environment. Please provide another input data source."),
-        easyClose = TRUE
-      ))
-      input_meta$df <- NULL
-      input_meta$source <- 'Please provide and load input source'
-    }
+# a custom table container to get two row headers
+create_table_sketch <- function(cols_structure, cols_img, cols_settings, cols_paths, color1, color2){
+  sketch <- htmltools::withTags(table(
+    class = 'display',
+    thead(
+      tr(
+        th(rowspan = 2, style = paste0('background: ', color1), 'Image code'),
+        th(colspan = length(cols_structure), style = paste0('background: ', color2), 'Data structure'),
+        th(colspan = length(cols_img), 'Image info'),
+        th(colspan = length(cols_settings), style = paste0('background: ', color2), 'Roxas settings'),
+        th(colspan = length(cols_paths), 'File paths')
+      ),
+      tr(
+        lapply(cols_structure,
+               \(x) th(x, style = paste0('background: ', color2))),
+        lapply(cols_img, th),
+        lapply(cols_settings,
+               \(x) th(x, style = paste0('background: ', color2))),
+        lapply(cols_paths, th),
+      )
+    )
+  ))
 
-    # from csv
-  } else if (input_src == 'df_meta_csv') {
-    input_meta$df <- read.csv(file_input$datapath, stringsAsFactors = FALSE)
-    input_meta$source <- paste0('read from file ', file_input$name)
-    # TODO: validation
-  }
-
-  # from json
-  # TODO: add read from json, iincluding distribution to other tabs!
-  # else if (input$input_src == 'df_meta_json') {
-  #   req(input$file_input)
-  #   input_meta$meta_json <- jsonlite::fromJSON(input$file_input$datapath)
-  #   input_meta$df <- input_meta$meta_json$image_table
-  #   input_meta$source <- paste0('read from file ', input$file_input$name)
-  # }
-
-  return(input_meta) # Return the updated input_meta
+  return(sketch)
 }
+
 
 
 # SERVER -----------------------------------------------------------------------
@@ -46,7 +50,6 @@ start_server <- function(id, main_session) {
     observe({
       shinyjs::toggleState(id = "file_input",
                            condition = input$input_src %in% c("df_meta_csv", "df_meta_json"))
-
       shinyjs::toggleState(id = "btn_load_input",
                            condition = (!is.null(input$input_src) && input$input_src == 'df_meta_env') || (!is.null(input$file_input)))
     })
@@ -59,38 +62,76 @@ start_server <- function(id, main_session) {
     )
 
     # next button
-    # toggle: disable if no input data available
+    # toggle: enable only if we have input data and check_raw is checked
     observe({
-      shinyjs::toggleState(id = "btn_next", condition = !is.null(input_meta$df))
+      shinyjs::toggleState(id = "btn_next", condition = (!is.null(input_meta$df) && input$check_raw))
     })
+
     # functionality: switch to next tab
     observeEvent(input$btn_next, {
       nav_select(id = 'tabs', selected = tab_general, session = main_session)
     })
 
+
+
     # load input data
     observeEvent(input$btn_load_input, {
-      if (input$btn_load_input == 1){
-        input_meta <- load_input_data(input$input_src, input$file_input, input_meta)
-      } else {
-        # Show overwrite warning if load button was clicked before
+      # Check if df is already set
+      if (!is.null(input_meta$df)) {
         showModal(
           modalDialog(
             title = "Warning",
-            "This action overwrites any existing inputs provided in the app. Are you sure you want to proceed?",
+            "This action overwrites any existing inputs provided in the app.
+            Are you sure you want to proceed?",
             footer = tagList(
               modalButton("Cancel"),
               actionButton(ns("confirm_submit"), "Proceed")
             )
           )
         )
+      } else {
+        # Load the data directly if no existing df
+        data <- load_input_data(input$input_src, input$file_input)
+        input_meta$df <- data$df
+        input_meta$source <- data$source
+        if (input$input_src == "df_meta_json") {
+          input_meta$meta_json <- load_whole_json(input$file_input$datapath)
+        }
+        shinyjs::reset(id = "check_raw")
       }
     })
+
+    # # load input data
+    # observeEvent(input$btn_load_input, {
+    #   if (is.null(input_meta$df)){
+    #     input_meta <- load_input_data(input$input_src, input$file_input, input_meta)
+    #     shinyjs::reset(id = "check_raw")
+    #   } else {
+    #     # show warning if we already have df_meta
+    #     showModal(
+    #       modalDialog(
+    #         title = "Warning",
+    #         "This action overwrites any existing inputs provided in the app. Are you sure you want to proceed?",
+    #         footer = tagList(
+    #           modalButton("Cancel"),
+    #           actionButton(ns("confirm_submit"), "Proceed")
+    #         )
+    #       )
+    #     )
+    #   }
+    # })
 
     # load input data in case of confirm overwrite
     observeEvent(input$confirm_submit, {
       removeModal()
-      input_meta <- load_input_data(input$input_src, input$file_input, input_meta)
+      # Load the data
+      data <- load_input_data(input$input_src, input$file_input)
+      input_meta$df <- data$df
+      input_meta$source <- data$source
+      if (input$input_src == "df_meta_json") {
+        input_meta$meta_json <- load_whole_json(input$file_input$datapath)
+      }
+      shinyjs::reset(id = "check_raw")
     })
 
     # print source of input data
@@ -108,27 +149,36 @@ start_server <- function(id, main_session) {
     dtree_json <- reactive({
       req(input_meta$df)
 
-      df_dtree <- input_meta$df %>% dplyr::select(site, tree_code, woodpiece, slide, image_code)
-      df_dtree <- df_dtree %>% tidyr::replace_na(list(woodpiece = '(n.a.)')) %>% # TODO: if other levels are NA, replace also with '(n.a.)'?
+      #df_meta %>% dplyr::select(site, species, tree, tree_code, woodpiece, woodpiece_code, slide, slide_code, image_code, org_img_name)
+      df_dtree <- input_meta$df %>% dplyr::select(site, species, tree, tree_code, woodpiece, woodpiece_code, slide, slide_code, image_code, org_img_name)
+      df_dtree <- df_dtree %>% #tidyr::replace_na(list(woodpiece = '(n.a.)')) %>% # TODO: if other levels are NA, replace also with '(n.a.)'?
+        dplyr::mutate(dplyr::across(c('tree', 'woodpiece', 'slide'), \(x) tidyr::replace_na(x, '(n.a.)'))) %>%
         dplyr::mutate(DS = 'dataset', .before = 1) %>% # need a root name for data.tree
-        tidyr::unite('pathString', sep = '/', remove = FALSE)
-      dtree <- data.tree::as.Node(df_dtree)
+        tidyr::unite('pathString', DS, site, tree_code, woodpiece_code, slide_code, image_code, sep = '/', remove = FALSE)
 
-      # set up the attributes for shinyTree:
-      # icons, all selected (-> at highest level), lower levels opened and loaded
+      dtree <- data.tree::FromDataFrameTable(
+        df_dtree,
+        colLevels = list(NULL, NULL, c('species','tree'),
+                         'woodpiece', 'slide', 'org_img_name'))
+
       for (site in dtree$children) {
-        site$state = c(selected = TRUE, loaded = TRUE, opened = TRUE)
-        site$icon = "glyphicon glyphicon-map-marker"
+        site$state <- c(selected = TRUE, loaded = TRUE, opened = TRUE)
+        site$icon <- "glyphicon glyphicon-map-marker"
+        site$text <- paste0('<strong>',site$name, '</strong>')
         for (tree in site$children) {
-          tree$icon = "glyphicon glyphicon-tree-conifer"
+          tree$icon <- "glyphicon glyphicon-tree-conifer"
+          tree$text <- paste0('<strong>', paste(tree$species, tree$tree), '</strong>', sprintf("  [code: %s]", tree$name))
           for (wp in tree$children) {
-            wp$icon = "glyphicon glyphicon-triangle-right"
-            wp$state = c(opened = TRUE, loaded = TRUE)
+            wp$icon <- "fa fa-bore-hole"
+            wp$state <- c(opened = TRUE, loaded = TRUE)
+            wp$text <- paste0('<strong>', wp$woodpiece, '</strong>', sprintf("  [code: %s]", wp$name))
             for (slide in wp$children) {
-              slide$icon = "glyphicon glyphicon-triangle-right"
-              slide$state = c(opened = TRUE, loaded = TRUE)
+              slide$icon <- "fa fa-vial"
+              slide$state <- c(opened = TRUE, loaded = TRUE)
+              slide$text <- paste0('<strong>', slide$slide, '</strong>', sprintf("  [code: %s]", slide$name))
               for (img in slide$children) {
-                img$icon = "glyphicon glyphicon-picture"
+                img$icon <- "glyphicon glyphicon-picture"
+                img$text <- paste0('<strong>', img$org_img_name, '</strong>', sprintf(" [code: %s]", img$name))
               }
             }
           }
@@ -138,28 +188,30 @@ start_server <- function(id, main_session) {
       shinyTree::treeToJSON(dtree, pretty = TRUE)
     })
 
-    output$tree <- shinyTree::renderTree(dtree_json())
+    output$tree <- shinyTree::renderTree({
+      validate(need(!is.null(input_meta$df), "No data to show"))
 
-    output$notree <- renderPrint({
-      if (is.null(input_meta$df)) {
-        "no data to show"
-      }
-    })
+      dtree_json()
+      })
+
+    # output$notree <- renderPrint({
+    #   if (is.null(input_meta$df)) {
+    #     "no data to show"
+    #   }
+    # })
 
 
     # RENDER DT ----------------------------------------------------------------
-    # Preprocess partial metadata
+    # Preprocess input metadata
     filt_meta <- reactive({
-      req(input_meta$df)
       req(input$tree)
 
-      # format raw df
+      # format raw df: cols in right order
       df <- input_meta$df %>%
-        dplyr::select(image_code, site, species, tree_code, woodpiece_code, slide_code,
-                      org_img_name, img_filetype, img_size, img_width, img_height,
-                      software:max_cwttan_l,
-                      fname_image, fname_cells, fname_rings, fname_settings) %>%
-        dplyr::mutate(dplyr::across(site:slide_code, as.factor))
+        dplyr::select(image_code, dplyr::all_of(cols_structure),
+                      dplyr::all_of(cols_img), dplyr::all_of(cols_settings),
+                      dplyr::all_of(cols_paths)) %>%
+        dplyr::mutate(dplyr::across(site:slide, as.factor))
       # filter for selected images in tree
       selected_imgs <- get_selected_imgs(input$tree)
       df <- df %>% dplyr::filter(image_code %in% selected_imgs)
@@ -167,41 +219,17 @@ start_server <- function(id, main_session) {
     })
 
 
-    # a custom table container to get two row headers
-    color1 <- '#CCE0E0'
-    color2 <- '#F2F7F7'
-    sketch = htmltools::withTags(table(
-      class = 'display',
-      thead(
-        tr(
-          th(rowspan = 2, style = paste0('background: ', color1), 'Image code'),
-          th(colspan = 5, style = paste0('background: ', color2), 'Data structure'),
-          th(colspan = 5, 'Image info'),
-          th(colspan = 20, style = paste0('background: ', color2), 'Roxas settings'),
-          th(colspan = 4, 'File paths')
-        ),
-        tr(
-          lapply(c('site', 'species', 'tree_code', 'woodpiece_code', 'slide_code'),
-                 \(x) th(x, style = paste0('background: ', color2))),
-          lapply(c('org_img_name', 'img_filetype', 'img_size', 'img_width', 'img_height'), th),
-          lapply(c('software', 'sw_version', 'configuration_file', 'created_at',
-                   'spatial_resolution', 'origin_calibrated_x', 'origin_calibrated_y',
-                   'meas_geometry', 'circ_lower_limit', 'circ_upper_limit',
-                   'outmost_year', 'min_cell_area', 'max_cell_area', 'dbl_cwt_threshold',
-                   'max_cwtrad_s', 'max_cwtrad_l', 'relwidth_cwt_window',
-                   'maxrel_opp_cwt', 'max_cwttan_s', 'max_cwttan_l'),
-                 \(x) th(x, style = paste0('background: ', color2))),
-          lapply(c('fname_image', 'fname_cells', 'fname_rings', 'fname_settings'), th),
-        )
-      )
-    ))
-
+    # render the datatable
     output$DTmeta <- DT::renderDT({
-      req(filt_meta())
+      validate(
+        need(!is.null(input_meta$df), "No data to show")
+      )
       DT::datatable(filt_meta(),
                     style = 'default',
                     rownames = FALSE,
-                    container = sketch,
+                    container = create_table_sketch(
+                      cols_structure, cols_img, cols_settings, cols_paths,
+                      prim_col_grad[4], prim_col_grad[6]),
                     selection = 'none',
                     extensions = "FixedColumns",
                     options = list(
@@ -211,24 +239,31 @@ start_server <- function(id, main_session) {
                     )
       ) %>%
         DT::formatStyle(
-          columns = c('image_code'), backgroundColor = color1) %>%
+          columns = c('image_code'), backgroundColor = prim_col_grad[4]) %>%
         DT::formatStyle(
-          columns = c(2:6,12:31) , backgroundColor = color2)
+          columns = c(cols_structure,cols_settings), backgroundColor = prim_col_grad[6])
     })
 
-    output$noDTmeta <- renderPrint({
-      if (is.null(input_meta$df)) {
-        "no data to show"
-      }
-    })
+    # output$noDTmeta <- renderPrint({
+    #   if (is.null(input_meta$df)) {
+    #     "no data to show"
+    #   }
+    # })
 
-    # return the input meta for use in other tabs
+
+    # return the input meta and val check for use in other tabs
     return(
-      reactive(input_meta)
+      list(
+        input_meta = input_meta,
+        val_check = reactive(input$check_raw)
+      )
     )
 
   }) # end of moduleServer
 }
+
+
+
 
 
 # prefilled_meta <- reactive({

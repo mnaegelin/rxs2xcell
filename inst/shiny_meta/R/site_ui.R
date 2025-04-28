@@ -4,7 +4,6 @@ site_ui <- function(id) {
   layout_sidebar(
 
     # sidebar
-    # sidebar
     sidebar = sidebar(
       title = "Instructions",
       card(
@@ -44,28 +43,80 @@ site_ui <- function(id) {
       open = c('Sites'),
 
       accordion_panel(
-        "Map",
-        leaflet::leafletOutput(ns("site_map"))
-      ),
-
-      accordion_panel(
         'Sites',
+
+        accordion(
+          id = ns("map_acc"),
+          class = "accordion-tert",
+          open = FALSE, # NOTE: does not work, fixed with panel_close event in server
+          accordion_panel(
+            "Map",
+            leaflet::leafletOutput(ns("site_map"))
+          )
+        ),
+
+        hr(),
+
 
         h5('Site information:', style = paste0('color: ',  sec_col)),
 
-        # card(
-        #   height = 300,
-        #   card_body(
-        #     fillable = FALSE,
         div(style='float: right',
             fileInput(ns('file_sites'), "Load site data from file", accept = ".csv")),
 
-        rhandsontable::rHandsontableOutput(ns("site_table")),
-          # )
+        div(style="min-height:200px;height:auto;",
+
+        rhandsontable::rHandsontableOutput(ns("site_table"))),
+
+        verbatimTextOutput(ns('no_data_site'))
+
+      ),
+
+      accordion_panel(
+        'Trees',
+
+        h5('Tree information:', style = paste0('color: ',  sec_col)),
+
+        div(style='float: right',
+            fileInput(ns('file_trees'), "Load tree data from file", accept = ".csv")),
+
+        br(),
+        div(style="min-height:200px;height:auto;",
+        rhandsontable::rHandsontableOutput(ns("tree_table"))),
+
+        verbatimTextOutput(ns('no_data_tree'))
+
+      ),
+
+      accordion_panel(
+        'Woodpieces',
+
+        h5('Woodpiece information:', style = paste0('color: ',  sec_col)),
+
+        div(style='float: right',
+            fileInput(ns('file_wp'), "Load woodpiece data from file", accept = ".csv")),
 
         br(),
 
-        actionButton(ns('save_btn'), "Save site data", icon = icon('save')),
+        rhandsontable::rHandsontableOutput(ns("wp_table")),
+
+        verbatimTextOutput(ns('no_data_wp'))
+
+
+      ),
+
+      accordion_panel(
+        'Slides',
+
+        h5('Slide information:', style = paste0('color: ',  sec_col)),
+
+        div(style='float: right',
+            fileInput(ns('file_slide'), "Load slide data from file", accept = ".csv")),
+
+        br(),
+
+        rhandsontable::rHandsontableOutput(ns("slide_table")),
+
+        verbatimTextOutput(ns('no_data_slide'))
 
       )
 

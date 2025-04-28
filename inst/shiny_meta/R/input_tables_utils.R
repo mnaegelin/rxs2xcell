@@ -1,9 +1,24 @@
 # Function to align df_authors to the structure of author_tbl_str
-align_to_structure <- function(target_structure, source_data) {
+align_to_structure <- function(target_structure, source_data, colHeaders = NULL, ignore_colnames = FALSE) {
   # Get the column names of the target and source
   target_cols <- names(target_structure)
+
+  if (ignore_colnames){
+    names(source_data)[1:length(target_cols)] <- target_cols
+  }
+
   source_cols <- names(source_data)
   missing_cols <- c()
+
+  # Map alternative column names (if provided)
+  if (!is.null(colHeaders)) {
+    # Reverse the named vector to match alternative names to standard names
+    alt_to_standard <- setNames(names(colHeaders), colHeaders)
+    # Replace alternative names in source_cols with their standard names
+    source_cols <- ifelse(source_cols %in% names(alt_to_standard),
+                          alt_to_standard[source_cols],
+                          source_cols)
+  }
 
   # Initialize a new dataframe with the target structure
   result <- target_structure[rep(1, nrow(source_data)), ]
@@ -24,7 +39,94 @@ align_to_structure <- function(target_structure, source_data) {
   return(list(data = result, missing_cols = missing_cols))
 }
 
+
+
+
+
 # validation check functions
+validate_required <- function(data, columns){
+  data %>%
+    dplyr::select(dplyr::all_of(columns)) %>%
+    dplyr::summarise(dplyr::across(dplyr::everything(), \(x) sum(is.na(x) | x == ""))) %>%
+    tidyr::pivot_longer(dplyr::everything(), names_to = "column", values_to = "missing_count") %>%
+    dplyr::filter(missing_count > 0)
+}
+
+validate_unique <- function(data, columns){
+  data %>%
+    dplyr::select(dplyr::all_of(columns)) %>%
+    dplyr::summarise(
+      dplyr::across(
+        dplyr::everything(),
+        \(x) sum(!is.na(x) & x != "") - dplyr::n_distinct(x[!is.na(x) & x != ""]))) %>%
+    tidyr::pivot_longer(dplyr::everything(), names_to = "column", values_to = "duplicate_count") %>%
+    dplyr::filter(duplicate_count > 0)
+}
+
+validate_char_length <- function(data, length_bounds) {
+  # `length_bounds` is a named list (not vector!) where each element is a vector c(min_length, max_length)
+  # Example: list(column1 = c(5, 10), column2 = c(3, 8))
+  data %>%
+    dplyr::select(dplyr::all_of(names(length_bounds))) %>%
+    dplyr::summarise(
+      dplyr::across(
+        dplyr::everything(),
+        \(x) sum(nchar(x[!is.na(x) & x != ""]) < length_bounds[[dplyr::cur_column()]][1] | nchar(x[!is.na(x) & x != ""]) > length_bounds[[dplyr::cur_column()]][2]))) %>%
+    tidyr::pivot_longer(dplyr::everything(), names_to = "column", values_to = "inv_length_count") %>%
+    dplyr::filter(inv_length_count > 0)
+
+}
+
+validate_regex <- function(data, reg_patterns){
+  # `reg_patterns` is a named list (not vector!) where each element is regular expression
+  # Example: list(email_column = '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+  data %>%
+    dplyr::select(dplyr::all_of(names(reg_patterns))) %>%
+    dplyr::summarise(
+      dplyr::across(
+        dplyr::everything(),
+        \(x) sum(!grepl(reg_patterns[[dplyr::cur_column()]], x[!is.na(x) & x != ""])))) %>%
+    tidyr::pivot_longer(dplyr::everything(), names_to = "column", values_to = "inv_pattern_count") %>%
+    dplyr::filter(inv_pattern_count > 0)
+}
+
+validate_options <- function(data, opt_list){
+  # `opt_list` is a named list (not vector!) where each element is a vector of valid options
+  # Example: list(column1 = c("option1", "option2"), column2 = c("optionA", "optionB"))
+  data %>%
+    dplyr::select(dplyr::all_of(names(opt_list))) %>%
+    dplyr::summarise(
+      dplyr::across(
+        dplyr::everything(),
+        \(x) sum(!x[!is.na(x) & x != ""] %in% opt_list[[dplyr::cur_column()]]))) %>%
+    tidyr::pivot_longer(dplyr::everything(), names_to = "column", values_to = "inv_option_count") %>%
+    dplyr::filter(inv_option_count > 0)
+}
+
+
+
+get_required_cols <- function(tbl_config){
+  req_cols <- c()
+  for (col in names(tbl_config)) {
+    if (col != 'colHeaders'){
+      if (tbl_config[[col]][['required']]) {
+        req_cols <- c(req_cols, col)
+      }
+    }
+  }
+  return(req_cols)
+}
+
+
+
+# validate_required_mulitcol
+# should return something like:
+# col1, col2; "missing values, provide at least one of these"
+
+
+
+
+
 # cf. the corresponding JS renderers in ht_render_utils.R
 validate_char_column <- function(column, col_config) {
   # Default values for validation rules
@@ -144,8 +246,10 @@ validate_date_column <- function(column, col_config){
 validate_column <- function(column, col_config){
   switch(col_config$type,
          "character" = validate_char_column(column, col_config),
+         "text" = validate_char_column(column, col_config),
          "numeric" = validate_num_column(column, col_config),
          "dropdown" = validate_drop_column(column, col_config),
+         "autocomplete" = validate_drop_column(column, col_config),
          "checkbox" = validate_cb_column(column, col_config),
          "date" = validate_date_column(column, col_config),
          stop("Unknown column type")

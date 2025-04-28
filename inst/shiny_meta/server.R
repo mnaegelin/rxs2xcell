@@ -1,15 +1,18 @@
 # server -----------------------------------------------------------------------
 server <- function(input, output, session) {
 
-  prefilled_meta <- start_server('start', session)
+  start_info <- start_server('start', session)
 
-  dataset_info <- dataset_server('ds', session)
+  dataset_info <- dataset_server('ds', session, countries_list, author_tbl, funding_tbl)
 
-  site_info <- site_server('site', session, prefilled_meta)
+  site_info <- site_server('site', session, start_info)
 
-  tree_info <- tree_server('tree', session, prefilled_meta)
+  #tree_info <- tree_server('tree', session, start_info)
 
-  summary_server('summary', session, prefilled_meta, dataset_info, site_info, tree_info)
+  summary_server('summary', session, start_info, dataset_info, site_info)
+
+  # output$debug <- renderPrint({
+  # })
 
 }
 

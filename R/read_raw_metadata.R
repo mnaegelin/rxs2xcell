@@ -409,6 +409,7 @@ collect_settings_data <- function(files_settings,
   }
   conv_dates <- df_settings_all$created_at %>% lubridate::mdy_hm(., tz=tz)
   # plausibility checks: no NA and not before outmost year
+  # TODO: this also checks undated?
   check_dates <- any(is.na(conv_dates)) |
     any(df_settings_all$outmost_year > lubridate::year(conv_dates))
   if (check_dates){

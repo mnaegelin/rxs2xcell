@@ -44,6 +44,8 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
       --bs-nav-underline-link-active-color: white;
     }
 
+
+
     /* class for a code style output*/
     .code-output {
       display:block;
@@ -70,7 +72,7 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
 
     /* styling the shinyTree resp. jstree */
     .jstree-proton .jstree-clicked {
-      background: ", prim_col, " !important;
+      background: ", prim_col_grad[1], " !important;
     }
 
     /* styling the accoridons */
@@ -90,6 +92,10 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
     }
     .accordion-tert .accordion-item {
       background-color: ", tert_col_grad[5], " !important;
+    }
+
+    .card-tert {
+      background-color: ", tert_col_grad[6], " !important;
     }
 
     /* datatable styling */
@@ -121,10 +127,7 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
       border-color: ", sec_col, " !important;
     }
 
-    .shiny-input-container .radio input  {
-      border-color: ", sec_col, " !important;
-      background-color: ", sec_col_grad[1], " !important;
-    }
+
 
     .btn-file {
       background-color: ", tert_col, " !important;
@@ -182,10 +185,34 @@ ui <- page_fluid(
       .handsontable td.htInvalid {
         background-color: pink !important;
       }
+      .form-control, .selectize-input, .form-control-shiny {
+        background-color: white !important;
+      }
+      .shiny-input-container .radio input:not(:checked)  {
+        border-color: ", sec_col, " !important;
+        background-color: white !important;
+      }
+      .shiny-input-container .radio input:checked  {
+        border-color: ", sec_col, " !important;
+        background-color: ", sec_col, " !important;
+      }
+          .shiny-input-container .checkbox input:not(:checked)  {
+        border-color: ", sec_col, " !important;
+        background-color: white !important;
+      }
+      .shiny-input-container .checkbox input:checked  {
+        border-color: ", sec_col, " !important;
+        background-color: ", sec_col, " !important;
+      }
+
+
+
+
     ")),
     # for the tippy tooltip
     tags$script(src = "https://unpkg.com/@popperjs/core@2"),
-    tags$script(src = "https://unpkg.com/tippy.js@6")
+    tags$script(src = "https://unpkg.com/tippy.js@6"),
+    # tags$script(src = "https://kit.fontawesome.com/<you>.js")
   ),
 
 
@@ -210,7 +237,7 @@ ui <- page_fluid(
     # TAB: general (dataset and authors) ---------------------------------------
     nav_panel(
       title = tab_general,
-      dataset_ui('ds')
+      dataset_ui('ds', countries_list = countries_list)
     ),
 
     # TAB: sites ---------------------------------------------------------------
@@ -219,11 +246,11 @@ ui <- page_fluid(
       site_ui('site')
     ),
 
-    # TAB: trees ---------------------------------------------------------------
-    nav_panel(
-      title = tab_tree,
-      tree_ui('tree')
-    ),
+    # # TAB: trees ---------------------------------------------------------------
+    # nav_panel(
+    #   title = tab_tree,
+    #   tree_ui('tree')
+    # ),
 
     # TAB: summary -------------------------------------------------------------
     nav_panel(
@@ -231,7 +258,9 @@ ui <- page_fluid(
       summary_ui('summary')
     )
 
-  ) # end of tabs
+  ), # end of tabs
+
+  verbatimTextOutput("debug"), # for debugging
 
 ) # end of ui
 

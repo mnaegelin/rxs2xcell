@@ -59,9 +59,48 @@ renderer_char <- function(required = NULL, min_length = NULL, max_length = NULL,
     }", check_required, minl, maxl, check_regex, regp, check_unique)))
 }
 
+renderer_text <- function(required = NULL){
+  check_required <- ifelse(is.null(required), "false", ifelse(required, "true", "false"))
+
+  htmlwidgets::JS(htmltools::HTML(sprintf("
+    function(instance, td, row, col, prop, value, cellProperties) {
+
+      Handsontable.renderers.HtmlRenderer.apply(this, arguments);
+
+      // remove old tippy if necessary
+      if(td.hasOwnProperty('_tippy')) {
+        td._tippy.destroy();
+      }
+
+      var isValid = true;
+      var message = '';
+
+      // check if value is empty
+      if (value === null || value === '') {
+        if (%s) {
+          isValid = false;
+          message = 'required field';
+        }
+      }
+
+      if (!isValid) {
+        // set background color and tooltip
+        td.style.background = 'pink';
+        tippy(td, { content: message });
+      } else {
+        td.style.background = '';
+      }
+
+
+
+      return td;
+    }", check_required)))
+}
+
+
 renderer_drop <- function(required = NULL, options){
   check_required <- ifelse(is.null(required), "false", ifelse(required, "true", "false"))
-  options_js <- paste0("[", paste0(sprintf("'%s'", options), collapse = ", "), "]")
+  options_js <- jsonlite::toJSON(options, auto_unbox = TRUE)
 
   htmlwidgets::JS(htmltools::HTML(sprintf("
     function(instance, td, row, col, prop, value, cellProperties) {
@@ -237,6 +276,8 @@ renderer_check <- function(required = NULL, min_checks = NULL, max_checks = NULL
       td.style.background = '';
     }
 
+    td.classList.add('htCenter');
+
     Handsontable.renderers.CheckboxRenderer.apply(this, arguments);
     return td;
   }", mincb, maxcb)))
@@ -299,7 +340,18 @@ hot_col_wrapper <- function(ht, col, col_config) {
         renderer = renderer_js,
         readOnly = readOnly
       )
-    # for numeric cols:
+  # for text /html cols:
+  } else if (col_config$type == 'text'){
+    renderer_js <- renderer_text(
+      required = col_config$required
+    )
+    ht %>%
+      rhandsontable::hot_col(
+        col,
+        renderer = renderer_js,
+        readOnly = readOnly
+      )
+  # for numeric cols:
   } else if (col_config$type == 'numeric') {
     renderer_js <- renderer_num(
       required = col_config$required,

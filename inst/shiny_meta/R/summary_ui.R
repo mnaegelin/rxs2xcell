@@ -26,9 +26,9 @@ summary_ui <- function(id) {
 
       actionButton(ns('btn_prev'), 'Previous', icon = icon('angle-double-left')),
 
-      hr(),
+      hr()
 
-      verbatimTextOutput(ns("testing"))
+
     ),
 
     # main content
@@ -48,6 +48,9 @@ summary_ui <- function(id) {
           "to be implemented: summary of provided data and validation checks",
           uiOutput(ns('validation_check')),
         ),
+        hr(),
+
+        verbatimTextOutput(ns("testing")),
         hr(),
 
         actionButton(ns('save_btn'), "Export ALL data", icon = icon('save')),

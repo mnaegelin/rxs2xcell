@@ -1,65 +1,65 @@
-tree_tbl_str <- data.frame(
-  treecode = character(0),
-  sitecode = character(0),
-  speciescode = character(0),
-  speciesname = character(0),
-  woodtype = character(0),
-  leafhabit = character(0),
-  ring_structure = character(0),
-  tree_treatment = character(0),
-  treedesc = character(0),
-  n_wp = integer(0),
-  stringsAsFactors = FALSE
-)
-
-tree_tbl_config <- list(
-  # NOTE: order matters for colHeaders (needs to be same as in df)
-  colHeaders = c(treecode = "Tree Code", sitecode = "Site Code",
-                 speciescode = "Species Code", speciesname = 'Species',
-                 woodtype = "wood type", leafhabit = "leaf habit",
-                 ring_structure = "ring structure",
-                 tree_treatment = "treatment", treedesc = "description",
-                 n_wp = "Nr of Pieces"),
-  treecode = list(type = 'character', readOnly = TRUE),
-  sitecode = list(type = 'character', readOnly = TRUE),
-  speciescode = list(type = 'character', required = TRUE, options = c('ABSP','PISY')),
-  speciesname = list(type = 'autocomplete', required = TRUE, options = c('Abies Mill. fir','Pinus sylvestris L.')),
-  woodtype = list(type = 'dropdown', required = FALSE, options = c("gymnosperm", "angiosperm")),
-  leafhabit = list(type = 'dropdown', required = FALSE, options = c("evergreen", "deciduous")),
-  ring_structure = list(type = 'dropdown', required = FALSE, options = c("conifer", "diffuse-porous", 'ring-porous')),
-  tree_treatment = list(type = 'dropdown', required = FALSE,
-                      options = c("control", "treatment")),
-  treedesc = list(type = 'character', required = FALSE),
-  n_wp = list(type = 'numeric', readOnly = TRUE)
-)
-
-
-wp_tbl_str <- data.frame(
-  wpcode = character(0),
-  treecode = character(0),
-  sampledate = character(0),
-  organ = character(0),
-  sampling_height = numeric(0),
-  dist_to_tip = numeric(0),
-  sample_prep = character(0),
-  sample_type = character(0),
-  pith_year = numeric(0),
-  n_slides = integer(0),
-  stringsAsFactors = FALSE
-)
-
-slide_tbl_str <- data.frame(
-  slidecode = character(0),
-  wpcode = character(0),
-  sampledate = character(0),
-  sect_thickness = character(0),
-  cuttingplane = character(0),
-  img_cap_system = character(0),
-  data_structure = character(0),
-  n_imgs = integer(0),
-  stringsAsFactors = FALSE
-)
-
+# tree_tbl_str <- data.frame(
+#   treecode = character(0),
+#   sitecode = character(0),
+#   speciescode = character(0),
+#   speciesname = character(0),
+#   woodtype = character(0),
+#   leafhabit = character(0),
+#   ring_structure = character(0),
+#   tree_treatment = character(0),
+#   treedesc = character(0),
+#   n_wp = integer(0),
+#   stringsAsFactors = FALSE
+# )
+#
+# tree_tbl_config <- list(
+#   # NOTE: order matters for colHeaders (needs to be same as in df)
+#   colHeaders = c(treecode = "Tree Code", sitecode = "Site Code",
+#                  speciescode = "Species Code", speciesname = 'Species',
+#                  woodtype = "wood type", leafhabit = "leaf habit",
+#                  ring_structure = "ring structure",
+#                  tree_treatment = "treatment", treedesc = "description",
+#                  n_wp = "Nr of Pieces"),
+#   treecode = list(type = 'character', readOnly = TRUE),
+#   sitecode = list(type = 'character', readOnly = TRUE),
+#   speciescode = list(type = 'character', required = TRUE, options = c('ABSP','PISY')),
+#   speciesname = list(type = 'autocomplete', required = TRUE, options = c('Abies Mill. fir','Pinus sylvestris L.')),
+#   woodtype = list(type = 'dropdown', required = FALSE, options = c("gymnosperm", "angiosperm")),
+#   leafhabit = list(type = 'dropdown', required = FALSE, options = c("evergreen", "deciduous")),
+#   ring_structure = list(type = 'dropdown', required = FALSE, options = c("conifer", "diffuse-porous", 'ring-porous')),
+#   tree_treatment = list(type = 'dropdown', required = FALSE,
+#                       options = c("control", "treatment")),
+#   treedesc = list(type = 'character', required = FALSE),
+#   n_wp = list(type = 'numeric', readOnly = TRUE)
+# )
+#
+#
+# wp_tbl_str <- data.frame(
+#   wpcode = character(0),
+#   treecode = character(0),
+#   sampledate = character(0),
+#   organ = character(0),
+#   sampling_height = numeric(0),
+#   dist_to_tip = numeric(0),
+#   sample_prep = character(0),
+#   sample_type = character(0),
+#   pith_year = numeric(0),
+#   n_slides = integer(0),
+#   stringsAsFactors = FALSE
+# )
+#
+# slide_tbl_str <- data.frame(
+#   slidecode = character(0),
+#   wpcode = character(0),
+#   sampledate = character(0),
+#   sect_thickness = character(0),
+#   cuttingplane = character(0),
+#   img_cap_system = character(0),
+#   data_structure = character(0),
+#   n_imgs = integer(0),
+#   stringsAsFactors = FALSE
+# )
+#
 
 
 tree_server <- function(id, main_session, prefilled_meta) {

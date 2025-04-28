@@ -1,28 +1,94 @@
 
 # TODO: renderers for multicolumn checks?
 # TODO: multicol validations?
-renderer_ror_or_aff_name_addr <- "
-  function(instance, td, row, col, prop, value, cellProperties) {
-    var data = instance.getDataAtRow(row);
-    var aff_name = data[4];
-    var aff_address = data[7];
-    var aff_rorid  = data[5];
-    if (((aff_name === null || aff_name === '') && (aff_address === null || aff_address === '')) && (aff_rorid === null || aff_rorid === '')) {
-      td.style.background = 'pink';
-    } else if ((aff_name === null || aff_name === '') || (aff_address === null || aff_address === '')) {
-      if (aff_rorid === null || aff_rorid === '') {
-        td.style.background = 'pink';
-      } else {
-        td.style.background = '';
-      }
+# renderer_ror_or_aff_name_addr <- "
+#   function(instance, td, row, col, prop, value, cellProperties) {
+#     var data = instance.getDataAtRow(row);
+#     var aff_name = data[4];
+#     var aff_address = data[7];
+#     var aff_rorid  = data[5];
+#     if (((aff_name === null || aff_name === '') && (aff_address === null || aff_address === '')) && (aff_rorid === null || aff_rorid === '')) {
+#       td.style.background = 'pink';
+#     } else if ((aff_name === null || aff_name === '') || (aff_address === null || aff_address === '')) {
+#       if (aff_rorid === null || aff_rorid === '') {
+#         td.style.background = 'pink';
+#       } else {
+#         td.style.background = '';
+#       }
+#     } else {
+#       td.style.background = '';
+#     }
+#     return td.innerHTML = value;
+#   }"
+
+
+# helper to create a numbered list of authors for modal dialog with checkboxes
+get_author_choices <- function(author_df){
+  cb_names <- paste0("Author Nr. ", rownames(author_df), ": ",
+                     author_df$last_name, ", ",
+                     author_df$first_name)
+  cb_names <- gsub(": ,", ": [last name],", cb_names)
+  cb_names <- gsub(", $", ", [first name]", cb_names)
+  cb_vals <- rownames(author_df)
+
+  return(stats::setNames(cb_vals, cb_names))
+}
+
+get_funding_choices <- function(funding_df){
+  cb_names <- paste0("Funding Inst. Nr. ", rownames(funding_df))
+  cb_vals <- rownames(funding_df)
+
+  return(stats::setNames(cb_vals, cb_names))
+}
+
+ror_api_request <- function(search_string, country_code){
+  search_url <- sprintf(
+    'https://api.ror.org/v2/organizations?query=%s&filter=country.country_code:%s',
+    URLencode(search_string), country_code)
+  ror_res <- httr::GET(search_url, httr::timeout(5))
+
+  if (httr::status_code(ror_res) == 200) {
+    ror_data <- jsonlite::fromJSON(rawToChar(ror_res$content))
+
+    if (ror_data$number_of_results > 0) {
+      # get the names (assuming that there is always exactly one ror_display name)
+      res_names <- ror_data$items$names %>%
+        dplyr::bind_rows() %>%
+        dplyr::filter(grepl('ror_display', types)) %>%
+        dplyr::rename(Name = value) %>%
+        dplyr::select(Name)
+
+      # get the locations
+      res_locs <- ror_data$items$locations %>%
+        dplyr::bind_rows() %>%
+        dplyr::pull(geonames_details) %>%
+        tidyr::unite(col = 'Location', name, country_name, sep = ', ', remove = FALSE) %>%
+        dplyr::rename(city = name) %>%
+        dplyr::select(Location, country_code, city)
+
+      res_df <- cbind(res_names, res_locs)
+
+      # get the ror ids and corresponding hyperlinks
+      res_df <- res_df %>%
+        dplyr::mutate(
+          RORID = gsub('https://ror.org/', '', ror_data$items$id),
+          Link = paste0("<a href='",ror_data$items$id,"' target='_blank'>",ror_data$items$id,"</a>")
+        )
+      return(res_df)
+
     } else {
-      td.style.background = '';
+      showNotification("No ROR results found. Try again.", type = "message")
+      return(NULL)
     }
-    return td.innerHTML = value;
-  }"
+
+  } else {
+    showNotification("ROR API request failed. Try again.", type = "error")
+    return(NULL)
+  }
+}
 
 
-countries_list <- names(get_country_codes())
+
 
 author_tbl_str <- data.frame(
     last_name = character(1),
@@ -53,41 +119,56 @@ author_tbl_config <- list(
                regex_pattern = '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$',
                unique = TRUE),
   orcid = list(type = 'character', required = FALSE),
-  org_name = list(type = 'character', required = TRUE),
+  org_name = list(type = 'text', required = TRUE),
   org_rorid = list(type = 'character', required = FALSE),
   aff_dep = list(type = 'character', required = FALSE),
   aff_street = list(type = 'character', required = FALSE),
   aff_plz = list(type = 'character', required = FALSE),
   aff_city = list(type = 'character', required = FALSE),
-  org_country = list(type = 'autocomplete', required = TRUE, options = countries_list),
+  org_country = list(type = 'autocomplete', required = TRUE, options = names(countries_list)),
   contactperson = list(type = 'checkbox', required = TRUE, max_checks = 1)
 )
+author_tbl <- list(
+  tbl_str = author_tbl_str,
+  tbl_config = author_tbl_config
+)
+
+
 
 funding_tbl_str <- data.frame(
   inst_name = character(1),
   inst_rorid = character(1),
-  inst_address = character(1),
+  inst_city = character(1),
+  inst_country = character(1),
   grantnr = character(1),
   stringsAsFactors = FALSE)
 
 funding_tbl_config <- list(
   # NOTE: order matters for colHeaders (needs to be same as in df)
-  colHeaders = c(inst_name = 'Funding Institution', inst_rorid = 'Inst. ROR',
-                 inst_address = 'Inst. Address', grantnr = 'Grant Nr.'),
-  inst_name = list(type = 'character', required = TRUE),
+  colHeaders = c(inst_name = 'Funding Institution', inst_rorid = 'Inst. RORID',
+                 inst_city = 'City', inst_country = 'Country', grantnr = 'Grant Nr.'),
+  inst_name = list(type = 'text', required = TRUE),
   inst_rorid = list(type = 'character', required = FALSE),
-  inst_address = list(type = 'character', required = FALSE),
+  inst_city = list(type = 'character', required = FALSE),
+  inst_country = list(type = 'autocomplete', required = FALSE, options = names(countries_list)),
   grantnr = list(type = 'character', required = TRUE)
 )
 
+funding_tbl <- list(
+  tbl_str = funding_tbl_str,
+  tbl_config = funding_tbl_config
+)
 
-dataset_server <- function(id, main_session) {
+
+# SERVER -----------------------------------------------------------------------
+dataset_server <- function(id, main_session,
+                           countries_list, author_tbl, funding_tbl) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
     # mock event to close ROR tab on start of app
     observeEvent(1,{
-      accordion_panel_close(id = 'ror_search_acc', values = TRUE)
+      accordion_panel_close(id = 'search_tools', values = TRUE)
     }, ignoreNULL = FALSE) # to fire the event at startup
 
 
@@ -100,162 +181,300 @@ dataset_server <- function(id, main_session) {
 
     iv_gen$enable() # TODO: enable from start?
 
+
     # ROR SEARCH ---------------------------------------------------------------
     # toggle search button: only enable if we have a country and search string
     shiny::observe({
-      shinyjs::toggleState(id = "search_ror",
-                           condition = !((input$search_string=="") &&
-                                           (input$search_country=="")))
+      shinyjs::toggleState(id = "btn_ror_search",
+                           condition = (!(input$ror_search_string=="") &&
+                                        !(input$ror_search_country=="")))
     })
 
-    # run the search via ROR API
-    shiny::observeEvent(input$search_ror, {
-      req(input$country_code)
-      req(input$search_string)
+    # initialize reactiveVal (responding to ror search button)
+    ror_df <- reactiveVal()
+
+    # observe ror search button and run ror API request
+    shiny::observeEvent(input$btn_ror_search, {
+      req(input$ror_search_country, input$ror_search_string)
+
+      res_df <- ror_api_request(search_string = input$ror_search_string,
+                                country_code = input$ror_search_country)
+      # update reactive
+      ror_df(res_df)
+    })
+
+    # render instructions
+    output$ror_instr <- renderUI({
+      if (is.null(ror_df())) {
+        tags$i("Run ROR search first...")
+      } else {
+        tags$i("Click on a row to select and transfer the ROR data to the tables below.")
+      }
+    })
+
+    # render ROR DT
+    output$ror_results <- DT::renderDT({
+      validate(need(!is.null(ror_df()), "No data to show"))
+      DT::datatable(ror_df() %>% dplyr::select(Link, RORID, Name, Location),
+                    style = 'default',
+                    rownames = FALSE,
+                    selection = "single",
+                    escape = FALSE,
+                    options = list(pageLength = 5))
+    })
+
+    # observe ROR row selection: open modal
+    observeEvent(input$ror_results_rows_selected, {
+      showModal(modalDialog(
+        title = "Transfer ROR data",
+        tagList(
+          p("Do you want to transfer the selected ROR data to the author and/or funding table?"),
+          checkboxGroupInput(
+            ns("selected_authors"),
+            label = "Select authors to update:",
+            choices = get_author_choices(author_data_out())#author_data$df_in
+          ),
+          checkboxGroupInput(
+            ns("selected_funders"),
+            label = "Select funding institutions to update:",
+            choices = get_funding_choices(funding_data_out())
+          )
+        ),
+        easyClose = TRUE,
+        footer = tagList(
+          modalButton("Cancel"),
+          actionButton(ns("btn_trans_ror"), "Transfer")
+        )
+      ))
+    })
+
+    # transfer ROR data to authors on confirm transfer
+    observeEvent(input$btn_trans_ror, {
+      # update the authors table
+      if (!is.null(input$selected_authors) && !is.null(input$ror_results_rows_selected)) {
+        # get the ROR data of the selected row (NOTE that only 1 row can be selected)
+        selected_ror_data <- ror_df()[input$ror_results_rows_selected, c("RORID", "Name", "city", 'country_code')]
+        selected_ror_data$Name <- gsub('\n','<br>',stringr::str_wrap(selected_ror_data$Name, width = 50))
+        selected_ror_data$country_code <- names(countries_list[countries_list == selected_ror_data$country_code])
+        # update the author data table for the selected authors
+        current_df <- author_data_out()
+        current_df[input$selected_authors, c("org_rorid", "org_name", "aff_city", "org_country")] <- selected_ror_data
+        author_data_in(current_df)
+      }
+      # update the funding table
+      if (!is.null(input$selected_funders) && !is.null(input$ror_results_rows_selected)) {
+        # get the ROR data of the selected row (NOTE that only 1 row can be selected)
+        selected_ror_data <- ror_df()[input$ror_results_rows_selected, c("RORID", "Name", "city", 'country_code')]
+        # selected_ror_data$Name <- gsub('\n','<br>',stringr::str_wrap(selected_ror_data$Name, width = 50))
+        selected_ror_data$country_code <- names(countries_list[countries_list == selected_ror_data$country_code])
+        # update in the funding data table for the selected funders
+        current_df <- funding_data_out()
+        current_df[input$selected_funders, c("inst_rorid", "inst_name", "inst_city", "inst_country")] <- selected_ror_data
+        funding_data_in(current_df)
+      }
+      # close the modal
+      removeModal()
+    })
+
+
+
+    # ORCID SEARCH ---------------------------------------------------------------
+    # toggle search button: only enable if we have a country and search string
+    shiny::observe({
+      shinyjs::toggleState(id = "btn_orcid_search",
+                           condition = !(input$orcid_search_string==""))
+    })
+
+    # run the search via ORCID API
+
+    # TODO: streamline API USAGE:
+    # if input matches ORCID pattern, switch to orcid query, else search names?
+    #https://info.orcid.org/documentation/api-tutorials/api-tutorial-searching-the-orcid-registry/
+    #https://pub.orcid.org/v3.0/expanded-search/?q=family-name:naegelin
+    #https://pub.orcid.org/v3.0/expanded-search/?q=orcid:0000-0002-2415-8019
+    #https://pub.orcid.org/v3.0/expanded-search/?q=given-and-family-names:naegelin
+    #https://pub.orcid.org/v3.0/expanded-search/?q=affiliation-org-name:ETH
+
+    orcid_df <- reactiveVal()
+
+    shiny::observeEvent(input$btn_orcid_search, {
+      req(input$orcid_search_string)
+
+      # TODO: get more org info? only if clear which one is the relavant one?
+      # TODO: link orcid vs raw
+      # TODO: colnames
 
       search_url <- sprintf(
-        'https://api.ror.org/v2/organizations?query=%s&filter=country.country_code:%s',
-        URLencode(input$search_string),
-        input$country_code)
+        'https://pub.orcid.org/v3.0/expanded-search/?q=%s',
+        URLencode(gsub(" ", "+AND+", input$orcid_search_string)))
 
-      ror_res <- httr::GET(search_url, httr::timeout(5))
+      orcid_res <- httr::GET(search_url, httr::timeout(5))
 
-      if (httr::status_code(ror_res) == 200) {
-        ror_data <- jsonlite::fromJSON(rawToChar(ror_res$content))
+      if (httr::status_code(orcid_res) == 200) {
+        orcid_data <- jsonlite::fromJSON(rawToChar(orcid_res$content))
 
-        if (ror_data$number_of_results > 0) {
-          # get the names (assuming that there is always exactly one ror_display name)
-          res_names <- ror_data$items$names %>%
-            dplyr::bind_rows() %>%
-            dplyr::filter(grepl('ror_display', types)) %>%
-            dplyr::pull(value)
+        if (orcid_data[['num-found']] > 0) {
+          # get the data
+          res_df <- orcid_data[['expanded-result']] %>%
+            dplyr::rename(
+              last_name = 'family-names',
+              first_name = 'given-names',
+              orcid_id = 'orcid-id',
+              org_name = 'institution-name'
+            ) %>%
+            dplyr::select(last_name, first_name, email, orcid_id, org_name)
 
-          # get the locations
-          res_locs <- ror_data$items$locations %>%
-            dplyr::bind_rows() %>%
-            dplyr::pull(geonames_details) %>%
-            tidyr::unite(col = 'address', name, country_name, sep = ', ') %>%
-            dplyr::pull(address)
-
-          # a dataframe of res_locs, res_names and res_ror_ids
-          ror_links <- paste0("<a href='",ror_data$items$id,"' target='_blank'>",ror_data$items$id,"</a>")
-          rorids <- gsub('https://ror.org/', '', ror_data$items$id)
-          res_df <- data.frame(Link = ror_links, RORID = rorids, Name = res_names,
-                               Location = res_locs)
-
-          #updateSelectizeInput(session, "result_choice", choices = res_names)
-          output$ror_results <- DT::renderDT({
-            DT::datatable(res_df,
-                          style = 'default',
-                          rownames = FALSE, selection = "none", escape = FALSE,
-                          options = list(
-                            pageLength = 5
-                          )
+          # create orcid hyperlinks, if multiple email / affiliations, we just take the first one (???)
+          res_df <- res_df %>%
+            dplyr::mutate(
+              orcid = paste0("<a href='https://orcid.org/", orcid_id, "' target='_blank'>",orcid_id,"</a>"),
+              email = sapply(email, function(x) if (length(x) == 0) NA else x[[1]]),
+              org_name = sapply(org_name, function(x) if (length(x) == 0) NA else x[[1]]),
             )
-          })
+
+          # update reactive
+          orcid_df(res_df)
+
         } else {
-          showNotification("No ROR results found. Try again.", type = "message")
+          showNotification("No ORCID results found. Try again.", type = "message")
         }
       } else {
-        showNotification("ROR API request failed. Try again.", type = "error")
+        showNotification("ORCID API request failed. Try again.", type = "error")
+      }
+    })
+
+
+
+    # render instructions
+    output$orcid_instr <- renderUI({
+      if (is.null(orcid_df())) {
+        tags$i("Run ORCID search first...")
+      } else {
+        tags$i("[TBD] Click on a row to select and transfer the ORCID data to the tables below.")
+      }
+    })
+
+    # render ORCID DT
+    output$orcid_results <- DT::renderDT({
+      validate(need(!is.null(orcid_df()), "No data to show"))
+      DT::datatable(orcid_df() %>% dplyr::select(last_name, first_name, email, orcid, org_name),
+                    style = 'default',
+                    rownames = FALSE,
+                    selection = "single",
+                    escape = FALSE,
+                    options = list(pageLength = 5))
+    })
+
+    # TODO: transfer of info to AUTHOR TABLE
+    # observe ROR row selection: open modal
+    observeEvent(input$orcid_results_rows_selected, {
+      showModal(modalDialog(
+        title = "Transfer ORCID data",
+        tagList(
+          p("Do you want to transfer the selected ORCID data to the author table?"),
+          radioButtons(
+            ns("sel_author_orc"),
+            label = "Select author to update:",
+            choices = c(get_author_choices(author_data_out()), "Add new author" = "new"),
+            selected = "new"
+          )
+        ),
+        easyClose = TRUE,
+        footer = tagList(
+          modalButton("Cancel"),
+          actionButton(ns("btn_trans_orcid"), "Transfer")
+        )
+      ))
+    })
+
+    output$testing <- renderPrint({
+      author_data_out()
+    })
+    # transfer ORCID data to authors on confirm transfer
+    observeEvent(input$btn_trans_orcid, {
+      if (!is.null(input$sel_author_orc) && !is.null(input$orcid_results_rows_selected)) {
+        # get the ROR data of the selected row (NOTE that only 1 row can be selected)
+        selected_orc_data <- orcid_df()[input$orcid_results_rows_selected,]
+        #selected_orc_data$org_name <- gsub('\n','<br>',stringr::str_wrap(selected_orc_data$org_name, width = 50))
+        # update in the author data table for the selected authors
+        current_df <- author_data_out()
+        row <- ifelse(input$sel_author_orc == "new", nrow(current_df) + 1, input$sel_author_orc)
+        current_df[row, c("last_name", "first_name", "orcid")] <- selected_orc_data[, c("last_name", "first_name", "orcid_id")]
+        # only update email if the field is NA or empty
+        if (is.na(current_df[row, "email"]) || current_df[row, "email"] == "") {
+          current_df[row, "email"] <- selected_orc_data$email
+        }
+        # only update org_name if the field is NA or empty
+        if (!is.null(selected_orc_data$org_name) && (is.na(current_df[row, "org_name"]) || current_df[row, "org_name"] == "")) {
+          current_df[row, "org_name"] <- selected_orc_data$org_name
+        }
+        author_data_in(current_df)
       }
 
+      # close the modal
+      removeModal()
     })
+
+    # TODO: logic if update from author table
+
+    # output$testing <- renderPrint({
+    #   funding_data$df_in
+    # })
+
 
 
     # AUTHOR RHANDSONTABLE -----------------------------------------------------
-    # Initialize data frame
-    author_data <- reactiveValues(
-      df_in = author_tbl_str,
-      df_out = NULL)
+    # initialize reactiveVal (responding to add/delete row, ror/orcid transfer, file upload)
+    author_data_in <- reactiveVal(author_tbl$tbl_str)
 
-    # Render editable table
+    # render editable table
     output$author_table <- rhandsontable::renderRHandsontable({
       rhandsontable::rhandsontable(
-        author_data$df_in,
+        author_data_in(),
         rowHeaders = TRUE,
         contextMenu = FALSE,
         stretchH = "all",
         height = 150,
-        colHeaders = unname(author_tbl_config$colHeaders)) %>%
-        # custom validation checks renderers for all cols based on tbl_config
-        purrr::reduce(
-          names(author_tbl_config$colHeaders), # names in df
-          function(ht, col) {
-            config <- author_tbl_config[[col]]
-            colName <- author_tbl_config$colHeaders[col] # name in ht
-            hot_col_wrapper(ht, colName, config)
-          },
-          .init = .
-        )
+        colHeaders = unname(author_tbl$tbl_config$colHeaders)) %>%
+      # custom validation check renderers for all cols based on tbl_config
+      purrr::reduce(
+        names(author_tbl$tbl_config$colHeaders), # names in df
+        function(ht, col) {
+          config <- author_tbl$tbl_config[[col]]
+          colName <- author_tbl$tbl_config$colHeaders[col] # name in ht
+          hot_col_wrapper(ht, colName, config)
+        },
+        .init = .
+      )
     })
 
-    funding_data <- reactiveValues(
-      df_in = funding_tbl_str,
-      df_out = NULL)
-
-    # Render editable table
-    output$funding_table <- rhandsontable::renderRHandsontable({
-      rhandsontable::rhandsontable(
-        funding_data$df_in,
-        rowHeaders = TRUE,
-        contextMenu = FALSE,
-        stretchH = "all",
-        colHeaders = unname(funding_tbl_config$colHeaders)) %>%
-        # custom validation checks renderers for all cols based on tbl_config
-        purrr::reduce(
-          names(funding_tbl_config$colHeaders), # names in df
-          function(ht, col) {
-            config <- funding_tbl_config[[col]]
-            colName <- funding_tbl_config$colHeaders[col] # name in ht
-            hot_col_wrapper(ht, colName, config)
-          },
-          .init = .
-        )
+    # create dataframe reactive to hot updates
+    author_data_out <- reactive({
+      rhandsontable::hot_to_r(input$author_table)
     })
 
-
-    # Update data frame on table edit
-    observeEvent(input$author_table, {
-      author_data$df_out <- rhandsontable::hot_to_r(input$author_table)
+    # observe add row button
+    observeEvent(input$btn_add_author, {
+      new_row <- author_tbl$tbl_str
+      current_df <- author_data_out()
+      current_df[nrow(current_df)+1,] <- new_row
+      author_data_in(current_df)
     })
 
-    observeEvent(input$funding_table, {
-      funding_data$df_out <- rhandsontable::hot_to_r(input$funding_table)
+    # observe delete row button
+    observeEvent(input$btn_del_author, {
+      req(nrow(author_data_out()) > 1)
+      current_df <- author_data_out()
+      current_df <- current_df[-nrow(current_df),]
+      author_data_in(current_df)
     })
 
-
-    # Observe add row button
-    observeEvent(input$add_author_btn, {
-      new_row <- author_tbl_str
-      author_data$df_in <- rbind(author_data$df_out, new_row)
-    })
-
-    # Observe delete row button
-    observeEvent(input$del_author_btn, {
-      req(nrow(author_data$df_out) > 1)
-      author_data$df_in <- author_data$df_out[-nrow(author_data$df_out), ]
-    })
-
-    # Observe add row button
-    observeEvent(input$add_fund_btn, {
-      new_row <- funding_tbl_str
-      funding_data$df_in <- rbind(funding_data$df_out, new_row)
-    })
-
-    # Observe delete row button
-    observeEvent(input$del_fund_btn, {
-      req(nrow(funding_data$df_out) > 1)
-      funding_data$df_in <- funding_data$df_out[-nrow(funding_data$df_out), ]
-    })
-
-
-    # Observe import button
+    # observe import data button
     observeEvent(input$file_authors, {
       # try to load the file
       imported_data <- tryCatch({
         read.csv(input$file_authors$datapath, stringsAsFactors = FALSE, encoding = 'UTF-8')
-        }, error = function(e) {
+      }, error = function(e) {
         showModal(modalDialog(
           title = "Error importing file",
           paste("An error occurred while reading the file:", e$message),
@@ -266,8 +485,8 @@ dataset_server <- function(id, main_session) {
       })
       # try to convert data to right structure
       converted_data <- tryCatch({
-        align_to_structure(author_tbl_str, imported_data)
-        }, error = function(e) {
+        align_to_structure(author_tbl$tbl_str, imported_data)
+      }, error = function(e) {
         showModal(modalDialog(
           title = "Error loading data",
           paste("Data could not be aligned with required structure:", e$message),
@@ -277,7 +496,8 @@ dataset_server <- function(id, main_session) {
         return(NULL)
       })
       # updated input data, report any missing columns
-      author_data$df_in <- converted_data$data
+      #author_data$df_in <- converted_data$data
+      author_data_in(converted_data$data)
       if (length(converted_data$missing_cols) > 0) {
         showNotification(
           paste("Missing columns filled with NA:",
@@ -287,25 +507,167 @@ dataset_server <- function(id, main_session) {
     })
 
 
-    # Validation check
-    output$validation_check <- renderUI({
-      req(author_data$df_out)
+    # FUNDING RHANDSONTABLE ----------------------------------------------------
+    # funding_data <- reactiveValues(
+    #   df_in = funding_tbl_str,
+    #   df_out = NULL)
+    # initialize reactiveVal (responding to add/delete row, ror transfer, file upload)
+    funding_data_in <- reactiveVal(funding_tbl$tbl_str)
 
-      validation_results <- list()
+    # Render editable table
+    output$funding_table <- rhandsontable::renderRHandsontable({
+      rhandsontable::rhandsontable(
+        funding_data_in(),
+        rowHeaders = TRUE,
+        contextMenu = FALSE,
+        stretchH = "all",
+        height = 150,
+        colHeaders = unname(funding_tbl$tbl_config$colHeaders)) %>%
+      # custom validation checks renderers for all cols based on tbl_config
+      purrr::reduce(
+        names(funding_tbl$tbl_config$colHeaders), # names in df
+        function(ht, col) {
+          config <- funding_tbl$tbl_config[[col]]
+          colName <- funding_tbl$tbl_config$colHeaders[col] # name in ht
+          hot_col_wrapper(ht, colName, config)
+        },
+        .init = .
+      )
+    })
+
+    # create dataframe reactive to hot updates
+    funding_data_out <- reactive({
+      rhandsontable::hot_to_r(input$funding_table)
+    })
+
+    # observe add row button
+    observeEvent(input$btn_add_fund, {
+      new_row <- funding_tbl$tbl_str
+      current_df <- funding_data_out()
+      current_df[nrow(current_df)+1,] <- new_row
+      funding_data_in(current_df)
+    })
+
+    # observe delete row button
+    observeEvent(input$btn_del_fund, {
+      req(nrow(funding_data_out()) > 1)
+      current_df <- funding_data_out()
+      current_df <- current_df[-nrow(current_df),]
+      funding_data_in(current_df)
+    })
+
+
+    # Observe import data button
+    # TODO:
+
+
+
+    # RELATED RESOURCES --------------------------------------------------------
+    doi_data <- reactiveValues(
+      df_in = data.frame(
+        DOI = character(0),
+        Citation = character(0),
+        XCELLID = character(0),
+        stringsAsFactors = FALSE
+      ),
+      df_out = NULL)
+
+
+
+    output$rel_resources <- DT::renderDT({
+      # a DT with a column of delete buttons
+      deleteButtonColumn(doi_data$df_in, 'delbtn', ns)
+    })
+
+    # observe delete row events
+    observeEvent(input$deletePressed, {
+      rowNum <- parseDeleteEvent(input$deletePressed)
+      # Delete the row from the data frame
+      doi_data$df_in <- doi_data$df_in[-rowNum,]
+    })
+
+    observeEvent(input$btn_add_pub,{
+      # TODO: logic if both are provided? (disable submit button?)
+      # TODO: what about XCELL datasets?
+      # DOI API REQUEST
+      if (!is.null(input$doi) && input$doi != "") {
+        search_url <- sprintf(
+          'https://citation.doi.org/format?doi=%s&style=apa&lang=en-US',
+          URLencode(input$doi)
+        )
+        doi_res <- httr::GET(search_url, httr::timeout(5))
+        if (httr::status_code(doi_res) == 200) {
+          doi_content <- httr::content(doi_res, as = "text", encoding = "UTF-8")
+          df_doi <- doi_data$df_in
+          df_doi <- rbind(df_doi, data.frame(
+            DOI = input$doi,
+            Citation = doi_content,
+            XCELLID = NA,
+            stringsAsFactors = FALSE
+          ))
+          doi_data$df_in <- df_doi
+          # clear input field
+          updateTextInput(session, "doi", value = "")
+        } else {
+          showNotification("Failed to fetch citation from DOI. Please check the DOI.", type = "error")
+        }
+      # COPY CITATION TEXT TO TABLE
+      } else  if (!is.null(input$citation) && input$citation != "") {
+        df_doi <- doi_data$df_in
+        df_doi <- rbind(df_doi, data.frame(
+          DOI = NA,
+          Citation = input$citation,
+          XCELLID = NA,
+          stringsAsFactors = FALSE
+        ))
+        doi_data$df_in <- df_doi
+        # clear input field
+        updateTextInput(session, "citation", value = "")
+      }
+    })
+
+
+#
+#     #Form for data entry
+#     entry_form <- function(button_id){
+#       showModal(
+#         modalDialog(
+#           div(id=ns("entry_form"),
+#               fluidPage(
+#                 textInput(ns("enter_doi"), "Enter DOI:", placeholder = "e.g., 10.3389/fpls.2016.00781"),
+#                 textAreaInput(ns("enter_citation"), "Or enter full citation", "",
+#                               placeholder = "e.g., von Arx, G. et al., Quantitative Wood Anatomy—Practical Guidelines. Front. Plant Sci. 7, 781 (2016)."),
+#                 textInput(ns("enter_xcellid"), "OR XCELL ID", placeholder = "TO BE IMPLEMENTED"),
+#                 actionButton(ns("btn_sub_rel"), "Submit", class = "btn btn-info")
+#               )
+#           )
+#         )
+#       )
+#     }
+
+
+    validation_results <- reactiveValues()
+
+    # Validation checks --------------------------------------------------------
+    output$validation_check <- renderUI({
+      # req(author_data$df_in)
+      #
+      #validation_results <- list()
 
       # use the iv_gen object to validate the dataset inputs
       validation_results$ds_info <- list(
         ds_name = switch(is.null(iv_gen$validate()[[ns('ds_name')]]) + 1, 'invalid name', NULL),
-        ds_desc = switch(is.null(iv_gen$validate()[[ns('ds_desc')]]) + 1, 'invalid description', NULL)
+        ds_desc = switch(is.null(iv_gen$validate()[[ns('ds_desc')]]) + 1, 'invalid description', NULL),
+        ds_lic = switch((input$ds_access == 'public' && is.null(input$ds_license)) + 1, 'missing license', NULL)
       )
 
       # column-wise validation checks on the author table
-      df_out <- author_data$df_out
-      validation_results$author_table <- lapply(names(df_out), function(col_name) {
-        validate_column(df_out[[col_name]], author_tbl_config[[col_name]])
-      })
-      names(validation_results$author_table) <- names(df_out)
-
+      df_aut <- author_data_out()
+      validation_results$author_table <- sapply(
+        colnames(df_aut),
+        function(col_name) {
+          validate_column(df_aut[[col_name]], author_tbl$tbl_config[[col_name]])},
+        simplify = FALSE, USE.NAMES = TRUE)
 
       # Use a for loop to iterate through validation_results
       issues_output <- list()
@@ -342,19 +704,19 @@ dataset_server <- function(id, main_session) {
     })
 
     # Observe save button
-    observeEvent(input$btn_save_aut, {
-      data <- author_data$df_out
-
-      # TODO: file download rather than predefined file?
-      # Save to CSV
-      write.csv(data, file = "author_data.csv", row.names = FALSE)
-      showModal(modalDialog(
-        title = "Success",
-        "Data saved successfully!",
-        easyClose = TRUE,
-        footer = NULL
-      ))
-    })
+    # observeEvent(input$btn_save_aut, {
+    #   data <- author_data$df_out
+    #
+    #   # TODO: file download rather than predefined file?
+    #   # Save to CSV
+    #   write.csv(data, file = "author_data.csv", row.names = FALSE)
+    #   showModal(modalDialog(
+    #     title = "Success",
+    #     "Data saved successfully!",
+    #     easyClose = TRUE,
+    #     footer = NULL
+    #   ))
+    # })
 
 
     # Next button
@@ -378,19 +740,22 @@ dataset_server <- function(id, main_session) {
     # clean up, refactor data import and validation checks into functions
 
     return(
-      reactive(
+      # reactive(
         list(
-          author_data = author_data$df_out,
-          funding_data = funding_data$df_out,
-          ds_data = list(
-            ds_name = input$ds_name,
-            ds_desc = input$ds_desc,
-            ds_access = input$df_access,
-            ds_license = input$ds_license,
-            ds_embargoed = input$ds_embargoed
-          )
+          input_meta = list(
+            ds_data = list(
+              ds_name = reactive(input$ds_name),
+              ds_desc = reactive(input$ds_desc),
+              ds_access = reactive(input$df_access),
+              ds_license = reactive(input$ds_license),
+              ds_embargoed = reactive(input$ds_embargoed)
+            ),
+            author_data = author_data_out,
+            funding_data = funding_data_out
+          ),
+          val_check = validation_results
         )
-      )
+      #)
     )
 
   })
