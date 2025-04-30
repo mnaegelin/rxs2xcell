@@ -89,6 +89,89 @@ ror_api_request <- function(search_string, country_code){
 
 
 
+orcid_api_request <- function(search_string = NULL, last_name = NULL, first_name = NULL){
+  # query by search string
+  if (!is.null(search_string)) {
+    # query either orcid or by names, depending on the format of the search_string
+    if (grepl("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", search_string)) {
+      # query by orcid
+      query <- sprintf('?q=orcid:%s',search_string)
+    } else {
+      # query by names
+      search_terms <- URLencode(gsub(" ", "+AND+", search_string))
+      query <- sprintf('?q=given-and-family-names:(%s)+OR+other-names:(%s)',
+                       search_terms, search_terms)
+    }
+    print(query)
+
+    search_url <- paste0(
+      'https://pub.orcid.org/v3.0/csv-search/', query,
+      '&fl=family-name,given-names,email,orcid,current-institution-affiliation-name,other-names',
+      '&rows=50')
+
+  # OR query by first and last names explicitly
+  } else if (!(is.null(last_name) || last_name == "" || is.na(last_name)) ||
+            !(is.null(first_name) || first_name == "" || is.na(first_name))) {
+
+    query_ln <- ifelse(!(is.null(last_name) || last_name == "" || is.na(last_name)),
+                       sprintf('(family-name:(%s))', URLencode(gsub(" ", "+AND+", last_name))),
+                       "")
+    query_fn <- ifelse(!(is.null(first_name) || first_name == "" || is.na(first_name)),
+                       sprintf('(given-names:(%s))', URLencode(gsub(" ", "+AND+", first_name))),
+                       "")
+    query <- paste0('?q=', query_ln, ifelse(nchar(query_ln)>0&&nchar(query_fn)>0, '+AND+', ""), query_fn)
+    print(query)
+
+    search_url <- paste0(
+      'https://pub.orcid.org/v3.0/csv-search/', query,
+      '&fl=family-name,given-names,email,orcid,current-institution-affiliation-name,other-names',
+      '&rows=50')
+
+  } else {
+    # no valid search terms provided, abort
+    # showNotification("Could not generate query. Provide either a search_string or last_name, first_name arguments.", type = "error")
+    return(NULL)
+  }
+
+  orcid_res <- httr::GET(search_url, httr::timeout(5))
+
+  if (httr::status_code(orcid_res) == 200) {
+    orcid_data <- read.table(text = rawToChar(orcid_res$content),
+                             sep =",", header = TRUE,
+                             stringsAsFactors = FALSE, allowEscapes = TRUE)
+
+    if (nrow(orcid_data) > 0) {
+      orcid_data <- orcid_data %>%
+        dplyr::rename(
+          last_name = 'family.name',
+          first_name = 'given.names',
+          orcid_id = 'orcid',
+          org_name = 'current.institution.affiliation.name',
+          other_names = 'other.names') %>%
+        # only use the first entry for email and affiliation
+        tidyr::separate(email, into = c("email"), sep = ",(?!\\s)", extra = "drop") %>%
+        tidyr::separate(org_name, into = c("org_name"), sep = ",(?!\\s)", extra = "drop") %>%
+        dplyr::mutate(
+          # create orcid hyperlinks
+          orcid = paste0("<a href='https://orcid.org/", orcid_id, "' target='_blank'>",orcid_id,"</a>"))
+
+      return(orcid_data)
+
+    } else {
+      showNotification("No ROR results found. Try again.", type = "message")
+      return(NULL)
+    }
+
+  } else {
+    showNotification("ROR API request failed. Try again.", type = "error")
+    return(NULL)
+  }
+
+}
+
+
+
+
 
 author_tbl_str <- data.frame(
     last_name = character(1),
@@ -190,17 +273,13 @@ dataset_server <- function(id, main_session,
                                         !(input$ror_search_country=="")))
     })
 
-    # initialize reactiveVal (responding to ror search button)
-    ror_df <- reactiveVal()
-
-    # observe ror search button and run ror API request
-    shiny::observeEvent(input$btn_ror_search, {
+    # ror_df: a reactive updated only in the event of the search button being clicked
+    ror_df <- eventReactive(input$btn_ror_search, {
       req(input$ror_search_country, input$ror_search_string)
 
-      res_df <- ror_api_request(search_string = input$ror_search_string,
-                                country_code = input$ror_search_country)
-      # update reactive
-      ror_df(res_df)
+      # run the ROR API request with the input search string
+      ror_api_request(search_string = input$ror_search_string,
+                      country_code = input$ror_search_country)
     })
 
     # render instructions
@@ -280,93 +359,72 @@ dataset_server <- function(id, main_session,
 
     # ORCID SEARCH ---------------------------------------------------------------
     # toggle search button: only enable if we have a country and search string
-    shiny::observe({
+    observe({
       shinyjs::toggleState(id = "btn_orcid_search",
                            condition = !(input$orcid_search_string==""))
     })
 
-    # run the search via ORCID API
-
-    # TODO: streamline API USAGE:
-    # if input matches ORCID pattern, switch to orcid query, else search names?
-    #https://info.orcid.org/documentation/api-tutorials/api-tutorial-searching-the-orcid-registry/
-    #https://pub.orcid.org/v3.0/expanded-search/?q=family-name:naegelin
-    #https://pub.orcid.org/v3.0/expanded-search/?q=orcid:0000-0002-2415-8019
-    #https://pub.orcid.org/v3.0/expanded-search/?q=given-and-family-names:naegelin
-    #https://pub.orcid.org/v3.0/expanded-search/?q=affiliation-org-name:ETH
-
+    # orcid_df: a reactive updated only in the event of the search button being clicked
     orcid_df <- reactiveVal()
 
-    shiny::observeEvent(input$btn_orcid_search, {
+    observeEvent(input$btn_orcid_search, {
       req(input$orcid_search_string)
 
-      # TODO: get more org info? only if clear which one is the relavant one?
-      # TODO: link orcid vs raw
-      # TODO: colnames
+      # run the ORCID API request with the input search string
+      res_df <- orcid_api_request(search_string = input$orcid_search_string)
+      res_df$search_terms <- input$orcid_search_string
 
-      search_url <- sprintf(
-        'https://pub.orcid.org/v3.0/expanded-search/?q=%s',
-        URLencode(gsub(" ", "+AND+", input$orcid_search_string)))
-
-      orcid_res <- httr::GET(search_url, httr::timeout(5))
-
-      if (httr::status_code(orcid_res) == 200) {
-        orcid_data <- jsonlite::fromJSON(rawToChar(orcid_res$content))
-
-        if (orcid_data[['num-found']] > 0) {
-          # get the data
-          res_df <- orcid_data[['expanded-result']] %>%
-            dplyr::rename(
-              last_name = 'family-names',
-              first_name = 'given-names',
-              orcid_id = 'orcid-id',
-              org_name = 'institution-name'
-            ) %>%
-            dplyr::select(last_name, first_name, email, orcid_id, org_name)
-
-          # create orcid hyperlinks, if multiple email / affiliations, we just take the first one (???)
-          res_df <- res_df %>%
-            dplyr::mutate(
-              orcid = paste0("<a href='https://orcid.org/", orcid_id, "' target='_blank'>",orcid_id,"</a>"),
-              email = sapply(email, function(x) if (length(x) == 0) NA else x[[1]]),
-              org_name = sapply(org_name, function(x) if (length(x) == 0) NA else x[[1]]),
-            )
-
-          # update reactive
-          orcid_df(res_df)
-
-        } else {
-          showNotification("No ORCID results found. Try again.", type = "message")
-        }
-      } else {
-        showNotification("ORCID API request failed. Try again.", type = "error")
-      }
+      # update the reactiveVal
+      orcid_df(res_df)
     })
 
+    output$testing <- renderPrint({
+      print(input$orcid_search_string)
+      print(orcid_df())
+    })
 
+    observeEvent(input$btn_orcid_tbl, {
+      current_df <- author_data_out()
+      results_combined <- list()
+      for (row in 1:nrow(current_df)){
+        # short break every 10th run to avoid crashing the API
+        if (row > 10 && row %% 10 == 0) {Sys.sleep(0.6)}
+
+        # run a name based api request for each row
+        last_name <- current_df$last_name[row]
+        first_name <- current_df$first_name[row]
+        results <- orcid_api_request(last_name = last_name, first_name = first_name)
+        results_combined[[paste(last_name, first_name)]] <- results
+      }
+      # combine the results and update the reactive
+      res_df <- dplyr::bind_rows(results_combined, .id = 'search_terms')
+      orcid_df(res_df)
+    })
 
     # render instructions
     output$orcid_instr <- renderUI({
       if (is.null(orcid_df())) {
         tags$i("Run ORCID search first...")
       } else {
-        tags$i("[TBD] Click on a row to select and transfer the ORCID data to the tables below.")
+        tags$i("Click on a row to select and transfer the ORCID data to the table below.
+                Note that existing email and affiliation data will not be overwritten.")
       }
     })
 
     # render ORCID DT
     output$orcid_results <- DT::renderDT({
       validate(need(!is.null(orcid_df()), "No data to show"))
-      DT::datatable(orcid_df() %>% dplyr::select(last_name, first_name, email, orcid, org_name),
+      DT::datatable(orcid_df() %>% dplyr::select(search_terms, last_name, first_name, email, orcid, org_name, other_names),
+                    extensions = 'RowGroup',
                     style = 'default',
                     rownames = FALSE,
                     selection = "single",
                     escape = FALSE,
-                    options = list(pageLength = 5))
+                    options = list(pageLength = 5,
+                                   rowGroup = list(dataSrc = 0)))
     })
 
-    # TODO: transfer of info to AUTHOR TABLE
-    # observe ROR row selection: open modal
+    # observe ORCID row selection: open modal
     observeEvent(input$orcid_results_rows_selected, {
       showModal(modalDialog(
         title = "Transfer ORCID data",
@@ -387,26 +445,23 @@ dataset_server <- function(id, main_session,
       ))
     })
 
-    output$testing <- renderPrint({
-      author_data_out()
-    })
-    # transfer ORCID data to authors on confirm transfer
+    # transfer ORCID data to author table on confirm transfer
     observeEvent(input$btn_trans_orcid, {
       if (!is.null(input$sel_author_orc) && !is.null(input$orcid_results_rows_selected)) {
-        # get the ROR data of the selected row (NOTE that only 1 row can be selected)
-        selected_orc_data <- orcid_df()[input$orcid_results_rows_selected,]
-        #selected_orc_data$org_name <- gsub('\n','<br>',stringr::str_wrap(selected_orc_data$org_name, width = 50))
-        # update in the author data table for the selected authors
+        # get the ORCID data of the selected row (NOTE: only 1 row can be selected)
+        sel_orcid_data <- orcid_df()[input$orcid_results_rows_selected,]
+        sel_orcid_data$org_name <- gsub('\n','<br>',stringr::str_wrap(sel_orcid_data$org_name, width = 50))
+        # update in the author data table for the selected author (NOTE: only 1 can be selected)
         current_df <- author_data_out()
         row <- ifelse(input$sel_author_orc == "new", nrow(current_df) + 1, input$sel_author_orc)
-        current_df[row, c("last_name", "first_name", "orcid")] <- selected_orc_data[, c("last_name", "first_name", "orcid_id")]
+        current_df[row, c("last_name", "first_name", "orcid")] <- sel_orcid_data[, c("last_name", "first_name", "orcid_id")]
         # only update email if the field is NA or empty
         if (is.na(current_df[row, "email"]) || current_df[row, "email"] == "") {
-          current_df[row, "email"] <- selected_orc_data$email
+          current_df[row, "email"] <- sel_orcid_data$email
         }
         # only update org_name if the field is NA or empty
-        if (!is.null(selected_orc_data$org_name) && (is.na(current_df[row, "org_name"]) || current_df[row, "org_name"] == "")) {
-          current_df[row, "org_name"] <- selected_orc_data$org_name
+        if (is.na(current_df[row, "org_name"]) || current_df[row, "org_name"] == "") {
+          current_df[row, "org_name"] <- sel_orcid_data$org_name
         }
         author_data_in(current_df)
       }
