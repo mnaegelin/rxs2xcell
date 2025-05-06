@@ -5,7 +5,8 @@ server <- function(input, output, session) {
 
   dataset_info <- dataset_server('ds', session, countries_list, author_tbl, funding_tbl)
 
-  site_info <- site_server('site', session, start_info)
+  site_info <- site_server('site', session, start_info, countries_list,
+                           site_tbl, tree_tbl, woodpiece_tbl, slide_tbl)
 
   #tree_info <- tree_server('tree', session, start_info)
 

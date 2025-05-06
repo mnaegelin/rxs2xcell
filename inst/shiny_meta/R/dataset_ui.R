@@ -29,15 +29,15 @@ dataset_ui <- function(id, countries_list) {
       hr(),
       tags$ol(
         class = 'custom-indent', start = 3,
-        tags$li("Disclose any funding sources who provided financial support
+        tags$li("Disclose any funding sources which provided financial support
                 related to the generation, collection, curation or processing of
-                this dataset.")
+                the dataset.")
       ),
       hr(),
       tags$ol(
         class = 'custom-indent', start = 4,
-        tags$li("If available, list any publications or datasets which are
-                 related to the current dataset.")
+        tags$li("If applicable, list any publications or datasets which are
+                 related to this dataset.")
       ),
       hr(),
 
@@ -102,18 +102,26 @@ dataset_ui <- function(id, countries_list) {
               span("*Access rights will", strong("not"), "be changed automatically after embargo date."),
               ns=NS(id))
           )
+        ),
+        layout_column_wrap(
+          width = 1/2,
+          textAreaInput(
+            ns('ds_ackn'), "Acknowledgements", rows = 3,
+            placeholder = "If applicable, acknowledge the contributions of specific colleagues, institutions, or agencies that aided these research efforts. Note that all authors and funding sources must be listed separately below.")
         )
       ),
 
-      ## Authors
+      ## Authors and funding
       accordion_panel(
         'Authors & Funding',
 
-        ## ROR search tool
+        ### search tools
         accordion(
           id = ns("search_tools"),
           class = "accordion-tert",
           open = FALSE, # NOTE: does not work, fixed with panel_close event in server
+
+          #### ROR search tool
           accordion_panel(
             'ROR search tool',
             layout_columns(
@@ -137,6 +145,7 @@ dataset_ui <- function(id, countries_list) {
             )
           ),
 
+          #### ORCID search tool
           accordion_panel(
             'ORCID search tool',
             layout_columns(
@@ -161,7 +170,8 @@ dataset_ui <- function(id, countries_list) {
           )
         ),
 
-        ## Authors input table
+
+        ### Authors input table
         hr(),
         h5('2. Author information'),
 
@@ -182,9 +192,10 @@ dataset_ui <- function(id, countries_list) {
         br(),
 
         #actionButton(ns('btn_save_aut'), "Save author data", icon = icon('save')),
-        hr(),
 
-        ## Funding info
+
+        ### Funding info table
+        hr(),
         h5('3. Funding information'),
 
         # another way to organize the layout
@@ -206,39 +217,37 @@ dataset_ui <- function(id, countries_list) {
 
       ),
 
+      ## Related resources
       accordion_panel(
         'Related resources',
         h5('4. Related publications and datasets'),
 
-        layout_columns(
-          card(
-            class = "card-tert",
-            textInput(ns("doi"), "Enter DOI:", placeholder = "e.g., 10.3389/fpls.2016.00781"),
-            span(tags$i('If a valid DOI is entered, the citation will automatically be generated via the DOI API.')),
-            textAreaInput(ns("citation"), "Or enter full citation", "",
+        card(
+          class = "card-tert",
+          layout_columns(
+            textInput(ns("doi"), "Either enter DOI", placeholder = "e.g., 10.3389/fpls.2016.00781"),
+            textAreaInput(ns("citation"), "Or enter full citation", "", rows = 3,
                           placeholder = "e.g., von Arx, G. et al., Quantitative Wood Anatomy—Practical Guidelines. Front. Plant Sci. 7, 781 (2016)."),
-            textInput(ns("xcellid"), "Or XCELL ID", placeholder = "TO BE IMPLEMENTED"),
-            actionButton(ns("btn_add_pub"), "Add item", class = "btn btn-info")
-            #shiny::selectizeInput("result_choice", "Select Result:", choices = NULL)
+            textInput(ns("xcellid"), "Or enter XCELL ID", placeholder = "TO BE IMPLEMENTED"),
+            col_widths = c(4,4,4)
           ),
-          card(
-            DT::DTOutput(ns("rel_resources"))
-          ),
-          col_widths = c(3,9)
+          span(tags$i('If a valid DOI or XCELL ID is entered, a citation will
+                      automatically be generated via the DOI or XCELL APIs, respectively.
+                      Otherwise, the provided citation is used directly.')),
+          actionButton(ns("btn_add_pub"), "Add item", style = "width: 130px",
+                       class = "btn btn-secondary", icon = icon('plus', lib = "glyphicon"))
+          #shiny::selectizeInput("result_choice", "Select Result:", choices = NULL)
         ),
 
-        # hr(),
-        #
-        # fluidRow(
-        #   actionButton("btn_add_rel", "Add", icon("plus")),
-        #   actionButton("btn_edit_rel", "Edit", icon("edit")),
-        #   actionButton("btn_del_rel", "Delete", icon("trash-alt"))
-        # ),
-        # DT::DTOutput(ns("relatedDT"))
+        hr(),
+        p(tags$i("Add related publications or datasets by providing either DOI, full citation or XCELL ID.")),
+
+        DT::DTOutput(ns("rel_resources"))
 
       )
-    ),
+    ), # end of accordion
 
+    # export progress to file button
     div(
       style = "text-align: center; margin-top: 20px;", # Centering and adding margin
       downloadButton(ns('btn_save'), "Export progress to file",
@@ -255,6 +264,15 @@ dataset_ui <- function(id, countries_list) {
 
 
 
+
+# hr(),
+#
+# fluidRow(
+#   actionButton("btn_add_rel", "Add", icon("plus")),
+#   actionButton("btn_edit_rel", "Edit", icon("edit")),
+#   actionButton("btn_del_rel", "Delete", icon("trash-alt"))
+# ),
+# DT::DTOutput(ns("relatedDT"))
 
 
 

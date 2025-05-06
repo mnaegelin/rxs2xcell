@@ -142,23 +142,23 @@ validate_char_column <- function(column, col_config) {
   validation_results <- c()
 
   if (check_required && any(is.na(column) | column == "")) {
-    validation_results <- c(validation_results, "missing values")
+    validation_results <- c(validation_results, "Required")
   }
 
   column_nonmissing <- column[!(is.na(column) | column == "")]
 
   if (any(nchar(column_nonmissing) < minl)) {
-    validation_results <- c(validation_results, "invalid lengths")
+    validation_results <- c(validation_results, "Invalid lengths")
   } else if (any(nchar(column_nonmissing) > maxl)) {
-    validation_results <- c(validation_results, "invalid lengths")
+    validation_results <- c(validation_results, "Invalid lengths")
   }
 
   if (check_regex && any(!grepl(regp, column_nonmissing))) {
-    validation_results <- c(validation_results, "invalid formats")
+    validation_results <- c(validation_results, "Invalid formats")
   }
 
   if (check_unique && any(duplicated(column_nonmissing))) {
-    validation_results <- c(validation_results, "non-unique values")
+    validation_results <- c(validation_results, "Non-unique values")
   }
 
   return(validation_results)
@@ -175,13 +175,13 @@ validate_num_column <- function(column, col_config) {
   column_numeric <- suppressWarnings(as.numeric(column))
 
   if (check_required && any(is.na(column_numeric))) {
-    validation_results <- c(validation_results, "missing values")
+    validation_results <- c(validation_results, "Required")
   }
 
   if (check_min_val && any(column_numeric < minv, na.rm = TRUE)) {
-    validation_results <- c(validation_results, "out of range values")
+    validation_results <- c(validation_results, "Out of range values")
   } else if (check_max_val && any(column_numeric > minv, na.rm = TRUE)) {
-    validation_results <- c(validation_results, "out of range values")
+    validation_results <- c(validation_results, "Out of range values")
   }
 
   return(validation_results)
@@ -189,18 +189,18 @@ validate_num_column <- function(column, col_config) {
 
 validate_drop_column <- function(column, col_config){
   check_required <- ifelse(is.null(col_config$required), FALSE, col_config$required)
-  val_options <- col_config$val_options
+  val_options <- col_config$options
 
   validation_results <- c()
 
   if (check_required && any(is.na(column) | column == '')) {
-    validation_results <- c(validation_results, "missing values")
+    validation_results <- c(validation_results, "Required")
   }
 
   column_nonmissing <- column[!(is.na(column) | column == "")]
 
   if (!all(column_nonmissing %in% val_options)) {
-    validation_results <- c(validation_results, "invalid values")
+    validation_results <- c(validation_results, "Invalid options")
   }
 
   return(validation_results)
@@ -215,12 +215,12 @@ validate_cb_column <- function(column, col_config){
 
   validation_results <- c()
 
-  true_count <- sum(column)
+  true_count <- sum(column, na.rm = TRUE) # NA count a s FALSE
 
   if (true_count < mincb) {
-    validation_results <- c(validation_results, "too few checked")
+    validation_results <- c(validation_results, "Too few checked")
   } else if (true_count > maxcb) {
-    validation_results <- c(validation_results, "too many checked")
+    validation_results <- c(validation_results, "Too many checked")
   }
 
   return(validation_results)
@@ -230,14 +230,14 @@ validate_date_column <- function(column, col_config){
   check_required <- ifelse(is.null(col_config$required), FALSE, col_config$required)
 
   if (check_required && any(is.na(column) | column == '')) {
-    validation_results <- c(validation_results, "missing values")
+    validation_results <- c(validation_results, "Required")
   }
 
   column_nonmissing <- column[!(is.na(column) | column == "")]
   column_date <- as.Date(column_nonmissing, format = "%Y-%m-%d")
 
   if (any(is.na(column_date))) {
-    validation_results <- c(validation_results, "invalid date formats")
+    validation_results <- c(validation_results, "Invalid date formats")
   }
 
   return(validation_results)
@@ -254,4 +254,35 @@ validate_column <- function(column, col_config){
          "date" = validate_date_column(column, col_config),
          stop("Unknown column type")
   )
+}
+
+collect_validator_results <- function(iv_validated, input_field_names, ns_prefix){
+  results <- list()
+  for (val_item in names(iv_validated)){
+    if (!is.null(iv_validated[[val_item]])){
+      item_name <- gsub(paste0(ns_prefix,'-'),'',val_item) # undo the namespace
+      results[[item_name]] <- list(
+        field = input_field_names[[item_name]],
+        type = iv_validated[[val_item]]$type,
+        message = iv_validated[[val_item]]$message
+      )
+    }
+  }
+  return(results)
+}
+
+collect_hot_val_results <- function(df, tbl_config){
+  results <- sapply(
+    colnames(df),
+    function(col_name) {
+      val_check <- validate_column(df[[col_name]], tbl_config[[col_name]])
+      if (length(val_check) > 0) {
+        list(
+          field = tbl_config$colHeaders[[col_name]],
+          type = 'error',
+          message = paste(val_check, collapse = ', ')
+        )
+      } else {NULL}
+    }, simplify = FALSE, USE.NAMES = TRUE)
+  return(results)
 }

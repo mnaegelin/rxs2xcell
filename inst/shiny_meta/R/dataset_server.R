@@ -41,137 +41,6 @@ get_funding_choices <- function(funding_df){
   return(stats::setNames(cb_vals, cb_names))
 }
 
-ror_api_request <- function(search_string, country_code){
-  search_url <- sprintf(
-    'https://api.ror.org/v2/organizations?query=%s&filter=country.country_code:%s',
-    URLencode(search_string), country_code)
-  ror_res <- httr::GET(search_url, httr::timeout(5))
-
-  if (httr::status_code(ror_res) == 200) {
-    ror_data <- jsonlite::fromJSON(rawToChar(ror_res$content))
-
-    if (ror_data$number_of_results > 0) {
-      # get the names (assuming that there is always exactly one ror_display name)
-      res_names <- ror_data$items$names %>%
-        dplyr::bind_rows() %>%
-        dplyr::filter(grepl('ror_display', types)) %>%
-        dplyr::rename(Name = value) %>%
-        dplyr::select(Name)
-
-      # get the locations
-      res_locs <- ror_data$items$locations %>%
-        dplyr::bind_rows() %>%
-        dplyr::pull(geonames_details) %>%
-        tidyr::unite(col = 'Location', name, country_name, sep = ', ', remove = FALSE) %>%
-        dplyr::rename(city = name) %>%
-        dplyr::select(Location, country_code, city)
-
-      res_df <- cbind(res_names, res_locs)
-
-      # get the ror ids and corresponding hyperlinks
-      res_df <- res_df %>%
-        dplyr::mutate(
-          RORID = gsub('https://ror.org/', '', ror_data$items$id),
-          Link = paste0("<a href='",ror_data$items$id,"' target='_blank'>",ror_data$items$id,"</a>")
-        )
-      return(res_df)
-
-    } else {
-      showNotification("No ROR results found. Try again.", type = "message")
-      return(NULL)
-    }
-
-  } else {
-    showNotification("ROR API request failed. Try again.", type = "error")
-    return(NULL)
-  }
-}
-
-
-
-orcid_api_request <- function(search_string = NULL, last_name = NULL, first_name = NULL){
-  # query by search string
-  if (!is.null(search_string)) {
-    # query either orcid or by names, depending on the format of the search_string
-    if (grepl("^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$", search_string)) {
-      # query by orcid
-      query <- sprintf('?q=orcid:%s',search_string)
-    } else {
-      # query by names
-      search_terms <- URLencode(gsub(" ", "+AND+", search_string))
-      query <- sprintf('?q=given-and-family-names:(%s)+OR+other-names:(%s)',
-                       search_terms, search_terms)
-    }
-    print(query)
-
-    search_url <- paste0(
-      'https://pub.orcid.org/v3.0/csv-search/', query,
-      '&fl=family-name,given-names,email,orcid,current-institution-affiliation-name,other-names',
-      '&rows=50')
-
-  # OR query by first and last names explicitly
-  } else if (!(is.null(last_name) || last_name == "" || is.na(last_name)) ||
-            !(is.null(first_name) || first_name == "" || is.na(first_name))) {
-
-    query_ln <- ifelse(!(is.null(last_name) || last_name == "" || is.na(last_name)),
-                       sprintf('(family-name:(%s))', URLencode(gsub(" ", "+AND+", last_name))),
-                       "")
-    query_fn <- ifelse(!(is.null(first_name) || first_name == "" || is.na(first_name)),
-                       sprintf('(given-names:(%s))', URLencode(gsub(" ", "+AND+", first_name))),
-                       "")
-    query <- paste0('?q=', query_ln, ifelse(nchar(query_ln)>0&&nchar(query_fn)>0, '+AND+', ""), query_fn)
-    print(query)
-
-    search_url <- paste0(
-      'https://pub.orcid.org/v3.0/csv-search/', query,
-      '&fl=family-name,given-names,email,orcid,current-institution-affiliation-name,other-names',
-      '&rows=50')
-
-  } else {
-    # no valid search terms provided, abort
-    # showNotification("Could not generate query. Provide either a search_string or last_name, first_name arguments.", type = "error")
-    return(NULL)
-  }
-
-  orcid_res <- httr::GET(search_url, httr::timeout(5))
-
-  if (httr::status_code(orcid_res) == 200) {
-    orcid_data <- read.table(text = rawToChar(orcid_res$content),
-                             sep =",", header = TRUE,
-                             stringsAsFactors = FALSE, allowEscapes = TRUE)
-
-    if (nrow(orcid_data) > 0) {
-      orcid_data <- orcid_data %>%
-        dplyr::rename(
-          last_name = 'family.name',
-          first_name = 'given.names',
-          orcid_id = 'orcid',
-          org_name = 'current.institution.affiliation.name',
-          other_names = 'other.names') %>%
-        # only use the first entry for email and affiliation
-        tidyr::separate(email, into = c("email"), sep = ",(?!\\s)", extra = "drop") %>%
-        tidyr::separate(org_name, into = c("org_name"), sep = ",(?!\\s)", extra = "drop") %>%
-        dplyr::mutate(
-          # create orcid hyperlinks
-          orcid = paste0("<a href='https://orcid.org/", orcid_id, "' target='_blank'>",orcid_id,"</a>"))
-
-      return(orcid_data)
-
-    } else {
-      showNotification("No ROR results found. Try again.", type = "message")
-      return(NULL)
-    }
-
-  } else {
-    showNotification("ROR API request failed. Try again.", type = "error")
-    return(NULL)
-  }
-
-}
-
-
-
-
 
 author_tbl_str <- data.frame(
     last_name = character(1),
@@ -185,14 +54,14 @@ author_tbl_str <- data.frame(
     aff_plz = character(1),
     aff_city = character(1),
     org_country = character(1),
-    contactperson = logical(1),
+    contactperson = FALSE,
     stringsAsFactors = FALSE)
 
 author_tbl_config <- list(
   # NOTE: order matters for colHeaders (needs to be same as in df)
   colHeaders = c(last_name = 'Last name', first_name = 'First name',
                  email = 'Email address', orcid = 'ORCID',
-                 org_name = 'Research Institution', org_rorid = 'RORID',
+                 org_name = 'Research institution', org_rorid = 'RORID',
                  aff_dep = 'Department', aff_street = 'Street',
                  aff_plz = 'Postal code', aff_city = "City",
                  org_country = "Country", contactperson = 'Contact person'),
@@ -211,29 +80,30 @@ author_tbl_config <- list(
   org_country = list(type = 'autocomplete', required = TRUE, options = names(countries_list)),
   contactperson = list(type = 'checkbox', required = TRUE, max_checks = 1)
 )
+
 author_tbl <- list(
   tbl_str = author_tbl_str,
   tbl_config = author_tbl_config
 )
-
-
 
 funding_tbl_str <- data.frame(
   inst_name = character(1),
   inst_rorid = character(1),
   inst_city = character(1),
   inst_country = character(1),
+  grant_name = character(1),
   grantnr = character(1),
   stringsAsFactors = FALSE)
 
 funding_tbl_config <- list(
   # NOTE: order matters for colHeaders (needs to be same as in df)
-  colHeaders = c(inst_name = 'Funding Institution', inst_rorid = 'Inst. RORID',
-                 inst_city = 'City', inst_country = 'Country', grantnr = 'Grant Nr.'),
+  colHeaders = c(inst_name = 'Funding institution', inst_rorid = 'Inst. RORID',
+                 inst_city = 'City', inst_country = 'Country', grant_name = 'Grant name', grantnr = 'Grant Nr. or ID'),
   inst_name = list(type = 'text', required = TRUE),
   inst_rorid = list(type = 'character', required = FALSE),
   inst_city = list(type = 'character', required = FALSE),
   inst_country = list(type = 'autocomplete', required = FALSE, options = names(countries_list)),
+  grant_name = list(type = 'character', required = FALSE),
   grantnr = list(type = 'character', required = TRUE)
 )
 
@@ -241,6 +111,16 @@ funding_tbl <- list(
   tbl_str = funding_tbl_str,
   tbl_config = funding_tbl_config
 )
+
+# need only the names of fields with validation checks,
+# can take table column names from tbl_configs
+input_field_names <- c(
+  ds_data = 'Dataset',
+  ds_name = 'Dataset name',
+  ds_desc = 'Dataset description',
+  author_data = 'Authors',
+  funding_data = 'Funding')
+
 
 
 # SERVER -----------------------------------------------------------------------
@@ -259,7 +139,11 @@ dataset_server <- function(id, main_session,
     # add validator rules for dataset inputs
     iv_gen <- shinyvalidate::InputValidator$new()
     iv_gen$add_rule("ds_name", shinyvalidate::sv_required())
-    iv_gen$add_rule("ds_name", max_char_limit, limit = 64)
+    iv_gen$add_rule("ds_name", max_char_limit, limit = 5)
+    # iv_gen$add_rule(
+    #   "ds_name",
+    #   shinyvalidate::sv_regex("^[a-zA-Z0-9]*$", "Only alphanumeric characters allowed")
+    # )
     iv_gen$add_rule("ds_desc", shinyvalidate::sv_required())
 
     iv_gen$enable() # TODO: enable from start?
@@ -364,9 +248,10 @@ dataset_server <- function(id, main_session,
                            condition = !(input$orcid_search_string==""))
     })
 
-    # orcid_df: a reactive updated only in the event of the search button being clicked
+    # reactiveVal (responding to search orcid from string or from table buttons)
     orcid_df <- reactiveVal()
 
+    # run ORCID API search on provided search string
     observeEvent(input$btn_orcid_search, {
       req(input$orcid_search_string)
 
@@ -378,11 +263,7 @@ dataset_server <- function(id, main_session,
       orcid_df(res_df)
     })
 
-    output$testing <- renderPrint({
-      print(input$orcid_search_string)
-      print(orcid_df())
-    })
-
+    # run ORCID API search on author table
     observeEvent(input$btn_orcid_tbl, {
       current_df <- author_data_out()
       results_combined <- list()
@@ -390,15 +271,35 @@ dataset_server <- function(id, main_session,
         # short break every 10th run to avoid crashing the API
         if (row > 10 && row %% 10 == 0) {Sys.sleep(0.6)}
 
-        # run a name based api request for each row
+        # run a name based api request for each row with values
         last_name <- current_df$last_name[row]
         first_name <- current_df$first_name[row]
-        results <- orcid_api_request(last_name = last_name, first_name = first_name)
-        results_combined[[paste(last_name, first_name)]] <- results
+        if (last_name != "" || first_name != ""){
+          results <- orcid_api_request(last_name = last_name, first_name = first_name)
+          results_combined[[paste(last_name, first_name)]] <- results
+
+          # if the result is unique, update the author table
+          if (nrow(results) == 1){
+            current_df[row, c("last_name", "first_name", "orcid")] <- results[, c("last_name", "first_name", "orcid_id")]
+            # only update email if the field is NA or empty
+            if (is.na(current_df[row, "email"]) || current_df[row, "email"] == "") {
+              current_df[row, "email"] <- results$email
+            }
+            # only update org_name if the field is NA or empty
+            if (is.na(current_df[row, "org_name"]) || current_df[row, "org_name"] == "") {
+              current_df[row, "org_name"] <- results$org_name
+            }
+          }
+        }
       }
-      # combine the results and update the reactive
-      res_df <- dplyr::bind_rows(results_combined, .id = 'search_terms')
-      orcid_df(res_df)
+
+      # combine the results and update the reactives
+      if (length(results_combined) > 0){
+        res_df <- dplyr::bind_rows(results_combined, .id = 'search_terms')
+        orcid_df(res_df)
+        author_data_in(current_df)
+      }
+
     })
 
     # render instructions
@@ -407,7 +308,7 @@ dataset_server <- function(id, main_session,
         tags$i("Run ORCID search first...")
       } else {
         tags$i("Click on a row to select and transfer the ORCID data to the table below.
-                Note that existing email and affiliation data will not be overwritten.")
+                Email and affiliation data will only be transferred if not yet provided in the table.")
       }
     })
 
@@ -453,7 +354,12 @@ dataset_server <- function(id, main_session,
         sel_orcid_data$org_name <- gsub('\n','<br>',stringr::str_wrap(sel_orcid_data$org_name, width = 50))
         # update in the author data table for the selected author (NOTE: only 1 can be selected)
         current_df <- author_data_out()
-        row <- ifelse(input$sel_author_orc == "new", nrow(current_df) + 1, input$sel_author_orc)
+        if (input$sel_author_orc == "new"){
+          row <- nrow(current_df) + 1
+          current_df[row,'contactperson'] <- FALSE # avoid NA in logical columns
+        } else {
+          row <- input$sel_author_orc
+        }
         current_df[row, c("last_name", "first_name", "orcid")] <- sel_orcid_data[, c("last_name", "first_name", "orcid_id")]
         # only update email if the field is NA or empty
         if (is.na(current_df[row, "email"]) || current_df[row, "email"] == "") {
@@ -469,12 +375,6 @@ dataset_server <- function(id, main_session,
       # close the modal
       removeModal()
     })
-
-    # TODO: logic if update from author table
-
-    # output$testing <- renderPrint({
-    #   funding_data$df_in
-    # })
 
 
 
@@ -563,9 +463,6 @@ dataset_server <- function(id, main_session,
 
 
     # FUNDING RHANDSONTABLE ----------------------------------------------------
-    # funding_data <- reactiveValues(
-    #   df_in = funding_tbl_str,
-    #   df_out = NULL)
     # initialize reactiveVal (responding to add/delete row, ror transfer, file upload)
     funding_data_in <- reactiveVal(funding_tbl$tbl_str)
 
@@ -618,33 +515,43 @@ dataset_server <- function(id, main_session,
 
 
     # RELATED RESOURCES --------------------------------------------------------
-    doi_data <- reactiveValues(
-      df_in = data.frame(
-        DOI = character(0),
-        Citation = character(0),
-        XCELLID = character(0),
-        stringsAsFactors = FALSE
-      ),
-      df_out = NULL)
+    # toggle add button: only enable if we have a DOI or citation to add
+    observe({
+      shinyjs::toggleState(id = "btn_add_pub",
+                           condition = (input$doi != "" || input$citation != ""))
+    })
 
+    # initialize reactiveVal (responding to add/delete item, DT cell edits)
+    doi_data_in <- reactiveVal(data.frame(
+      DOI = character(0),
+      Citation = character(0),
+      XCELLID = character(0),
+      stringsAsFactors = FALSE
+    ))
 
-
+    # render DT
     output$rel_resources <- DT::renderDT({
       # a DT with a column of delete buttons
-      deleteButtonColumn(doi_data$df_in, 'delbtn', ns)
+      deleteButtonColumn(doi_data_in(), 'delbtn', ns)
     })
 
     # observe delete row events
     observeEvent(input$deletePressed, {
       rowNum <- parseDeleteEvent(input$deletePressed)
       # Delete the row from the data frame
-      doi_data$df_in <- doi_data$df_in[-rowNum,]
+      current_df <- doi_data_in()
+      current_df <- current_df[-rowNum,]
+      if (nrow(current_df) > 0) {
+        rownames(current_df) <- 1:nrow(current_df) # update rownames
+      }
+      doi_data_in(current_df)
     })
 
+    # observe add item events
     observeEvent(input$btn_add_pub,{
-      # TODO: logic if both are provided? (disable submit button?)
-      # TODO: what about XCELL datasets?
-      # DOI API REQUEST
+      # TODO: logic if both are provided? (disable add button?)
+      # TODO: what about XCELL datasets (without DOI)?
+      # EITHER run DOI API request
       if (!is.null(input$doi) && input$doi != "") {
         search_url <- sprintf(
           'https://citation.doi.org/format?doi=%s&style=apa&lang=en-US',
@@ -653,111 +560,110 @@ dataset_server <- function(id, main_session,
         doi_res <- httr::GET(search_url, httr::timeout(5))
         if (httr::status_code(doi_res) == 200) {
           doi_content <- httr::content(doi_res, as = "text", encoding = "UTF-8")
-          df_doi <- doi_data$df_in
-          df_doi <- rbind(df_doi, data.frame(
-            DOI = input$doi,
-            Citation = doi_content,
-            XCELLID = NA,
-            stringsAsFactors = FALSE
-          ))
-          doi_data$df_in <- df_doi
+          current_df <- doi_data_in()
+          nrows <- nrow(current_df)
+          current_df[nrows+1,c('DOI','Citation')] <- c(input$doi,doi_content)
+          doi_data_in(current_df)
           # clear input field
           updateTextInput(session, "doi", value = "")
         } else {
           showNotification("Failed to fetch citation from DOI. Please check the DOI.", type = "error")
         }
-      # COPY CITATION TEXT TO TABLE
+
+      # OR copy citation text directly to table
       } else  if (!is.null(input$citation) && input$citation != "") {
-        df_doi <- doi_data$df_in
-        df_doi <- rbind(df_doi, data.frame(
-          DOI = NA,
-          Citation = input$citation,
-          XCELLID = NA,
-          stringsAsFactors = FALSE
-        ))
-        doi_data$df_in <- df_doi
+        current_df <- doi_data_in()
+        nrows <- nrow(current_df)
+        current_df[nrows+1,'Citation'] <- input$citation
+        doi_data_in(current_df)
         # clear input field
         updateTextInput(session, "citation", value = "")
       }
     })
 
-
-#
-#     #Form for data entry
-#     entry_form <- function(button_id){
-#       showModal(
-#         modalDialog(
-#           div(id=ns("entry_form"),
-#               fluidPage(
-#                 textInput(ns("enter_doi"), "Enter DOI:", placeholder = "e.g., 10.3389/fpls.2016.00781"),
-#                 textAreaInput(ns("enter_citation"), "Or enter full citation", "",
-#                               placeholder = "e.g., von Arx, G. et al., Quantitative Wood Anatomy—Practical Guidelines. Front. Plant Sci. 7, 781 (2016)."),
-#                 textInput(ns("enter_xcellid"), "OR XCELL ID", placeholder = "TO BE IMPLEMENTED"),
-#                 actionButton(ns("btn_sub_rel"), "Submit", class = "btn btn-info")
-#               )
-#           )
-#         )
-#       )
-#     }
+    # observe DT cell edits
+    observeEvent(input$rel_resources_cell_edit, {
+      info <- input$rel_resources_cell_edit
+      # update the data frame with the new value (-1 due to del button col)
+      current_df <- doi_data_in()
+      current_df[info$row, info$col-1] <- info$value
+      doi_data_in(current_df)
+    })
 
 
+
+
+    # VALIDATION CHECKS --------------------------------------------------------
     validation_results <- reactiveValues()
 
-    # Validation checks --------------------------------------------------------
-    output$validation_check <- renderUI({
-      # req(author_data$df_in)
-      #
-      #validation_results <- list()
+    validation_checks <- reactive({
+      results <- list()
 
-      # use the iv_gen object to validate the dataset inputs
-      validation_results$ds_info <- list(
-        ds_name = switch(is.null(iv_gen$validate()[[ns('ds_name')]]) + 1, 'invalid name', NULL),
-        ds_desc = switch(is.null(iv_gen$validate()[[ns('ds_desc')]]) + 1, 'invalid description', NULL),
-        ds_lic = switch((input$ds_access == 'public' && is.null(input$ds_license)) + 1, 'missing license', NULL)
-      )
+      # 1) dataset input fields from the input validator
+      iv_validated <- iv_gen$validate()
+      results$ds_data <- collect_validator_results(iv_validated, input_field_names, 'ds')
 
-      # column-wise validation checks on the author table
+
+      # 2) author table
       df_aut <- author_data_out()
-      validation_results$author_table <- sapply(
-        colnames(df_aut),
-        function(col_name) {
-          validate_column(df_aut[[col_name]], author_tbl$tbl_config[[col_name]])},
-        simplify = FALSE, USE.NAMES = TRUE)
+      results$author_data <- collect_hot_val_results(df_aut, author_tbl$tbl_config)
 
-      # Use a for loop to iterate through validation_results
-      issues_output <- list()
-      for (input_type in names(validation_results)){
-        issue_list <- list()
-        for (input_name in names(validation_results[[input_type]])) {
-          issues <- validation_results[[input_type]][[input_name]]
-          # If there are issues for the current column, add them to the issue list
-          if (length(issues) > 0) {
-            issue_list <- tagList(issue_list, tags$li(paste0(input_name, ": ", paste(issues, collapse = ", "))))
-          }
-        }
-        if (length(issue_list) > 0) {
-          issues_output <- tagList(issues_output,
-            tagList(paste0("Issues with ", input_type, " input:"), tags$ul(issue_list))
-          )
-        }
-      }
+      # 3) funding table
+      df_fund <- funding_data_out()
+      results$funding_data <- collect_hot_val_results(df_fund, funding_tbl$tbl_config)
 
-      # set the color of the header based on the validation results
+      # 4) related resources
+      # not validation checks
+
+      # convert collected results to dataframe
+      df_results <- results %>%
+        purrr::map(~ .x %>%
+                     purrr::map(~ tibble::tibble(
+                       field = .x$field,
+                       type = .x$type,
+                       message = .x$message
+                     )) %>%
+                     purrr::list_rbind(names_to = 'fname')) %>%
+        purrr::list_rbind(names_to = 'tname')
+
+      df_results$topic <- input_field_names[df_results$tname]
+
+      df_results
+    })
+
+    # set the color of the card header based on the validation results
+    observe({
       shinyjs::toggleClass(id = "val_check_header", class = 'bg-secondary',
-        condition = length(issues_output) > 0)
+                           condition = nrow(validation_checks()) > 0)
+    })
+
+    output$validation_check <- renderUI({
+      df_validation <- validation_checks()
+
+      if (nrow(df_validation) == 0) {
+        return(tagList(strong("ALL GOOD :)", style = paste0('color: ', prim_col, ';'))))
+      } else {
+        # generate html lists for each topic
+        html_output <- df_validation %>%
+          dplyr::group_by(topic) %>%
+          dplyr::summarise(
+            content = paste0("<li>", field, ": ", message, "</li>", collapse = "")
+          ) %>%
+          dplyr::mutate(
+            html = paste0("<b>", topic, ":</b><ul>", content, "</ul>")
+          ) %>%
+          dplyr::pull(html) %>%
+          paste(collapse = "")
+
+        return(HTML(html_output))
 
       # TODO:
       # add warning messages before switching tab or saving data
 
-      # show output message
-      if (length(issues_output) > 0) {
-        tagList(issues_output)
-      } else {
-        tagList(strong("ALL GOOD :)", style = paste0('color: ', prim_col, ';')))
       }
-
     })
 
+    # TODO:
     # Observe save button
     # observeEvent(input$btn_save_aut, {
     #   data <- author_data$df_out
@@ -792,7 +698,8 @@ dataset_server <- function(id, main_session,
     # read data from file: append or warn if there is already data?
     # from / to csv or xslx? sheets?
     # more details on validation errors (nr characters, pattern, etc.)
-    # clean up, refactor data import and validation checks into functions
+    # orcid transfer: what if names don't match?
+
 
     return(
       # reactive(
@@ -803,12 +710,14 @@ dataset_server <- function(id, main_session,
               ds_desc = reactive(input$ds_desc),
               ds_access = reactive(input$df_access),
               ds_license = reactive(input$ds_license),
-              ds_embargoed = reactive(input$ds_embargoed)
+              ds_embargoed = reactive(input$ds_embargoed),
+              ds_ackn = reactive(input$ds_ackn)
             ),
             author_data = author_data_out,
-            funding_data = funding_data_out
+            funding_data = funding_data_out,
+            doi_data = doi_data_in
           ),
-          val_check = validation_results
+          val_check = validation_checks
         )
       #)
     )
@@ -817,6 +726,79 @@ dataset_server <- function(id, main_session,
 }
 
 
+
+
+
+# output$validation_check <- renderUI({
+#   # req(author_data$df_in)
+#   #
+#   #validation_results <- list()
+#
+#   # use the iv_gen object to validate the dataset inputs
+#   validation_results$ds_info <- list(
+#     ds_name = switch(is.null(iv_gen$validate()[[ns('ds_name')]]) + 1, 'invalid name', NULL),
+#     ds_desc = switch(is.null(iv_gen$validate()[[ns('ds_desc')]]) + 1, 'invalid description', NULL),
+#     ds_lic = switch((input$ds_access == 'public' && is.null(input$ds_license)) + 1, 'missing license', NULL)
+#   )
+#
+#   # column-wise validation checks on the author table
+#   df_aut <- author_data_out()
+#   validation_results$author_table <- sapply(
+#     colnames(df_aut),
+#     function(col_name) {
+#       validate_column(df_aut[[col_name]], author_tbl$tbl_config[[col_name]])},
+#     simplify = FALSE, USE.NAMES = TRUE)
+#
+#   # Use a for loop to iterate through validation_results
+#   issues_output <- list()
+#   for (input_type in names(validation_results)){
+#     issue_list <- list()
+#     for (input_name in names(validation_results[[input_type]])) {
+#       issues <- validation_results[[input_type]][[input_name]]
+#       # If there are issues for the current column, add them to the issue list
+#       if (length(issues) > 0) {
+#         issue_list <- tagList(issue_list, tags$li(paste0(input_name, ": ", paste(issues, collapse = ", "))))
+#       }
+#     }
+#     if (length(issue_list) > 0) {
+#       issues_output <- tagList(issues_output,
+#         tagList(paste0("Issues with ", input_type, " input:"), tags$ul(issue_list))
+#       )
+#     }
+#   }
+#
+#   # set the color of the header based on the validation results
+#   shinyjs::toggleClass(id = "val_check_header", class = 'bg-secondary',
+#     condition = length(issues_output) > 0)
+#
+#   # TODO:
+#   # add warning messages before switching tab or saving data
+#
+#   # show output message
+#   if (length(issues_output) > 0) {
+#     tagList(issues_output)
+#   } else {
+#     tagList(strong("ALL GOOD :)", style = paste0('color: ', prim_col, ';')))
+#   }
+#
+# })
+
+#     #Form for data entry
+#     entry_form <- function(button_id){
+#       showModal(
+#         modalDialog(
+#           div(id=ns("entry_form"),
+#               fluidPage(
+#                 textInput(ns("enter_doi"), "Enter DOI:", placeholder = "e.g., 10.3389/fpls.2016.00781"),
+#                 textAreaInput(ns("enter_citation"), "Or enter full citation", "",
+#                               placeholder = "e.g., von Arx, G. et al., Quantitative Wood Anatomy—Practical Guidelines. Front. Plant Sci. 7, 781 (2016)."),
+#                 textInput(ns("enter_xcellid"), "OR XCELL ID", placeholder = "TO BE IMPLEMENTED"),
+#                 actionButton(ns("btn_sub_rel"), "Submit", class = "btn btn-info")
+#               )
+#           )
+#         )
+#       )
+#     }
     # unique_sites <- unique(df_meta$site)
     #
     # # Dynamic UI generation for each unique site_code

@@ -1,5 +1,6 @@
 #' @import shiny
 #' @import bslib
+#' @importFrom magrittr %>%
 #' @export
 #'
 # dependencies:

@@ -11,12 +11,12 @@ site_ui <- function(id) {
         card_header(
           class = 'bg-primary',
           span(icon("exclamation", style = "color: white"),'Note')),
-        "The site table is partially filled with information from the df_meta as provided in the Start tab."
+        "The tables here are partially filled with information from the input data you provided in the Start tab."
       ),
       hr(),
       tags$ol(
         class = 'custom-indent',
-        tags$li("Please provide ...")),
+        tags$li("Please provide information related to how the QWA data in this dataset where obtained and generated, at the site-, tree-, woodpiece- and slide-level."),),
       hr(),
       tags$ol(
         class = 'custom-indent', start = 2,
@@ -58,7 +58,7 @@ site_ui <- function(id) {
         hr(),
 
 
-        h5('Site information:', style = paste0('color: ',  sec_col)),
+        h5('Site information'),
 
         div(style='float: right',
             fileInput(ns('file_sites'), "Load site data from file", accept = ".csv")),
@@ -74,7 +74,7 @@ site_ui <- function(id) {
       accordion_panel(
         'Trees',
 
-        h5('Tree information:', style = paste0('color: ',  sec_col)),
+        h5('Tree information'),
 
         div(style='float: right',
             fileInput(ns('file_trees'), "Load tree data from file", accept = ".csv")),
@@ -90,7 +90,7 @@ site_ui <- function(id) {
       accordion_panel(
         'Woodpieces',
 
-        h5('Woodpiece information:', style = paste0('color: ',  sec_col)),
+        h5('Woodpiece information'),
 
         div(style='float: right',
             fileInput(ns('file_wp'), "Load woodpiece data from file", accept = ".csv")),
@@ -107,7 +107,7 @@ site_ui <- function(id) {
       accordion_panel(
         'Slides',
 
-        h5('Slide information:', style = paste0('color: ',  sec_col)),
+        h5('Slide information'),
 
         div(style='float: right',
             fileInput(ns('file_slide'), "Load slide data from file", accept = ".csv")),

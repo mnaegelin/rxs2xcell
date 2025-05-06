@@ -137,6 +137,8 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
 
   ")))
 
+
+
 # bs-btn-disabled-bg: #551345;
 # .handsontable .autocompleteEditor .htMacScroll {
 #   overflow: visible !important;
@@ -196,7 +198,7 @@ ui <- page_fluid(
         border-color: ", sec_col, " !important;
         background-color: ", sec_col, " !important;
       }
-          .shiny-input-container .checkbox input:not(:checked)  {
+      .shiny-input-container .checkbox input:not(:checked)  {
         border-color: ", sec_col, " !important;
         background-color: white !important;
       }
@@ -205,8 +207,13 @@ ui <- page_fluid(
         background-color: ", sec_col, " !important;
       }
 
-
-
+      /* style for input DT similar to hot*/
+        .inputDT thead th {
+          background-color: ", sec_col_grad[5], " !important;
+        }
+      .inputDT tbody td {
+        background-color: white;
+      }
 
     ")),
     # for the tippy tooltip
