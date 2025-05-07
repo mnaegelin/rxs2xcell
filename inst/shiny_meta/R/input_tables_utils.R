@@ -180,7 +180,7 @@ validate_num_column <- function(column, col_config) {
 
   if (check_min_val && any(column_numeric < minv, na.rm = TRUE)) {
     validation_results <- c(validation_results, "Out of range values")
-  } else if (check_max_val && any(column_numeric > minv, na.rm = TRUE)) {
+  } else if (check_max_val && any(column_numeric > maxv, na.rm = TRUE)) {
     validation_results <- c(validation_results, "Out of range values")
   }
 
@@ -228,6 +228,8 @@ validate_cb_column <- function(column, col_config){
 
 validate_date_column <- function(column, col_config){
   check_required <- ifelse(is.null(col_config$required), FALSE, col_config$required)
+
+  validation_results <- c()
 
   if (check_required && any(is.na(column) | column == '')) {
     validation_results <- c(validation_results, "Required")

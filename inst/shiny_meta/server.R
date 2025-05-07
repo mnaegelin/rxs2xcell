@@ -3,12 +3,12 @@ server <- function(input, output, session) {
 
   start_info <- start_server('start', session)
 
-  dataset_info <- dataset_server('ds', session, countries_list, author_tbl, funding_tbl)
+  # TODO: add: species info, countries_sf vars as inputs
+  dataset_info <- dataset_server('ds', session, start_info,
+                                 countries_list, author_tbl, funding_tbl)
 
   site_info <- site_server('site', session, start_info, countries_list,
                            site_tbl, tree_tbl, woodpiece_tbl, slide_tbl)
-
-  #tree_info <- tree_server('tree', session, start_info)
 
   summary_server('summary', session, start_info, dataset_info, site_info)
 
@@ -18,7 +18,7 @@ server <- function(input, output, session) {
 }
 
 
-
+#tree_info <- tree_server('tree', session, start_info)
 # RADIALNETWORK TRY
 # Modified JavaScript code to send the selected node to Shiny for the networkD3 plot
 # clickJS <- '

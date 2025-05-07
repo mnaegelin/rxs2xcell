@@ -16,13 +16,13 @@ site_ui <- function(id) {
       hr(),
       tags$ol(
         class = 'custom-indent',
-        tags$li("Please provide information related to how the QWA data in this dataset where obtained and generated, at the site-, tree-, woodpiece- and slide-level."),),
+        tags$li("Please provide information related to how the QWA data in this dataset were obtained and generated, at the site-, tree-, woodpiece- and slide-level."),),
       hr(),
-      tags$ol(
-        class = 'custom-indent', start = 2,
-        tags$li("Please list all ...")
-      ),
-      hr(),
+      # tags$ol(
+      #   class = 'custom-indent', start = 2,
+      #   tags$li("Use the map to check the validity of the provided site coordinates.")
+      # ),
+      # hr(),
       card(
         class = 'card-note',
         card_header(
@@ -40,7 +40,7 @@ site_ui <- function(id) {
 
     # main content
     accordion(
-      open = c('Sites'),
+      open = c('Sites', 'Trees', 'Woodpieces', 'Slides'),
 
       accordion_panel(
         'Sites',
@@ -60,12 +60,13 @@ site_ui <- function(id) {
 
         h5('Site information'),
 
-        div(style='float: right',
-            fileInput(ns('file_sites'), "Load site data from file", accept = ".csv")),
+        div(style="display: flex; justify-content: space-between; align-items: center;",
+            span(tags$i("For valid site coordinates, markers are added to the map tool above.")),
+            div(style = "margin-left: auto; margin-bottom: 0;",
+                fileInput(ns('file_sites'), "Load site data from file", accept = ".csv"))),
 
         div(style="min-height:200px;height:auto;",
-
-        rhandsontable::rHandsontableOutput(ns("site_table"))),
+          rhandsontable::rHandsontableOutput(ns("site_table"))),
 
         verbatimTextOutput(ns('no_data_site'))
 
@@ -81,7 +82,7 @@ site_ui <- function(id) {
 
         br(),
         div(style="min-height:200px;height:auto;",
-        rhandsontable::rHandsontableOutput(ns("tree_table"))),
+          rhandsontable::rHandsontableOutput(ns("tree_table"))),
 
         verbatimTextOutput(ns('no_data_tree'))
 
@@ -120,7 +121,14 @@ site_ui <- function(id) {
 
       )
 
-    ) # end of main content
+    ), # end of main content accordion
+
+    # export progress to file button
+    div(
+      style = "text-align: center; margin-top: 20px;", # Centering and adding margin
+      downloadButton(ns('btn_save'), "Export progress to file",
+                     style = "font-size: 1.1rem; padding: 8px 15px;") # Bigger button styling
+    )
   ) # end of layout_sidebar
 }
 

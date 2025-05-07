@@ -11,16 +11,18 @@ summary_ui <- function(id) {
         card_header(
           class = 'bg-primary',
           span(icon("exclamation", style = "color: white"),'Note')),
-        "The overview here combines all information provided in tabs 1-4."
+        "The overview here combines all information provided in the previous tabs."
       ),
       hr(),
       tags$ol(
         class = 'custom-indent',
-        tags$li("Please provide ...")),
+        tags$li("Please consult the validation check summary and correct any issues in the data entry tabs."),),
       hr(),
       tags$ol(
         class = 'custom-indent', start = 2,
-        tags$li("Please list all ...")
+        tags$li("When there are no more issues or if you are certain that you want to ignore the remaining messages,
+                please click the 'Export data to file' button to download the final version of the metadata.
+                You can then share the file with the XCELL team, contact at patrick.fonti@wsl.ch."),
       ),
       hr(),
 
@@ -45,15 +47,20 @@ summary_ui <- function(id) {
           card_header(
             class = 'bg-primary',
             span(icon("exclamation", style = "color: white"),'Validation check summary')),
-          "to be implemented: summary of provided data and validation checks",
-          uiOutput(ns('validation_check')),
+          "to be implemented: summary of provided data and additional, more complex validation checks",
+          #uiOutput(ns('validation_check')),
+          DT::DTOutput(ns('DT_valcheck'))
         ),
         hr(),
 
         verbatimTextOutput(ns("testing")),
         hr(),
 
-        actionButton(ns('save_btn'), "Export ALL data", icon = icon('save')),
+        div(
+          style = "text-align: center; margin-top: 20px;", # Centering and adding margin
+          actionButton(ns('btn_save'), "Export data to file", icon = icon('download', lib = "glyphicon"),
+                         style = "font-size: 1.1rem; padding: 8px 15px;") # Bigger button styling
+        )
 
       )
 

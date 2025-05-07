@@ -221,9 +221,8 @@ start_server <- function(id, main_session) {
 
     # render the datatable
     output$DTmeta <- DT::renderDT({
-      validate(
-        need(!is.null(input_meta$df), "No data to show")
-      )
+      validate(need(!is.null(input_meta$df), "No data to show"))
+
       DT::datatable(filt_meta(),
                     style = 'default',
                     rownames = FALSE,
@@ -250,12 +249,32 @@ start_server <- function(id, main_session) {
     #   }
     # })
 
+    validation_checks <- reactive({
+      df_results <- data.frame(topic = character(0), field = character(0),
+                               type = character(0), message = character(0))
+      if (!input$check_raw) {
+        df_results <- dplyr::bind_rows(
+          df_results,
+         data.frame(topic = "Raw input data",
+                    field = "Inferred structure",
+                    type = "error",
+                    message = "Not confirmed"))
+      }
+
+      df_results
+
+    })
+
+    output$testing <- renderPrint(
+      input_meta$meta_json
+    )
+
 
     # return the input meta and val check for use in other tabs
     return(
       list(
         input_meta = input_meta,
-        val_check = reactive(input$check_raw)
+        val_check = validation_checks
       )
     )
 

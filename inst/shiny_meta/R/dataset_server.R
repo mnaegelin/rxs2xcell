@@ -112,19 +112,11 @@ funding_tbl <- list(
   tbl_config = funding_tbl_config
 )
 
-# need only the names of fields with validation checks,
-# can take table column names from tbl_configs
-input_field_names <- c(
-  ds_data = 'Dataset',
-  ds_name = 'Dataset name',
-  ds_desc = 'Dataset description',
-  author_data = 'Authors',
-  funding_data = 'Funding')
 
 
 
 # SERVER -----------------------------------------------------------------------
-dataset_server <- function(id, main_session,
+dataset_server <- function(id, main_session, start_info,
                            countries_list, author_tbl, funding_tbl) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -134,12 +126,21 @@ dataset_server <- function(id, main_session,
       accordion_panel_close(id = 'search_tools', values = TRUE)
     }, ignoreNULL = FALSE) # to fire the event at startup
 
+    observeEvent(start_info$input_meta$meta_json,{
+      if (!is.null(start_info$input_meta$meta_json)){
+        meta_json <- start_info$input_meta$meta_json
+        ds_name <- meta_json$ds_data$ds_name
+        print(ds_name)
+        updateTextInput(session, "ds_name", value = ds_name)
+        # TODO: the rest of the fields, in all tabs
+      }
+    })
 
     # DATASET INPUT ------------------------------------------------------------
     # add validator rules for dataset inputs
     iv_gen <- shinyvalidate::InputValidator$new()
     iv_gen$add_rule("ds_name", shinyvalidate::sv_required())
-    iv_gen$add_rule("ds_name", max_char_limit, limit = 5)
+    iv_gen$add_rule("ds_name", max_char_limit, limit = 64)
     # iv_gen$add_rule(
     #   "ds_name",
     #   shinyvalidate::sv_regex("^[a-zA-Z0-9]*$", "Only alphanumeric characters allowed")
@@ -424,11 +425,29 @@ dataset_server <- function(id, main_session,
       author_data_in(current_df)
     })
 
+    observeEvent(input$file_authors,{
+      showModal(modalDialog(
+        title = "Confirm Import",
+        tagList(
+          "Are you sure?, TODO: warn that it overwrites existing data, add import controls"
+        ),
+        footer = tagList(
+          actionButton(ns("import_aut_data"), "Import data"),
+          modalButton("Cancel")
+        )
+      ))
+    })
+
+
     # observe import data button
-    observeEvent(input$file_authors, {
+    observeEvent(input$import_aut_data, {
       # try to load the file
+      removeModal()
       imported_data <- tryCatch({
-        read.csv(input$file_authors$datapath, stringsAsFactors = FALSE, encoding = 'UTF-8')
+        vroom::vroom(input$file_authors$datapath,
+                     .name_repair = janitor::make_clean_names,
+                     show_col_types = FALSE)
+        #read.csv(input$file_authors$datapath, stringsAsFactors = FALSE, encoding = 'UTF-8')
       }, error = function(e) {
         showModal(modalDialog(
           title = "Error importing file",
@@ -594,8 +613,6 @@ dataset_server <- function(id, main_session,
 
 
     # VALIDATION CHECKS --------------------------------------------------------
-    validation_results <- reactiveValues()
-
     validation_checks <- reactive({
       results <- list()
 
@@ -628,7 +645,10 @@ dataset_server <- function(id, main_session,
 
       df_results$topic <- input_field_names[df_results$tname]
 
-      df_results
+      dplyr::bind_rows(
+        data.frame(topic = character(0), field = character(0),
+                   type = character(0), message = character(0)),
+        df_results)
     })
 
     # set the color of the card header based on the validation results
@@ -700,7 +720,9 @@ dataset_server <- function(id, main_session,
     # more details on validation errors (nr characters, pattern, etc.)
     # orcid transfer: what if names don't match?
 
-
+    output$testing <- renderPrint({
+      start_info$input_meta$meta_json
+    })
     return(
       # reactive(
         list(
@@ -708,7 +730,7 @@ dataset_server <- function(id, main_session,
             ds_data = list(
               ds_name = reactive(input$ds_name),
               ds_desc = reactive(input$ds_desc),
-              ds_access = reactive(input$df_access),
+              ds_access = reactive(input$ds_access),
               ds_license = reactive(input$ds_license),
               ds_embargoed = reactive(input$ds_embargoed),
               ds_ackn = reactive(input$ds_ackn)

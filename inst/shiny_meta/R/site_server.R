@@ -152,8 +152,9 @@ wp_tbl_str <- data.frame(
   organ = character(0),
   sampling_height = numeric(0),
   sample_apex_distance = numeric(0),
-  sample_prep = character(0),
   sample_type = character(0),
+  sample_embedding = character(0),
+  sample_archived = logical(0),
   pith_year = numeric(0),
   stringsAsFactors = FALSE
 )
@@ -162,8 +163,9 @@ wp_tbl_config <- list(
   colHeaders = c(
     wpcode = "Woodpiece code", treecode = "Tree code", n_slides = "Nr of slides",
     sample_date = "Sample date", organ = "Organ", sampling_height = "Sampling height",
-    sample_apex_distance = "Distance from apex", sample_prep = "Sample preparation",
-    sample_type = "Sample type", pith_year = "Pith year"
+    sample_apex_distance = "Distance from apex", sample_type = "Sample type",
+    sample_embedding = "Embedding method", sample_archived = "Sample archived",
+    pith_year = "Pith year"
   ),
   wpcode = list(type = 'character', readOnly = TRUE),
   treecode = list(type = 'character', readOnly = TRUE),
@@ -173,10 +175,11 @@ wp_tbl_config <- list(
                options = c('branch','root','stem')),
   sampling_height = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 150),
   sample_apex_distance = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 150),
-  sample_prep = list(type = 'dropdown', required = FALSE,
-                      options = c('micro-section', 'cut surface', 'polished surface', 'double saw cut')),
   sample_type = list(type = 'dropdown', required = FALSE,
                       options = c('core 5 mm', 'core 10 mm', 'wood section', 'wood disk')),
+  sample_embedding = list(type = 'dropdown', required = FALSE,
+                options = c('paraffin embedding', 'none')),
+  sample_archived = list(type = 'checkbox', required = FALSE),
   pith_year = list(type = 'numeric', required = FALSE, min_val = -15000, max_val = 2500)
 )
 
@@ -191,55 +194,58 @@ slide_tbl_str <- data.frame(
   n_imgs = integer(0),
   sample_date = character(0),
   sect_thickness = character(0),
-  cuttingplane = character(0),
+  cutting_plane = character(0),
   slide_prep = character(0),
   slide_staining = character(0),
+  slide_archived = logical(0),
   img_cap_system = character(0),
   data_structure = character(0),
   stringsAsFactors = FALSE
 )
 
-# TODO: FIX
+
 slide_tbl_config <- list(
   colHeaders = c(
     slidecode = "Slide code", wpcode = "Woodpiece code", n_imgs = "Nr of images",
     sample_date = "Sample date", sect_thickness = "Section thickness",
-    cuttingplane = "Cutting plane", slide_prep = "Slide preparation",
-    slide_staining = "Staining method", img_cap_system = "Image capturing system",
-    data_structure = "Data structure"
+    cutting_plane = "Cutting plane", slide_prep = "Slide preparation",
+    slide_staining = "Staining method", slide_archived = "Slide archived",
+    img_cap_system = "Image capturing system", data_structure = "Data structure"
   ),
   slidecode = list(type = 'character', readOnly = TRUE),
   wpcode = list(type = 'character', readOnly = TRUE),
   n_imgs = list(type = 'numeric', readOnly = TRUE),
   sample_date = list(type = 'date', required = TRUE),
-  sect_thickness = list(type = 'dropdown', required = FALSE,
-                        options = c('0-10 µm','10-20 µm','20-30 µm','30-40 µm','40-50 µm')),
-  cuttingplane = list(type = 'dropdown', required = FALSE,
-                      options = c('transversal','longitudinal')),
+  sect_thickness = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 100),
+  cutting_plane = list(type = 'dropdown', required = FALSE,
+                      options = c('cross-section', 'tangential section', 'radial section')),
   slide_prep = list(type = 'dropdown', required = FALSE,
-                    options = c('none','double saw cut','micro-section')),
+                     options = c('micro-section', 'cut surface', 'polished surface', 'double saw cut')),
   slide_staining = list(type = 'dropdown', required = FALSE,
-                        options = c('none','stain','fluorescent stain')),
+                        options = c('Sarafin Astrablue')),
+  slide_archived = list(type = 'checkbox', required = FALSE),
   img_cap_system = list(type = 'dropdown', required = FALSE,
-                        options = c('none','camera','microscope')),
+                        options = c('confocal microscope','light microscope','...')),
   data_structure= list(type='dropdown', required=FALSE,
-                       options=c('raw data','processed data'))
+                       options=c('tracheid-full', 'vessels', '...'))
 )
 
 slide_tbl <- list(
   tbl_str = slide_tbl_str,
-  tbl_config = NULL
+  tbl_config = slide_tbl_config
 )
 
 
 # SERVER -----------------------------------------------------------------------
 site_server <- function(id, main_session, start_info, countries_list, site_tbl, tree_tbl, woodpiece_tbl, slide_tbl) {
   moduleServer(id, function(input, output, session) {
+    ns <- session$ns
 
     # mock event to close map tab on start of app
     observeEvent(1,{
       accordion_panel_close(id = 'map_acc', values = TRUE)
     }, ignoreNULL = FALSE) # to fire the event at startup
+
 
 
     # initialize reactiveVals (responding to changes in df_meta, file upload)
@@ -248,7 +254,7 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
     wp_data_in <- reactiveVal(NULL)
     slide_data_in <- reactiveVal(NULL)
 
-    # observe changes in df_meta to (re-)initialize site_data_in
+    # observe changes in df_meta to (re-)initialize these dataframes
     # NOTE: this purposefully overwrites/resets any updates via hot edit or
     # file upload if the underlying df_meta is changed
     observeEvent(start_info$input_meta$df, {
@@ -294,9 +300,20 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
 
       wp_data_in(df_wp)
 
+      # slide
+      df_slide <- slide_tbl$tbl_str
+      df_slide <- df_meta %>%
+        dplyr::group_by(woodpiece_code, slide_code) %>%
+        dplyr::summarise(n = dplyr::n_distinct(image_code), .groups = 'keep') %>%
+        dplyr::rename(slidecode = slide_code, wpcode = woodpiece_code, n_imgs = n) %>%
+        dplyr::left_join(df_slide, by = c('slidecode', 'wpcode', 'n_imgs')) %>%
+        dplyr::select(colnames(df_slide))
+
+      slide_data_in(df_slide)
     })
 
-    # TODO: observe file upload button: merge with site_data_out and update site_data_in
+    # TODO: observe file upload button: merge file input with site_data_out and update site_data_in
+    # add only info for valid sitecodes / colnames?
     # observeEvent(input$file_sites, {
     #   # try to load the file
     #   imported_data <- tryCatch({
@@ -333,29 +350,6 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
     # })
 
 
-    slide_data <- reactiveValues(
-      df_in = slide_tbl_str,
-      df_out = NULL
-    )
-
-    # get initial site info from df_meta
-    # TODO: warn that manual input here will be lost if df_meta is changed!
-    observe({
-      df_meta <- start_info$input_meta$df
-      if (!is.null(df_meta)) {
-
-        # SLIDE
-        df_in_sl <- slide_data$df_in
-        slide_imgs <- df_meta %>%
-          dplyr::group_by(woodpiece_code, slide_code) %>%
-          dplyr::summarise(n = dplyr::n_distinct(image_code), .groups = 'keep') %>%
-          dplyr::rename(slidecode = slide_code, wpcode = woodpiece_code, n_imgs = n)
-        slide_data$df_in <- df_in_sl %>%
-          dplyr::right_join(slide_imgs, by = c('slidecode', 'wpcode', 'n_imgs'))
-      }
-    })
-
-
     # SITE MAP -----------------------------------------------------------------
     # render Leaflet map
     output$site_map <- leaflet::renderLeaflet({
@@ -365,7 +359,6 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
         leaflet::addTiles()
 
       # add markers for all sites in the table
-
       site_coords <- site_coordinates()
       # if we have both lat and longitude, add markers and zoom to new bounds
       if (nrow(site_coords)>0) {
@@ -375,10 +368,9 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
       }
 
       sitemap
-
     })
 
-    # site coordinates reactiveVal, update ONLY if coordinates in site_data_out changes
+    # site coordinates reactiveVal, updates IFF coord cols in site_data_out change
     site_coordinates <- reactiveVal(NULL)
 
     observeEvent(site_data_out(),{
@@ -400,13 +392,37 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
           longitude = ifelse(longitude < min_lng | longitude > max_lng, NA, longitude),
           latitude = ifelse(latitude < min_lat | latitude > max_lat, NA, latitude)
         ) %>%
-        dplyr::filter(!is.na(longitude) & !is.na(latitude))
+        dplyr::filter(!is.na(longitude) & !is.na(latitude)) %>%
+        dplyr::distinct()
 
       # update reactive
       site_coordinates(site_coords)
     }, ignoreInit = TRUE)
 
 
+    observeEvent(site_coordinates(),{
+      site_coords <- site_coordinates()
+      if (nrow(site_coords) > 0) {
+        current_df <- site_data_out()
+        site_coords$iso_codes <- country_from_coords(lng = site_coords$longitude, lat = site_coords$latitude, countries_sf)
+        site_coords$new_country <- ifelse(
+            is.na(site_coords$iso_codes) | site_coords$iso_codes == "-99",
+            "",  # Assign empty string for NA values
+            names(countries_list)[match(site_coords$iso_codes, countries_list)]
+          )
+
+          # update country column in site data
+          current_df <- current_df %>% dplyr::left_join(site_coords, by = c('longitude', 'latitude')) %>%
+            dplyr::mutate(country = new_country) %>%
+            dplyr::select(-iso_codes, -new_country)
+          site_data_in(current_df)
+
+      }
+
+    }, ignoreInit = TRUE)
+
+
+    # TODO: for simultaneous updates
     #tree_species <- reactiveVal(NULL)
 
     # update species info in tree table IFF speciesname or code are changed
@@ -454,28 +470,7 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
 
     }, ignoreInit = TRUE)
 
-    # TODO: maybe update countries automatically? but is expensive -> only at end?
-    # use either tidygeocoder (api request, slow) or sf package (downlaod data first via rnaturalearth)
-    # site_countries <- reactiveVal(NULL)
-    #
-    # observeEvent(site_data_out(),{
-    #   # # get unique country codes from site data
-    #   # site_countries <- site_data_out() %>%
-    #   #   dplyr::select(country) %>%
-    #   #   dplyr::distinct() %>%
-    #   #   dplyr::filter(!is.na(country)) %>%
-    #   #   dplyr::pull(country)
-    #   #
-    #   # # update reactive
-    #   # site_countries(site_countries)
-    # }, ignoreInit = TRUE)
 
-
-
-    output$testing <- renderPrint({
-      #input$site_table$changes$changes
-      input$tree_table$changes$changes
-    })
 
     # render editable table
     output$site_table <- rhandsontable::renderRHandsontable({
@@ -512,6 +507,8 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
 
 
     output$tree_table <- rhandsontable::renderRHandsontable({
+      validate(need(!is.null(tree_data_in()), "No data to show"))
+
       rhandsontable::rhandsontable(
         tree_data_in(),
         rowHeaders = TRUE,
@@ -538,11 +535,14 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
     })
 
     output$wp_table <- rhandsontable::renderRHandsontable({
+      validate(need(!is.null(wp_data_in()), "No data to show"))
+
       rhandsontable::rhandsontable(
         wp_data_in(),
         rowHeaders = TRUE,
         contextMenu = FALSE,
         stretchH = "all",
+        height = 180,
         colHeaders = unname(woodpiece_tbl$tbl_config$colHeaders)) %>%
         purrr::reduce(
           names(woodpiece_tbl$tbl_config$colHeaders), # names in df
@@ -553,104 +553,117 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
           },
           .init = .
         )
-        # rhandsontable::hot_col(
-        #   'sampledate',
-        #   renderer = renderer_date(required = FALSE),
-        #   type = 'date',
-        #   dateFormat = "YYYY-MM-DD"
-        # )
-
     })
 
     # create dataframe reactive to hot updates
     wp_data_out <- reactive({
-      rhandsontable::hot_to_r(input$twp_table)
+      rhandsontable::hot_to_r(input$wp_table)
     })
 
     output$slide_table <- rhandsontable::renderRHandsontable({
+      validate(need(!is.null(slide_data_in()), "No data to show"))
+
       rhandsontable::rhandsontable(
-        slide_data$df_in,
+        slide_data_in(),
         rowHeaders = TRUE,
         contextMenu = FALSE,
-        stretchH = "all")
+        stretchH = "all",
+        colHeaders = unname(slide_tbl$tbl_config$colHeaders)) %>%
+        purrr::reduce(
+          names(slide_tbl$tbl_config$colHeaders), # names in df
+          function(ht, col) {
+            config <- slide_tbl$tbl_config[[col]]
+            colName <- slide_tbl$tbl_config$colHeaders[col] # name in ht
+            hot_col_wrapper(ht, colName, config)
+          },
+          .init = .
+        )
+    })
+
+    # create dataframe reactive to hot updates
+    slide_data_out <- reactive({
+      rhandsontable::hot_to_r(input$slide_table)
     })
 
 
+    output$testing <- renderPrint({
+      validation_checks()
+    })
+
+    # TODO: check configs, val functions, edge cases
+    # VALIDATION CHECKS --------------------------------------------------------
+    validation_checks <- reactive({
+      results <- list()
+
+      # 1) site table
+      df_site <- site_data_out()
+      results$site_data <- collect_hot_val_results(df_site, site_tbl$tbl_config)
+
+      # 2) tree table
+      df_tree <- tree_data_out()
+      results$tree_data <- collect_hot_val_results(df_tree, tree_tbl$tbl_config)
+
+      # 3) woodpiece table
+      df_wp <- wp_data_out()
+      results$wp_data <- collect_hot_val_results(df_wp, woodpiece_tbl$tbl_config)
+
+      # 4) slide table
+      df_slide <- slide_data_out()
+      results$slide_data <- collect_hot_val_results(df_slide, slide_tbl$tbl_config)
 
 
 
-    # observeEvent(input$wp_table, {
-    #   wp_data$df_out <- rhandsontable::hot_to_r(input$wp_table)
-    # })
-    observeEvent(input$slide_table, {
-      slide_data$df_out <- rhandsontable::hot_to_r(input$slide_table)
+      # convert collected results to dataframe
+      df_results <- results %>%
+        purrr::map(~ .x %>%
+                     purrr::map(~ tibble::tibble(
+                       field = .x$field,
+                       type = .x$type,
+                       message = .x$message
+                     )) %>%
+                     purrr::list_rbind(names_to = 'fname')) %>%
+        purrr::list_rbind(names_to = 'tname')
+
+      df_results$topic <- input_field_names[df_results$tname]
+
+      dplyr::bind_rows(
+        data.frame(topic = character(0), field = character(0),
+                   type = character(0), message = character(0)),
+        df_results)
     })
 
 
-    validation_results <- reactiveValues()
-
-    # Validation checks --------------------------------------------------------
-    # TODO:
     output$validation_check <- renderUI({
-      #req...
+        df_validation <- validation_checks()
 
-      #validation_results <- list()
+        if (nrow(df_validation) == 0) {
+          return(tagList(strong("ALL GOOD :)", style = paste0('color: ', prim_col, ';'))))
+        } else {
+          # generate html lists for each topic
+          html_output <- df_validation %>%
+            dplyr::group_by(topic) %>%
+            dplyr::summarise(
+              content = paste0("<li>", field, ": ", message, "</li>", collapse = "")
+            ) %>%
+            dplyr::mutate(
+              html = paste0("<b>", topic, ":</b><ul>", content, "</ul>")
+            ) %>%
+            dplyr::pull(html) %>%
+            paste(collapse = "")
 
-      # use the iv_gen object to validate the dataset inputs
+          return(HTML(html_output))
 
-      # column-wise validation checks on the author table
-      # df_site <- site_data$df_in
-      # validation_results$site_table <- lapply(colnames(df_site), function(col_name) {
-      #   validate_column(df_site[[col_name]], site_tbl_config[[col_name]])
-      # })
-      # names(validation_results$site_table) <- colnames(df_site)
-      #
-      # df_tree <- tree_data$df_in
-      # validation_results$tree_table <- lapply(colnames(df_tree), function(col_name) {
-      #   validate_column(df_tree[[col_name]], tree_tbl_config[[col_name]])
-      # })
-      # names(validation_results$tree_table) <- colnames(df_tree)
-      #
-      #
-      # # Use a for loop to iterate through validation_results
-      # issues_output <- list()
-      # for (input_type in names(validation_results)){
-      #   issue_list <- list()
-      #   for (input_name in names(validation_results[[input_type]])) {
-      #     issues <- validation_results[[input_type]][[input_name]]
-      #     # If there are issues for the current column, add them to the issue list
-      #     if (length(issues) > 0) {
-      #       issue_list <- tagList(issue_list, tags$li(paste0(input_name, ": ", paste(issues, collapse = ", "))))
-      #     }
-      #   }
-      #   if (length(issue_list) > 0) {
-      #     issues_output <- tagList(issues_output,
-      #                              tagList(paste0("Issues with ", input_type, " input:"), tags$ul(issue_list))
-      #     )
-      #   }
-      # }
-      #
-      # # set the color of the header based on the validation results
-      # shinyjs::toggleClass(id = "val_check_header", class = 'bg-secondary',
-      #                      condition = length(issues_output) > 0)
-      #
-      # # TODO:
-      # # add warning messages before switching tab or saving data
-      #
-      # # show output message
-      # if (length(issues_output) > 0) {
-      #   tagList(issues_output)
-      # } else {
-      #   tagList(strong("ALL GOOD :)", style = paste0('color: ', prim_col, ';')))
-      # }
+          # TODO:
+          # add warning messages before switching tab or saving data
 
+        }
     })
 
 
     # Next button
     observeEvent(input$btn_next, {
       #iv_gen$enable()
-      nav_select(id = 'tabs', selected = tab_tree, session = main_session)
+      nav_select(id = 'tabs', selected = tab_summary, session = main_session)
     })
 
     # Previous button
@@ -659,18 +672,22 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
       nav_select(id = 'tabs', selected = tab_general, session = main_session)
     })
 
+    # TODO:
+    # SAVE BUTTON
+
 
 
     return(
-        list(
-          input_meta = list(
-            site_data = site_data_out,
-            tree_data = tree_data_out,
-            wp_data = wp_data_out
-            #slide_data = slide_data$df_out
-            )
-          # ,
-          # val_check = validation_results
+      list(
+        input_meta = list(
+          site_data = site_data_out,
+          tree_data = tree_data_out,
+          wp_data = wp_data_out,
+          slide_data = slide_data_out
+        ),
+        val_check = validation_checks
+        # ,
+        # val_check = validation_results
       )
     )
 

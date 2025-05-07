@@ -3,7 +3,6 @@
 tab_start <- '1: Start'
 tab_general <- '2: General'
 tab_site <- '3: Samples'
-#tab_tree <- '4: Trees'
 tab_summary <- '4: Summary'
 
 # define color range
@@ -54,6 +53,20 @@ get_country_codes <- function(){
 
 # source the var, we need it everywhere
 countries_list <- get_country_codes()
+countries_sf <- rnaturalearth::ne_load(
+  scale=50, type='countries',
+  destdir = system.file("extdata/ne_countries_data", package="rxs2xcell"))
+
+country_from_coords <- function(lng, lat, countries_sf = NULL){
+  point <- sf::st_as_sf(data.frame(lon = lng, lat = lat), coords = c("lon", "lat"), crs = 4326)
+  # if no countries are provided, load them from the package
+  if (is.null(countries_sf)) {
+    dir_path <- system.file("extdata/ne_countries_data", package="rxs2xcell")
+    countries_sf <- rnaturalearth::ne_load(scale=50, type='countries', destdir = dir_path)
+  }
+  country <- sf::st_join(point, countries_sf, join = sf::st_within)
+  return(country$ISO_A2_EH)
+}
 
 get_species_info <- function(){
   file_path <- system.file("extdata", "species_ITRDB_20250423.csv", package = "rxs2xcell")
@@ -69,6 +82,18 @@ max_char_limit <- function(value, limit) {
   if (nchar(value) > limit) paste0("Input exceeds ", limit, " characters.")
 }
 
+# need only the names of fields with validation checks,
+# can take table column names from tbl_configs
+input_field_names <- c(
+  ds_data = 'Dataset',
+  ds_name = 'Dataset name',
+  ds_desc = 'Dataset description',
+  author_data = 'Authors',
+  funding_data = 'Funding',
+  site_data = 'Sites',
+  tree_data = 'Trees',
+  wp_data = 'Woodpieces',
+  slide_data = 'Slides')
 
 
 #' A column of delete buttons for each row in the data frame for the first column
@@ -152,11 +177,14 @@ load_meta_csv <- function(datapath){
 }
 
 load_meta_json <- function(datapath){
-  # TODO
+  meta_json <- jsonlite::fromJSON(datapath, flatten = TRUE)
+  return(meta_json$df_meta)
 }
 
 load_whole_json <- function(datapath){
-  # TODO
+  meta_json <- jsonlite::fromJSON(datapath, flatten = TRUE)
+  meta_json$df_meta <- NULL
+  return(meta_json)
 }
 
 load_input_data <- function(input_src, file_input = NULL) {

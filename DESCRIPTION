@@ -25,6 +25,7 @@ Imports:
     ggnewscale,
     ggplot2,
     ggstance,
+    janitor,
     leaflet,
     lubridate,
     magrittr,
@@ -33,6 +34,7 @@ Imports:
     reactable,
     reactable.extras,
     readr,
+    sf,
     shiny,
     shinyalert,
     shinyjs,
@@ -40,6 +42,7 @@ Imports:
     shinyvalidate,
     stringr,
     tidyr,
+    vroom,
     zoo
 Remotes:
     mnaegelin/shinyvalidate@remove_rules 

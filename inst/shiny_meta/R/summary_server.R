@@ -1,9 +1,133 @@
-summary_server <- function(id, main_session, start_info, dataset_info, site_info, tree_info) {
+summary_server <- function(id, main_session, start_info, dataset_info, site_info) {
   moduleServer(id, function(input, output, session) {
+    ns <- session$ns
 
+    valchecks_combined <- reactive({
+      dplyr::bind_rows(
+        start_info$val_check(),
+        dataset_info$val_check(),
+        site_info$val_check()
+      )
+    })
+
+    output$DT_valcheck <- DT::renderDataTable({
+      DT::datatable(
+        valchecks_combined() %>% dplyr::select(-dplyr::any_of(c('fname', 'tname')))
+      )
+
+    })
+
+    data_combined <- reactive({
+      results <- list()
+      results$ds_data <- list(
+        ds_name = dataset_info$input_meta$ds_data$ds_name(),
+        ds_desc = dataset_info$input_meta$ds_data$ds_desc(),
+        ds_access = dataset_info$input_meta$ds_data$ds_access(),
+        ds_license = dataset_info$input_meta$ds_data$ds_license(),
+        ds_embargoed = dataset_info$input_meta$ds_data$ds_embargoed(),
+        ds_ackn = dataset_info$input_meta$ds_data$ds_ackn()
+      )
+      results$author_data <- dataset_info$input_meta$author_data()
+      results$funding_data <- dataset_info$input_meta$funding_data()
+      results$doi_data <- dataset_info$input_meta$doi_data()
+      results$site_data <- site_info$input_meta$site_data()
+      results$tree_data <- site_info$input_meta$tree_data()
+      results$wp_data <- site_info$input_meta$wp_data()
+      results$slide_data <- site_info$input_meta$slide_data()
+
+      results
+    })
+
+    output$testing <- renderPrint({
+      data_combined()$doi_data
+    })
+
+    observeEvent(input$btn_save, {
+      validation_message <- if (nrow(valchecks_combined()) > 0) {
+        tags$p(
+          style = "color: red;",
+          "Note that the automatic validation checks have raised issues with the collected metadata, see the validation check summary."
+        )
+      } else {
+        NULL
+      }
+
+      showModal(modalDialog(
+        title = "Confirm Export",
+        tagList(
+          "Do you want to save your progress for reuse later, or is this the final export?",
+          validation_message
+        ),
+        footer = tagList(
+          downloadButton(ns("save_progress"), "Save Progress"),
+          downloadButton(ns("final_export"), "Final Export"),
+          modalButton("Cancel")
+        )
+      ))
+    })
+
+    output$save_progress <- downloadHandler(
+      filename = function() {
+        paste0("collected_data_", Sys.Date(), ".json")
+      },
+      content = function(file) {
+        removeModal()
+        # Save the data to a file
+        data_to_export <- data_combined()
+        data_to_export$export_type <- 'in_progress'
+        jsonlite::write_json(data_to_export, file)
+      }
+    )
+
+    output$final_export <- downloadHandler(
+      filename = function() {
+        paste0("collected_data_", Sys.Date(), ".json")
+      },
+      content = function(file) {
+        removeModal()
+        # Save the data to a file
+        data_to_export <- data_combined()
+        data_to_export$export_type <- 'final'
+        jsonlite::write_json(data_to_export, file)
+      }
+    )
+
+    # # Handle "Save Progress" action
+    # observeEvent(input$save_progress, {
+    #   removeModal()  # Close the modal
+    #   download_data("in_progress")
+    # })
+    #
+    # # Handle "Final Export" action
+    # observeEvent(input$final_export, {
+    #   removeModal()  # Close the modal
+    #   download_data("final")
+    # })
+    #
+    # # Function to trigger download
+    # download_data <- function(export_type) {
+    #   # Add export_type to collected data
+    #   data_to_export <- dataset_info$input_meta()
+    #   data_to_export$export_type <- export_type
+    #
+    #   # Write data to JSON (example: save to a temporary file)
+    #   json_file <- tempfile(fileext = ".json")
+    #   jsonlite::write_json(data_to_export, json_file)
+    #
+    #   # Trigger file download
+    #   shiny::downloadHandler(
+    #     filename = function() {
+    #       paste0("collected_data_", export_type, ".json")
+    #     },
+    #     content = function(file) {
+    #       file.copy(json_file, file)
+    #     }
+    #   )
+    #
+    # }
+    #
     # output$testing <- renderPrint({
-    #   validation_results <- site_data()$val_check
-    #   print(validation_results$site_table)
+    #   valchecks_combined()
     # })
     #
     # output$validation_check <- renderUI({
@@ -46,7 +170,7 @@ summary_server <- function(id, main_session, start_info, dataset_info, site_info
 
     # Previous button
     observeEvent(input$btn_prev, {
-      nav_select(id = 'tabs', selected = tab_tree, session = main_session)
+      nav_select(id = 'tabs', selected = tab_site, session = main_session)
     })
 
     # observeEvent(input$save_btn, {
