@@ -1,3 +1,5 @@
+^renv$
+^renv\.lock$
 ^rxs2xcell\.Rproj$
 ^\.Rproj\.user$
 ^README\.Rmd$

@@ -106,12 +106,12 @@ complete_metadata <- jsonlite::fromJSON("./inst/shiny_meta/data.json", flatten =
 # QWA_data$rings <- read.csv("./out/QWA_Arzac2024_rings.csv")
 
 
-dbcon <- DBI::dbConnect(RPostgreSQL::PostgreSQL(),
+dbcon2 <- DBI::dbConnect(RPostgreSQL::PostgreSQL(),
                         dbname = "xcell",
-                        host = "pgdbtapp.wsl.ch",
+                        host = "pgdbxcell.wsl.ch",
                         port = 5432,
-                        user = "naegelin",
-                        password = keyring::key_get("pgdbt_xcell", username = "naegelin"))
+                        user = "xcell_edit", #naegelin
+                        password = 'jG4412hv9U') #keyring::key_get("pgdbt_xcell", username = "naegelin")
 schema <- 'v3'
 
 write_data_to_db(complete_metadata,
