@@ -720,9 +720,7 @@ dataset_server <- function(id, main_session, start_info,
     # more details on validation errors (nr characters, pattern, etc.)
     # orcid transfer: what if names don't match?
 
-    output$testing <- renderPrint({
-      start_info$input_meta$meta_json
-    })
+
     return(
       # reactive(
         list(

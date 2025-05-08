@@ -586,9 +586,6 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
     })
 
 
-    output$testing <- renderPrint({
-      validation_checks()
-    })
 
     # TODO: check configs, val functions, edge cases
     # VALIDATION CHECKS --------------------------------------------------------

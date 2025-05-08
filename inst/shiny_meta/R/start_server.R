@@ -265,10 +265,6 @@ start_server <- function(id, main_session) {
 
     })
 
-    output$testing <- renderPrint(
-      input_meta$meta_json
-    )
-
 
     # return the input meta and val check for use in other tabs
     return(

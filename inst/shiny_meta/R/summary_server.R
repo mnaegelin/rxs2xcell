@@ -38,9 +38,7 @@ summary_server <- function(id, main_session, start_info, dataset_info, site_info
       results
     })
 
-    output$testing <- renderPrint({
-      data_combined()$doi_data
-    })
+
 
     observeEvent(input$btn_save, {
       validation_message <- if (nrow(valchecks_combined()) > 0) {
