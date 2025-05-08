@@ -1,10 +1,10 @@
 start_ui <- function(id) {
   ns <- NS(id)
 
-  layout_sidebar(
+  bslib::layout_sidebar(
 
     # sidebar: Input data
-    sidebar = sidebar(
+    sidebar = bslib::sidebar(
       title = "Instructions", #paste(icon("info", style = paste("color:", prim_col)),
 
       span("We start from the raw metadata inferred from images and ROXAS settings

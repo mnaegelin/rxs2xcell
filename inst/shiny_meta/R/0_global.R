@@ -210,53 +210,6 @@ load_input_data <- function(input_src, file_input = NULL) {
 }
 
 
-# load_input_data <- function(input_src, file_input, input_meta) {
-#
-#   # from environment
-#   if (input_src == 'df_meta_env') {
-#     if (exists('df_meta')) {
-#       input_meta$df <- df_meta
-#       input_meta$source <- 'df_meta from R environment'
-#     } else {
-#       showModal(modalDialog(
-#         title = "Error",
-#         span("No", code('df_meta'), "available in the R environment. Please provide another input data source."),
-#         easyClose = TRUE
-#       ))
-#       input_meta$df <- NULL
-#       input_meta$source <- 'Please provide and load input source'
-#     }
-#
-#     # from csv
-#   } else if (input_src == 'df_meta_csv') {
-#     df <- read.csv(file_input$datapath, stringsAsFactors = FALSE)
-#     # TODO: improve validation, ROXAS AI
-#     if (setdiff(c(cols_structure,cols_img,cols_settings,cols_paths, cols_other),
-#                 colnames(df)) %>% length() > 0) {
-#       showModal(modalDialog(
-#         title = "Error",
-#         span("Required columns missing in data. Please provide another input data source."),
-#         easyClose = TRUE
-#       ))
-#       input_meta$df <- NULL
-#       input_meta$source <- 'Please provide and load input source'
-#     } else {
-#       input_meta$df <- df
-#       input_meta$source <- paste0('read from file ', file_input$name)
-#     }
-#   }
-#
-#   # from json
-#   # TODO: add read from json, iincluding distribution to other tabs!
-#   # else if (input$input_src == 'df_meta_json') {
-#   #   req(input$file_input)
-#   #   input_meta$meta_json <- jsonlite::fromJSON(input$file_input$datapath)
-#   #   input_meta$df <- input_meta$meta_json$image_table
-#   #   input_meta$source <- paste0('read from file ', input$file_input$name)
-#   # }
-#
-#   return(input_meta) # Return the updated input_meta
-# }
 
 # helper to get the list of all selected images in the shinyTree
 get_selected_imgs <- function(tree, selected = c()) { #ancestry = "",
@@ -404,6 +357,57 @@ orcid_api_request <- function(search_string = NULL, last_name = NULL, first_name
 
 
 # old -----
+
+# load_input_data <- function(input_src, file_input, input_meta) {
+#
+#   # from environment
+#   if (input_src == 'df_meta_env') {
+#     if (exists('df_meta')) {
+#       input_meta$df <- df_meta
+#       input_meta$source <- 'df_meta from R environment'
+#     } else {
+#       showModal(modalDialog(
+#         title = "Error",
+#         span("No", code('df_meta'), "available in the R environment. Please provide another input data source."),
+#         easyClose = TRUE
+#       ))
+#       input_meta$df <- NULL
+#       input_meta$source <- 'Please provide and load input source'
+#     }
+#
+#     # from csv
+#   } else if (input_src == 'df_meta_csv') {
+#     df <- read.csv(file_input$datapath, stringsAsFactors = FALSE)
+#     # TODO: improve validation, ROXAS AI
+#     if (setdiff(c(cols_structure,cols_img,cols_settings,cols_paths, cols_other),
+#                 colnames(df)) %>% length() > 0) {
+#       showModal(modalDialog(
+#         title = "Error",
+#         span("Required columns missing in data. Please provide another input data source."),
+#         easyClose = TRUE
+#       ))
+#       input_meta$df <- NULL
+#       input_meta$source <- 'Please provide and load input source'
+#     } else {
+#       input_meta$df <- df
+#       input_meta$source <- paste0('read from file ', file_input$name)
+#     }
+#   }
+#
+#   # from json
+#   # TODO: add read from json, iincluding distribution to other tabs!
+#   # else if (input$input_src == 'df_meta_json') {
+#   #   req(input$file_input)
+#   #   input_meta$meta_json <- jsonlite::fromJSON(input$file_input$datapath)
+#   #   input_meta$df <- input_meta$meta_json$image_table
+#   #   input_meta$source <- paste0('read from file ', input$file_input$name)
+#   # }
+#
+#   return(input_meta) # Return the updated input_meta
+# }
+
+
+
 # # Aggregating df_rings to get the required data for the editable datatable
 # df_edit <- QWA_data$rings %>%
 #   dplyr::group_by(tree_code) %>%

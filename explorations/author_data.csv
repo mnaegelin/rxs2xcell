@@ -1,2 +1,2 @@
-Last Name,first_name,email,orcid,org_name,org_rorid,aff_dep,aff_street,aff_plz,aff_city,org_country,contactperson
-Naegelin, ,,,,,,,,,DE,FALSE
+"lastname","firstname","email","orcid","aff_name","aff_rorid","aff_dep","aff_address","contactperson"
+"Müller","Maria","m.mueller@gmail.com","0123456","ETH",NA,NA,NA,TRUE

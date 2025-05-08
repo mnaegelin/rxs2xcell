@@ -1,4 +1,6 @@
 # server -----------------------------------------------------------------------
+library(magrittr)
+library(bslib)
 server <- function(input, output, session) {
 
   start_info <- start_server('start', session)

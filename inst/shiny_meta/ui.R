@@ -13,13 +13,17 @@
 # see https://shiny.posit.co/r/articles/build/selectize/
 
 
+#' @importFrom magrittr %>%
+library(magrittr)
+library(bslib)
 
 theme <- NULL
-theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
+print('here??')
+theme <- bslib::bs_theme(version = 5, primary = prim_col, secondary = sec_col,
                   info = tert_col, font_scale = 0.8, preset = "zephyr",
                   "body-bg" = prim_col_grad[5], "card-border-width" = 0,
-                  "focus-ring-color" = sec_col_grad[4]) %>%
-  bs_add_rules(HTML(paste0("
+                  "focus-ring-color" = sec_col_grad[4])
+theme <-  bslib::bs_add_rules(theme, HTML(paste0("
     .btn-secondary {
       color: white;
     }
@@ -137,6 +141,7 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
 
   ")))
 
+print('here again')
 
 
 # bs-btn-disabled-bg: #551345;
@@ -169,7 +174,7 @@ theme <- bs_theme(version = 5, primary = prim_col, secondary = sec_col,
 # }
 
 # Define UI --------------------------------------------------------------------
-ui <- page_fluid(
+ui <- bslib::page_fluid(
 
   # preliminaries
   shinyjs::useShinyjs(),  # Include shinyjs
@@ -224,7 +229,7 @@ ui <- page_fluid(
 
 
   # MAIN PANEL -----------------------------------------------------------------
-  navset_card_underline( # navset_card_pill, page_navbar?
+  bslib::navset_card_underline( # navset_card_pill, page_navbar?
     id = 'tabs',
     selected = tab_start, # TODO: for testing, set to tab_start
     # navbar_options = navbar_options(collapsible = FALSE),
@@ -236,19 +241,19 @@ ui <- page_fluid(
 
 
     # TAB: Start (prefilled metadata) ------------------------------------------
-    nav_panel(
+    bslib::nav_panel(
       title = tab_start,
       start_ui('start')
     ),
 
     # TAB: general (dataset and authors) ---------------------------------------
-    nav_panel(
+    bslib::nav_panel(
       title = tab_general,
       dataset_ui('ds', countries_list = countries_list)
     ),
 
     # TAB: sites ---------------------------------------------------------------
-    nav_panel(
+    bslib::nav_panel(
       title = tab_site,
       site_ui('site')
     ),
@@ -260,7 +265,7 @@ ui <- page_fluid(
     # ),
 
     # TAB: summary -------------------------------------------------------------
-    nav_panel(
+    bslib::nav_panel(
       title = tab_summary,
       summary_ui('summary')
     )
