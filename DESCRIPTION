@@ -30,6 +30,7 @@ Imports:
     htmlwidgets,
     httr,
     janitor,
+    jsonlite,
     leaflet,
     lubridate,
     magrittr,
