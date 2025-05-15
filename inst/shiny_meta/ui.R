@@ -18,7 +18,7 @@ library(magrittr)
 library(bslib)
 
 theme <- NULL
-print('here??')
+
 theme <- bslib::bs_theme(version = 5, primary = prim_col, secondary = sec_col,
                   info = tert_col, font_scale = 0.8, preset = "zephyr",
                   "body-bg" = prim_col_grad[5], "card-border-width" = 0,
@@ -141,7 +141,7 @@ theme <-  bslib::bs_add_rules(theme, HTML(paste0("
 
   ")))
 
-print('here again')
+
 
 
 # bs-btn-disabled-bg: #551345;

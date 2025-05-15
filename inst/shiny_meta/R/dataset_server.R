@@ -1,4 +1,3 @@
-
 # TODO: renderers for multicolumn checks?
 # TODO: multicol validations?
 # renderer_ror_or_aff_name_addr <- "
@@ -21,96 +20,6 @@
 #     return td.innerHTML = value;
 #   }"
 
-
-# helper to create a numbered list of authors for modal dialog with checkboxes
-get_author_choices <- function(author_df){
-  cb_names <- paste0("Author Nr. ", rownames(author_df), ": ",
-                     author_df$last_name, ", ",
-                     author_df$first_name)
-  cb_names <- gsub(": ,", ": [last name],", cb_names)
-  cb_names <- gsub(", $", ", [first name]", cb_names)
-  cb_vals <- rownames(author_df)
-
-  return(stats::setNames(cb_vals, cb_names))
-}
-
-get_funding_choices <- function(funding_df){
-  cb_names <- paste0("Funding Inst. Nr. ", rownames(funding_df))
-  cb_vals <- rownames(funding_df)
-
-  return(stats::setNames(cb_vals, cb_names))
-}
-
-
-author_tbl_str <- data.frame(
-    last_name = character(1),
-    first_name = character(1),
-    email = character(1),
-    orcid = character(1),
-    org_name = character(1),
-    org_rorid = character(1),
-    aff_dep = character(1),
-    aff_street = character(1),
-    aff_plz = character(1),
-    aff_city = character(1),
-    org_country = character(1),
-    contactperson = FALSE,
-    stringsAsFactors = FALSE)
-
-author_tbl_config <- list(
-  # NOTE: order matters for colHeaders (needs to be same as in df)
-  colHeaders = c(last_name = 'Last name', first_name = 'First name',
-                 email = 'Email address', orcid = 'ORCID',
-                 org_name = 'Research institution', org_rorid = 'RORID',
-                 aff_dep = 'Department', aff_street = 'Street',
-                 aff_plz = 'Postal code', aff_city = "City",
-                 org_country = "Country", contactperson = 'Contact person'),
-  last_name = list(type = 'character', required = TRUE),
-  first_name = list(type = 'character', required = TRUE),
-  email = list(type = 'character', required = TRUE,
-               regex_pattern = '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$',
-               unique = TRUE),
-  orcid = list(type = 'character', required = FALSE),
-  org_name = list(type = 'text', required = TRUE),
-  org_rorid = list(type = 'character', required = FALSE),
-  aff_dep = list(type = 'character', required = FALSE),
-  aff_street = list(type = 'character', required = FALSE),
-  aff_plz = list(type = 'character', required = FALSE),
-  aff_city = list(type = 'character', required = FALSE),
-  org_country = list(type = 'autocomplete', required = TRUE, options = names(countries_list)),
-  contactperson = list(type = 'checkbox', required = TRUE, max_checks = 1)
-)
-
-author_tbl <- list(
-  tbl_str = author_tbl_str,
-  tbl_config = author_tbl_config
-)
-
-funding_tbl_str <- data.frame(
-  inst_name = character(1),
-  inst_rorid = character(1),
-  inst_city = character(1),
-  inst_country = character(1),
-  grant_name = character(1),
-  grantnr = character(1),
-  stringsAsFactors = FALSE)
-
-funding_tbl_config <- list(
-  # NOTE: order matters for colHeaders (needs to be same as in df)
-  colHeaders = c(inst_name = 'Funding institution', inst_rorid = 'Inst. RORID',
-                 inst_city = 'City', inst_country = 'Country', grant_name = 'Grant name', grantnr = 'Grant Nr. or ID'),
-  inst_name = list(type = 'text', required = TRUE),
-  inst_rorid = list(type = 'character', required = FALSE),
-  inst_city = list(type = 'character', required = FALSE),
-  inst_country = list(type = 'autocomplete', required = FALSE, options = names(countries_list)),
-  grant_name = list(type = 'character', required = FALSE),
-  grantnr = list(type = 'character', required = TRUE)
-)
-
-funding_tbl <- list(
-  tbl_str = funding_tbl_str,
-  tbl_config = funding_tbl_config
-)
 
 
 
@@ -357,7 +266,7 @@ dataset_server <- function(id, main_session, start_info,
         current_df <- author_data_out()
         if (input$sel_author_orc == "new"){
           row <- nrow(current_df) + 1
-          current_df[row,'contactperson'] <- FALSE # avoid NA in logical columns
+          current_df[row,] <- create_empty_tbl(author_tbl, nrows=1)
         } else {
           row <- input$sel_author_orc
         }
@@ -381,23 +290,30 @@ dataset_server <- function(id, main_session, start_info,
 
     # AUTHOR RHANDSONTABLE -----------------------------------------------------
     # initialize reactiveVal (responding to add/delete row, ror/orcid transfer, file upload)
-    author_data_in <- reactiveVal(author_tbl$tbl_str)
+    author_data_in <- reactiveVal(create_empty_tbl(author_tbl, nrows=1))
+
+
 
     # render editable table
     output$author_table <- rhandsontable::renderRHandsontable({
+      colHeaders <- get_tbl_colHeaders(author_tbl)
+      tippies <- get_header_tippies(author_tbl)
+
       rhandsontable::rhandsontable(
         author_data_in(),
         rowHeaders = TRUE,
         contextMenu = FALSE,
         stretchH = "all",
         height = 150,
-        colHeaders = unname(author_tbl$tbl_config$colHeaders)) %>%
+        colHeaders = unname(colHeaders),
+        afterGetColHeader = tippy_renderer(tippies)
+        ) %>%
       # custom validation check renderers for all cols based on tbl_config
       purrr::reduce(
-        names(author_tbl$tbl_config$colHeaders), # names in df
+        names(colHeaders), # names in df
         function(ht, col) {
-          config <- author_tbl$tbl_config[[col]]
-          colName <- author_tbl$tbl_config$colHeaders[col] # name in ht
+          config <- author_tbl[[col]]
+          colName <- colHeaders[col] # name in ht
           hot_col_wrapper(ht, colName, config)
         },
         .init = .
@@ -411,7 +327,7 @@ dataset_server <- function(id, main_session, start_info,
 
     # observe add row button
     observeEvent(input$btn_add_author, {
-      new_row <- author_tbl$tbl_str
+      new_row <- create_empty_tbl(author_tbl, nrows=1)
       current_df <- author_data_out()
       current_df[nrow(current_df)+1,] <- new_row
       author_data_in(current_df)
@@ -429,7 +345,20 @@ dataset_server <- function(id, main_session, start_info,
       showModal(modalDialog(
         title = "Confirm Import",
         tagList(
-          "Are you sure?, TODO: warn that it overwrites existing data, add import controls"
+          span("Importing data will overwrite any changes already made in the current table.
+          Are you sure you wish to continue?"),
+          checkboxInput(
+            ns("aut_col_order"),
+            label = "Ignore column names, use order instead.",
+            value = FALSE
+          ),
+          numericInput(
+            ns("aut_col_header"),
+            label = "Column order to use (1-based):",
+            value = 1,
+            min = 1,
+            max = length(author_tbl)
+          ),
         ),
         footer = tagList(
           actionButton(ns("import_aut_data"), "Import data"),
@@ -459,7 +388,7 @@ dataset_server <- function(id, main_session, start_info,
       })
       # try to convert data to right structure
       converted_data <- tryCatch({
-        align_to_structure(author_tbl$tbl_str, imported_data)
+        align_to_structure(create_empty_tbl(author_tbl), imported_data)
       }, error = function(e) {
         showModal(modalDialog(
           title = "Error loading data",
@@ -483,27 +412,32 @@ dataset_server <- function(id, main_session, start_info,
 
     # FUNDING RHANDSONTABLE ----------------------------------------------------
     # initialize reactiveVal (responding to add/delete row, ror transfer, file upload)
-    funding_data_in <- reactiveVal(funding_tbl$tbl_str)
+    funding_data_in <- reactiveVal(create_empty_tbl(funding_tbl, nrows=1))
 
     # Render editable table
     output$funding_table <- rhandsontable::renderRHandsontable({
+      colHeaders <- get_tbl_colHeaders(funding_tbl)
+      tippies <- get_header_tippies(funding_tbl)
+
       rhandsontable::rhandsontable(
         funding_data_in(),
         rowHeaders = TRUE,
         contextMenu = FALSE,
         stretchH = "all",
         height = 150,
-        colHeaders = unname(funding_tbl$tbl_config$colHeaders)) %>%
-      # custom validation checks renderers for all cols based on tbl_config
-      purrr::reduce(
-        names(funding_tbl$tbl_config$colHeaders), # names in df
-        function(ht, col) {
-          config <- funding_tbl$tbl_config[[col]]
-          colName <- funding_tbl$tbl_config$colHeaders[col] # name in ht
-          hot_col_wrapper(ht, colName, config)
-        },
-        .init = .
-      )
+        colHeaders = unname(colHeaders),
+        afterGetColHeader = tippy_renderer(tippies)
+      ) %>%
+        # custom validation check renderers for all cols based on tbl_config
+        purrr::reduce(
+          names(colHeaders), # names in df
+          function(ht, col) {
+            config <- funding_tbl[[col]]
+            colName <- colHeaders[col] # name in ht
+            hot_col_wrapper(ht, colName, config)
+          },
+          .init = .
+        )
     })
 
     # create dataframe reactive to hot updates
@@ -513,7 +447,7 @@ dataset_server <- function(id, main_session, start_info,
 
     # observe add row button
     observeEvent(input$btn_add_fund, {
-      new_row <- funding_tbl$tbl_str
+      new_row <- create_empty_tbl(funding_tbl, nrows=1)
       current_df <- funding_data_out()
       current_df[nrow(current_df)+1,] <- new_row
       funding_data_in(current_df)
@@ -623,11 +557,11 @@ dataset_server <- function(id, main_session, start_info,
 
       # 2) author table
       df_aut <- author_data_out()
-      results$author_data <- collect_hot_val_results(df_aut, author_tbl$tbl_config)
+      results$author_data <- collect_hot_val_results(df_aut, author_tbl)
 
       # 3) funding table
       df_fund <- funding_data_out()
-      results$funding_data <- collect_hot_val_results(df_fund, funding_tbl$tbl_config)
+      results$funding_data <- collect_hot_val_results(df_fund, funding_tbl)
 
       # 4) related resources
       # not validation checks
@@ -744,6 +678,8 @@ dataset_server <- function(id, main_session, start_info,
 
   })
 }
+
+
 
 
 

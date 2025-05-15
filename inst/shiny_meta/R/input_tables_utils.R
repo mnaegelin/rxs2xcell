@@ -189,7 +189,7 @@ validate_num_column <- function(column, col_config) {
 
 validate_drop_column <- function(column, col_config){
   check_required <- ifelse(is.null(col_config$required), FALSE, col_config$required)
-  val_options <- col_config$options
+  val_options <- get_options(col_config$options)
 
   validation_results <- c()
 
@@ -280,7 +280,7 @@ collect_hot_val_results <- function(df, tbl_config){
       val_check <- validate_column(df[[col_name]], tbl_config[[col_name]])
       if (length(val_check) > 0) {
         list(
-          field = tbl_config$colHeaders[[col_name]],
+          field = tbl_config[[col_name]]$col_header,
           type = 'error',
           message = paste(val_check, collapse = ', ')
         )

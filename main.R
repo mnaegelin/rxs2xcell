@@ -1,12 +1,10 @@
-# TODO: put some of the data into inst/extdata, usable for testing and examples
-# TODO: remove the explorations/*, out/* and this main.R file from the package
-# TODO: add tests
-# TODO: add template workflow?
 ################################################################################
 ################################################################################
 
 library(devtools)
 load_all()
+#remotes::install_github('mnaegelin/rxs2xcell', auth_token = GITHUB_PAT)
+#library(rxs2xcell)
 
 ################################################################################
 # set path to the input and output data
@@ -24,7 +22,7 @@ df_structure <- extract_data_structure(files)
 
 # NOTE: At the moment, we assume that all images are named according to the
 # following pattern:
-# `{site}_{species}_{tree}{woodpiece}_{sample}_{image}`,
+#`{site}_{species}_{tree}{woodpiece}_{sample}_{image}`,
 # where tree is assumed to be a two-character code, and woodpiece is optional.
 
 
@@ -40,8 +38,8 @@ df_meta <- collect_metadata_from_files(df_structure,
 
 ################################################################################
 # complete the required metadata form via the Shiny app
-# TODO: finalize
 launch_metadata_app()
+
 
 
 
@@ -66,7 +64,6 @@ QWA_data <- remove_outliers(QWA_data)
 
 ################################################################################
 # complete cell measures
-# TODO: finalize
 QWA_data <- complete_cell_measures(QWA_data)
 
 
@@ -96,9 +93,28 @@ write.csv(QWA_data$rings,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ################################################################################
 ################################################################################
 ################################################################################
+# TODO: put some of the data into inst/extdata, usable for testing and examples
+# TODO: remove the explorations/*, out/* and this main.R file from the package
+# TODO: add tests
+# TODO: add template workflow?
 # TODO: writing to DB
 complete_metadata <- jsonlite::fromJSON("./inst/shiny_meta/data.json", flatten = T)
 # QWA_data <- list()
@@ -111,7 +127,7 @@ dbcon2 <- DBI::dbConnect(RPostgreSQL::PostgreSQL(),
                         host = "pgdbxcell.wsl.ch",
                         port = 5432,
                         user = "xcell_edit", #naegelin
-                        password = 'jG4412hv9U') #keyring::key_get("pgdbt_xcell", username = "naegelin")
+                        password = keyring::key_get("pgdbt_xcell", username = "xcell_edit")) #naegelin
 schema <- 'v3'
 
 write_data_to_db(complete_metadata,

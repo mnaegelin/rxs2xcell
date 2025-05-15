@@ -1,0 +1,734 @@
+{
+    "author_tbl":
+    {
+        "last_name":
+        {
+            "col_header": "Last name",
+            "col_header_tippy": "Family name(s) of the author",
+            "type": "character",
+            "required": true
+        },
+        "first_name":
+        {
+            "col_header": "First name",
+            "col_header_tippy": "Given name(s) of the author",
+            "type": "character",
+            "required": true
+        },
+        "email":
+        {
+            "col_header": "Email",
+            "col_header_tippy": "Valid email address",
+            "type": "character",
+            "required": true,
+            "regex_pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$",
+            "unique": true
+        },
+        "orcid":
+        {
+            "col_header": "ORCID",
+            "col_header_tippy": "ORCID, e.g. 0000-0002-7070-3292",
+            "type": "character",
+            "required": false,
+            "regex_pattern": "^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$"
+        },
+        "org_name":
+        {
+            "col_header": "Research institution",
+            "col_header_tippy": "Primary affiliation",
+            "type": "text",
+            "required": true
+        },
+        "org_rorid":
+        {
+            "col_header": "RORID",
+            "col_header_tippy": "RORID, e.g. 04bs5yc70",
+            "type": "character",
+            "required": false,
+            "regex_pattern": "^[0-9a-zA-Z]{9}$"
+        },
+        "aff_dep":
+        {
+            "col_header": "Department",
+            "col_header_tippy": "Department at primary affiliation",
+            "type": "text",
+            "required": false
+        },
+        "aff_street":
+        {
+            "col_header": "Street",
+            "col_header_tippy": "",
+            "type": "text",
+            "required": false
+        },
+        "aff_plz":
+        {
+            "col_header": "Postal code",
+            "col_header_tippy": "",
+            "type": "character",
+            "required": false
+        },
+        "aff_city":
+        {
+            "col_header": "City",
+            "col_header_tippy": "",
+            "type": "character",
+            "required": false
+        },
+        "org_country":
+        {
+            "col_header": "Country",
+            "col_header_tippy": "Country code and name (ISO 3166-1 alpha-2)",
+            "type": "autocomplete",
+            "required": true,
+            "options": "country_codes_names"
+        },
+        "contact_person":
+        {
+            "col_header": "Contact person",
+            "col_header_tippy": "Select one author as contact person",
+            "type": "checkbox",
+            "required": true,
+            "min_checks": 1,
+            "max_checks": 1
+        }
+    },
+    "funding_tbl":
+    {
+        "inst_name":
+        {
+            "col_header": "Funding institution",
+            "col_header_tippy": "",
+            "type": "text",
+            "required": true
+        },
+        "inst_rorid":
+        {
+            "col_header": "RORID",
+            "col_header_tippy": "RORID, e.g. 04bs5yc70",
+            "type": "character",
+            "required": false,
+            "regex_pattern": "^[0-9a-zA-Z]{9}$"
+        },
+        "inst_city":
+        {
+            "col_header": "City",
+            "col_header_tippy": "",
+            "type": "character",
+            "required": false
+        },
+        "inst_country":
+        {
+            "col_header": "Country",
+            "col_header_tippy": "Country code and name (ISO 3166-1 alpha-2)",
+            "type": "autocomplete",
+            "required": false,
+            "options": "country_codes_names"
+        },
+        "grant_name":
+        {
+            "col_header": "Grant name",
+            "col_header_tippy": "",
+            "type": "character",
+            "required": false
+        },
+        "grant_nr":
+        {
+            "col_header": "Grant Nr.",
+            "col_header_tippy": "Nr. or ID of the grant",
+            "type": "character",
+            "required": true
+        }
+    },
+    "site_tbl":
+    {
+        "site_code":
+        {
+            "col_header": "Site code",
+            "col_header_tippy": "",
+            "type": "character",
+            "readOnly": true
+        },
+        "n_trees":
+        {
+            "col_header": "Nr. of trees",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "readOnly": true
+        },
+        "site_name":
+        {
+            "col_header": "Site name",
+            "col_header_tippy": "",
+            "type": "character",
+            "required": true,
+            "unique": true
+        },
+        "site_desc":
+        {
+            "col_header": "Site description",
+            "col_header_tippy": "",
+            "type": "character",
+            "required": false
+        },
+        "latitude":
+        {
+            "col_header": "Latitude",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": true,
+            "min_val": -90,
+            "max_val": 90
+        },
+        "longitude":
+        {
+            "col_header": "Longitude",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": true,
+            "min_val": -180,
+            "max_val": 180
+        },
+        "country":
+        {
+            "col_header": "Country",
+            "col_header_tippy": "Country code and name (ISO 3166-1 alpha-2)",
+            "type": "autocomplete",
+            "required": false,
+            "options": "country_codes_names"
+        },
+        "elevation":
+        {
+            "col_header": "Elevation",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": true,
+            "min_val": -420,
+            "max_val": 8848
+        },
+        "aspect":
+        {
+            "col_header": "Aspect",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": false,
+            "min_val": 0,
+            "max_val": 360
+        },
+        "slope":
+        {
+            "col_header": "Slope",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": false,
+            "min_val": 0,
+            "max_val": 90
+        },
+        "topography":
+        {
+            "col_header": "Site topography",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "summit",
+                "plateau",
+                "upper slope",
+                "middle slope",
+                "lower slope",
+                "valley bottom",
+                "flat"
+            ]
+        },
+        "soil_depth":
+        {
+            "col_header": "Soil depth",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "0-100 cm",
+                "100-200 cm",
+                ">200 cm"
+            ]
+        },
+        "soil_water_capacity":
+        {
+            "col_header": "Soil water holding cap.",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "low",
+                "medium",
+                "high"
+            ]
+        },
+        "stand_type":
+        {
+            "col_header": "Stand type",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "mono gymnosperm",
+                "mixed gymnosperm",
+                "mixed forest",
+                "mixed angiosperm",
+                "mono angiosperm"
+            ]
+        },
+        "stand_structure":
+        {
+            "col_header": "Stand structure",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "regular",
+                "irregular",
+                "old growth"
+            ]
+        },
+        "stand_age":
+        {
+            "col_header": "Stand age",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "evenaged",
+                "unevenaged"
+            ]
+        },
+        "stand_main_species":
+        {
+            "col_header": "Main species",
+            "col_header_tippy": "",
+            "type": "autocomplete",
+            "required": false,
+            "options": "species_names"
+        },
+        "stand_management":
+        {
+            "col_header": "Management",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "unmanaged",
+                "extensive",
+                "moderate",
+                "instensive"
+            ]
+        }
+    },
+    "tree_tbl":
+    {
+        "tree_code":
+        {
+            "col_header": "Tree code",
+            "col_header_tippy": "Identifying code for the tree (rxs2xcell generated)",
+            "type": "character",
+            "readOnly": true
+        },
+        "site_code":
+        {
+            "col_header": "Site code",
+            "col_header_tippy": "Site to which the tree is assigned",
+            "type": "character",
+            "readOnly": true
+        },
+        "n_woodpieces":
+        {
+            "col_header": "Nr of pieces",
+            "col_header_tippy": "Nr. of woodpieces collected from tree",
+            "type": "numeric",
+            "readOnly": true
+        },
+        "species_code":
+        {
+            "col_header": "Species code",
+            "col_header_tippy": "Based on ITRDB species code list",
+            "type": "autocomplete",
+            "required": true,
+            "options": "species_codes"
+        },
+        "species_name":
+        {
+            "col_header": "Species",
+            "col_header_tippy": "",
+            "type": "autocomplete",
+            "required": true,
+            "options": "species_names"
+        },
+        "wood_type":
+        {
+            "col_header": "Wood type",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "gymnosperm",
+                "angiosperm"
+            ]
+        },
+        "leaf_habit":
+        {
+            "col_header": "Leaf habit",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "evergreen",
+                "deciduous"
+            ]
+        },
+        "tree_ring_structure":
+        {
+            "col_header": "Treering structure",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "conifer",
+                "diffuse-porous",
+                "ring-porous"
+            ]
+        },
+        "tree_treatment":
+        {
+            "col_header": "Treatment",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "none",
+                "pruning",
+                "thinning",
+                "water exclusion",
+                "watering",
+                "heating",
+                "cooling"
+            ]
+        },
+        "tree_dbh":
+        {
+            "col_header": "Diameter at breast height",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": false,
+            "min_val": 0,
+            "max_val": 500
+        },
+        "tree_height":
+        {
+            "col_header": "Total height",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": false,
+            "min_val": 0,
+            "max_val": 120
+        },
+        "tree_age":
+        {
+            "col_header": "Age",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": false,
+            "min_val": 0,
+            "max_val": 5000
+        },
+        "tree_sex":
+        {
+            "col_header": "Sex",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "male",
+                "female",
+                "both",
+                "unknown"
+            ]
+        },
+        "tree_social_status":
+        {
+            "col_header": "Social status",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "dominant",
+                "co-dominant",
+                "suppressed",
+                "dying"
+            ]
+        },
+        "tree_health_status":
+        {
+            "col_header": "Health condition",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "healthy",
+                "declining",
+                "dying",
+                "dead"
+            ]
+        },
+        "tree_origin":
+        {
+            "col_header": "Origin",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "planted",
+                "natural regeneration",
+                "potted",
+                "coppiced",
+                "grafted"
+            ]
+        },
+        "tree_comment":
+        {
+            "col_header": "Comments",
+            "col_header_tippy": "",
+            "type": "character",
+            "required": false
+        }
+    },
+    "woodpiece_tbl":
+    {
+        "woodpiece_code":
+        {            
+            "col_header": "Woodpiece code",
+            "col_header_tippy": "",
+            "type": "character",
+            "readOnly": true
+        },
+        "tree_code":
+        {            
+            "col_header": "Tree code",
+            "col_header_tippy": "",
+            "type": "character",
+            "readOnly": true
+        },
+        "n_slides":
+        {            
+            "col_header": "Nr of slides",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "readOnly": true
+        },
+        "sample_date":
+        {            
+            "col_header": "Sample date",
+            "col_header_tippy": "when was the sample collected from the tree",
+            "type": "date",
+            "required": true
+        },
+        "organ":
+        {            
+            "col_header": "Organ",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": true,
+            "options":
+            [
+                "branch",
+                "root",
+                "stem"
+            ]
+        },
+        "sampling_height":
+        {            
+            "col_header":  "Sampling height",
+            "col_header_tippy": "can be negative for root samples",
+            "type": "numeric",
+            "required": false,
+            "min_val": 0,
+            "max_val": 150
+        },
+        "sample_apex_distance":
+        {            
+            "col_header": "Distance from apex",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": false,
+            "min_val": 0,
+            "max_val": 150
+        },
+        "sample_type":
+        {            
+            "col_header": "Sample type",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "core 5 mm",
+                "core 10 mm",
+                "wood section",
+                "wood disk"
+            ]
+        },
+        "sample_embedding":
+        {            
+            "col_header": "Embedding method",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "paraffin embedding",
+                "none"
+            ]
+        },
+        "sample_archived":
+        {            
+            "col_header": "Sample archived",
+            "col_header_tippy": "",
+            "type": "checkbox",
+            "required": false
+        },
+        "pith_year":
+        {            
+            "col_header": "Pith year",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": false,
+            "min_val": -15000,
+            "max_val": 2500
+        }
+    },
+    "slide_tbl":
+    {
+        "slide_code":
+        {            
+            "col_header": "Slide code",
+            "col_header_tippy": "Identifying code",
+            "type": "character",
+            "readOnly": true
+        },
+        "woodpiece_code":
+        {            
+            "col_header": "Woodpiece code",
+            "col_header_tippy": "To which woodpiece the slide belongs",
+            "type": "character",
+            "readOnly": true
+        },
+        "n_imgs":
+        {            
+            "col_header": "Nr of images",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "readOnly": true
+        },
+        "sample_date":
+        {            
+            "col_header": "Sample date",
+            "col_header_tippy": "",
+            "type": "date",
+            "required": true
+        },
+        "sect_thickness":
+        {            
+            "col_header": "Section thickness",
+            "col_header_tippy": "",
+            "type": "numeric",
+            "required": false,
+            "min_val": 0,
+            "max_val": 100
+        },
+        "cutting_plane":
+        {            
+            "col_header": "Cutting plane",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "cross-section",
+                "tangential section",
+                "radial section"
+            ]
+        },
+        "slide_prep":
+        {            
+            "col_header": "Slide preparation",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "micro-section",
+                "cut surface",
+                "polished surface",
+                "double saw cut"
+            ]
+        },
+        "slide_staining":
+        {            
+            "col_header": "Staining method",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options": 
+            [
+                "Sarafin Astrablue", 
+                "other"
+            ]
+        },
+        "slide_archived":
+        {            
+            "col_header": "Slide archived",
+            "col_header_tippy": "",
+            "type": "checkbox",
+            "required": false
+        },
+        "img_cap_system":
+        {            
+            "col_header": "Image capturing system",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "confocal microscope",
+                "light microscope",
+                "..."
+            ]
+        },
+        "data_structure":
+        {            
+            "col_header": "Data structure",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "tracheid-full",
+                "vessels",
+                "..."
+            ]
+        }
+    }
+}

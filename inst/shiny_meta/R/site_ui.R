@@ -68,7 +68,9 @@ site_ui <- function(id) {
         div(style="min-height:200px;height:auto;",
           rhandsontable::rHandsontableOutput(ns("site_table"))),
 
-        verbatimTextOutput(ns('no_data_site'))
+        p(tags$i("In case of site networks, ...")),
+        actionButton(ns('btn_add_nws'), 'Add site network', icon = icon('plus')),
+        DT::DTOutput(ns("networks")) # Placeholder for the selectize input
 
       ),
 
@@ -84,7 +86,7 @@ site_ui <- function(id) {
         div(style="min-height:200px;height:auto;",
           rhandsontable::rHandsontableOutput(ns("tree_table"))),
 
-        verbatimTextOutput(ns('no_data_tree'))
+
 
       ),
 
@@ -100,7 +102,6 @@ site_ui <- function(id) {
 
         rhandsontable::rHandsontableOutput(ns("wp_table")),
 
-        verbatimTextOutput(ns('no_data_wp'))
 
 
       ),
@@ -117,7 +118,7 @@ site_ui <- function(id) {
 
         rhandsontable::rHandsontableOutput(ns("slide_table")),
 
-        verbatimTextOutput(ns('no_data_slide'))
+
 
       )
 

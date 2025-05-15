@@ -77,7 +77,7 @@ dataset_ui <- function(id, countries_list) {
         layout_column_wrap(
           width = 1/2,
           radioButtons(ns("ds_access"), "Dateset access rights",
-                       choices = c("public", "private"),
+                       choices = c("public", "restricted"),
                        selected = "public"),
 
           div(
@@ -86,7 +86,9 @@ dataset_ui <- function(id, countries_list) {
               condition = "input.ds_access == 'public'",
               selectizeInput(ns("ds_license"),
                           "Select a license for the public dataset",
-                          choices = c("CC BY 4.0", "CC BY-SA 4.0", "CC BY-NC 4.0", "CC BY-NC-SA 4.0"),
+                          choices = c("CC BY 4.0", "CC BY-SA 4.0", "CC BY-NC 4.0",
+                                      "CC BY-NC-SA 4.0", "CC BY-ND 4.0", "CC BY-NC-ND 4.0",
+                                      "CCO 1.0"),
                           selected = "CC BY 4.0",
                           options = list(create = TRUE)),
               span("CC licenses are preferred (cf. ",
@@ -95,10 +97,10 @@ dataset_ui <- function(id, countries_list) {
               ns=NS(id)),
             # Conditional panel for private dataset: Embargo date
             conditionalPanel(
-              condition = "input.ds_access == 'private'",
+              condition = "input.ds_access == 'restricted'",
               dateInput(ns("ds_embargoed"),
                         "If applicable, select an embargo date",
-                        value = as.Date(NA)),
+                        value = Sys.Date() + 365),
               span("*Access rights will", strong("not"), "be changed automatically after embargo date."),
               ns=NS(id))
           )

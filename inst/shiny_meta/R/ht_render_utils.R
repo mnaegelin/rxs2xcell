@@ -91,8 +91,6 @@ renderer_text <- function(required = NULL){
         td.style.background = '';
       }
 
-
-
       return td;
     }", check_required)))
 }
@@ -369,13 +367,13 @@ hot_col_wrapper <- function(ht, col, col_config) {
   } else if (col_config$type == 'dropdown') {
     renderer_js <- renderer_drop(
       required = col_config$required,
-      options = col_config$options
+      options = get_options(col_config$options)
     )
     ht %>%
       rhandsontable::hot_col(
         col,
         type = 'dropdown',
-        source = col_config$options,
+        source = get_options(col_config$options),
         renderer = renderer_js,
         readOnly = readOnly
       )
@@ -383,13 +381,13 @@ hot_col_wrapper <- function(ht, col, col_config) {
   } else if (col_config$type == 'autocomplete') {
     renderer_js <- renderer_auto(
       required = col_config$required,
-      options = col_config$options
+      options = get_options(col_config$options)
     )
     ht %>%
       rhandsontable::hot_col(
         col,
         type = 'autocomplete',
-        source = col_config$options,
+        source = get_options(col_config$options),
         renderer = renderer_js,
         readOnly = readOnly
       )
@@ -421,4 +419,19 @@ hot_col_wrapper <- function(ht, col, col_config) {
         readOnly = readOnly
       )
   }
+}
+
+
+tippy_renderer <- function(tippies) {
+  tippies_js <- jsonlite::toJSON(tippies, auto_unbox = T, null = "null")
+  htmlwidgets::JS(htmltools::HTML(
+  sprintf("
+    function(col, th) {
+      var tippies_js = %s;
+      var message = tippies_js[col];
+      if(th.hasOwnProperty('_tippy')) {th._tippy.destroy()} // destroy previous tippy instance if it exists
+      if (message != null && message != '') {
+        tippy(th, { content: message });
+      }
+    }", tippies_js)))
 }

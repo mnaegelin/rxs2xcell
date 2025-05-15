@@ -51,11 +51,18 @@ get_country_codes <- function(){
   return(country_list)
 }
 
+get_countries_info <- function(){
+  file_path <- system.file("extdata", "country_ISO3166-1-alpha-2_20250513.csv", package = "rxs2xcell")
+  df_countries <- read.csv(file_path, stringsAsFactors = FALSE, na.strings=c(""))
+  return(df_countries)
+}
+
 # source the var, we need it everywhere
 countries_list <- get_country_codes()
 countries_sf <- rnaturalearth::ne_load(
   scale=50, type='countries',
   destdir = system.file("extdata/ne_countries_data", package="rxs2xcell"))
+countries_info <- get_countries_info()
 
 country_from_coords <- function(lng, lat, countries_sf = NULL){
   point <- sf::st_as_sf(data.frame(lon = lng, lat = lat), coords = c("lon", "lat"), crs = 4326)
@@ -76,6 +83,20 @@ get_species_info <- function(){
 
 species_info <- get_species_info()
 
+get_options <- function(options){
+  if (is.list(options)) { # or by length?
+    return(options) # convert to vector?
+  } else {
+    switch(
+      options,
+      country_codes_names = return(countries_info$combined),
+      species_names = return(species_info$species_name),
+      species_codes = return(species_info$itrdb_species_code),
+    )
+  }
+}
+
+
 
 
 max_char_limit <- function(value, limit) {
@@ -94,6 +115,38 @@ input_field_names <- c(
   tree_data = 'Trees',
   wp_data = 'Woodpieces',
   slide_data = 'Slides')
+
+
+
+
+create_empty_tbl <- function(tbl_config, nrows = 0){
+  # TODO: handle integers, dates?
+  colClasses <- sapply(tbl_config, \(x) x$type)
+  colClasses[colClasses %in% c("text","dropdown","autocomplete")] <- "character"
+  colClasses[colClasses == "checkbox"] <- "logical"
+  colClasses[colClasses == "date"] <- "Date"
+  col.names <- names(colClasses)
+
+  empty_tbl <- read.table(text = "",
+                          colClasses = colClasses,
+                          col.names = col.names)
+
+  if (nrows > 0){
+    empty_tbl[1:nrows,col.names[colClasses == "character"]] <- ""
+    empty_tbl[1:nrows,col.names[colClasses == "checkbox"]] <- FALSE
+  }
+  return(empty_tbl)
+}
+
+get_tbl_colHeaders <- function(tbl_config){
+  colHeaders <- sapply(tbl_config, \(x) x$col_header)
+  return(colHeaders)
+}
+
+get_header_tippies <- function(tbl_config){
+  tippies_list <- unname(sapply(tbl_config, \(x) x$col_header_tippy))
+  return(tippies_list)
+}
 
 
 #' A column of delete buttons for each row in the data frame for the first column
@@ -230,6 +283,25 @@ get_selected_imgs <- function(tree, selected = c()) { #ancestry = "",
 
 
 ## DATASET SERVER -----
+# helper to create a numbered list of authors for modal dialog with checkboxes
+get_author_choices <- function(author_df){
+  cb_names <- paste0("Author Nr. ", rownames(author_df), ": ",
+                     author_df$last_name, ", ",
+                     author_df$first_name)
+  cb_names <- gsub(": ,", ": [last name],", cb_names)
+  cb_names <- gsub(", $", ", [first name]", cb_names)
+  cb_vals <- rownames(author_df)
+
+  return(stats::setNames(cb_vals, cb_names))
+}
+
+get_funding_choices <- function(funding_df){
+  cb_names <- paste0("Funding Inst. Nr. ", rownames(funding_df))
+  cb_vals <- rownames(funding_df)
+
+  return(stats::setNames(cb_vals, cb_names))
+}
+
 ror_api_request <- function(search_string, country_code){
   search_url <- sprintf(
     'https://api.ror.org/v2/organizations?query=%s&filter=country.country_code:%s',

@@ -5,12 +5,16 @@ server <- function(input, output, session) {
 
   start_info <- start_server('start', session)
 
+  #table_configs <- jsonlite::read_json("./inst/shiny_meta/www/table_configs.json")
+  table_configs <- jsonlite::read_json("www/table_configs.json")
+
   # TODO: add: species info, countries_sf vars as inputs
-  dataset_info <- dataset_server('ds', session, start_info,
-                                 countries_list, author_tbl, funding_tbl)
+  dataset_info <- dataset_server('ds', session, start_info, countries_list,
+                                 table_configs$author_tbl, table_configs$funding_tbl)
 
   site_info <- site_server('site', session, start_info, countries_list,
-                           site_tbl, tree_tbl, woodpiece_tbl, slide_tbl)
+                           table_configs$site_tbl, table_configs$tree_tbl,
+                           table_configs$woodpiece_tbl, table_configs$slide_tbl)
 
   summary_server('summary', session, start_info, dataset_info, site_info)
 

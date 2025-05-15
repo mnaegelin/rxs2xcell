@@ -1,4 +1,4 @@
-﻿tree_species,itrdb_species_code,wood_type,leaf_habit,tree_ring_structure
+﻿species_name,itrdb_species_code,wood_type,leaf_habit,tree_ring_structure
 Abies Mill. fir,ABSP,gymnosperm,evergreen,conifer
 Abies alba Mill.,ABAL,gymnosperm,evergreen,conifer
 Abies amabilis Dougl. ex Forbes,ABAM,gymnosperm,evergreen,conifer

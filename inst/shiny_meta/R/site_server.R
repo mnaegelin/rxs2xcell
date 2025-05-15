@@ -14,226 +14,6 @@
 #         }
 #       }"
 
-site_tbl_str <- data.frame(
-  sitecode = character(0),
-  n_tree = integer(0),
-  sitename = character(0),
-  sitedesc = character(0),
-  latitude = numeric(0),
-  longitude = numeric(0),
-  country = character(0),
-  elevation = numeric(0),
-  aspect = numeric(0),
-  slope = numeric(0),
-  topography = character(0),
-  soildepth = character(0),
-  soilwater_capacity = character(0),
-  stand_type = character(0),
-  stand_structure = character(0),
-  stand_age = character(0),
-  stand_main_species = character(0),
-  stand_management = character(0),
-  stringsAsFactors = FALSE
-)
-
-site_tbl_config <- list(
-# NOTE: order matters for colHeaders (needs to be same as in df)
-  colHeaders = c(
-    sitecode = "Site code", n_tree = "Nr of trees", sitename = "Site name",
-    sitedesc = "Site description", latitude = "Latitude", longitude = "Longitude",
-    country = "Country", elevation = "Elevation", aspect = "Aspect", slope = "Slope",
-    topography = "Topography", soildepth = "Soil depth",
-    soilwater_capacity = "Soil water holding capacity",
-    stand_type = "Forest stand type", stand_structure = "Stand structure",
-    stand_age = "Stand age", stand_main_species = "Stand main species",
-    stand_management = "Stand management intensity"
-  ),
-  sitecode = list(type = 'character', readOnly = TRUE),
-  n_tree = list(type = 'numeric', readOnly = TRUE),
-  sitename = list(type = 'character', required = TRUE, unique = TRUE),
-  sitedesc = list(type = 'character', required = FALSE),
-  latitude = list(type = 'numeric', required = TRUE, min_val = -90, max_val = 90),
-  longitude = list(type = 'numeric', required = TRUE, min_val = -180, max_val = 180),
-  country = list(type = 'autocomplete', required = FALSE, options = names(countries_list)), # calculated automatically
-  elevation = list(type = 'numeric', required = TRUE, min_val = -420, max_val = 8848),
-  aspect = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 360),
-  slope = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 90),
-  topography = list(type = 'dropdown', required = FALSE,
-                    options = c('summit','plateau', 'upper slope', 'middle slope',
-                                'lower slope', 'valley bottom', 'flat')),
-  soildepth = list(type = 'dropdown', required = FALSE,
-                   options = c("0-100 cm", "100-200 cm", ">200 cm")),
-  soilwater_capacity = list(type = 'dropdown', required = FALSE,
-                             options = c("low", "medium", "high")),
-  stand_type = list(type = 'dropdown', required = FALSE,
-                    options = c('mono gymnosperm', 'mixed gymnosperm',
-                                'mixed forest', 'mixed angiosperm', 'mono angiosperm')),
-  stand_structure = list(type = 'dropdown', required = FALSE,
-                    options = c('regular', 'irregular', 'old growth')),
-  stand_age = list(type = 'dropdown', required = FALSE, options = c('evenaged', 'unevenaged')),
-  stand_main_species = list(type = 'autocomplete', required = FALSE,
-                            options = species_info$itrdb_species_code),
-  stand_management = list(type = 'dropdown', required = FALSE,
-                          options = c('unmanaged', 'extensive', 'moderate', 'instensive'))
-)
-
-site_tbl <- list(
-  tbl_str = site_tbl_str,
-  tbl_config = site_tbl_config
-)
-
-tree_tbl_str <- data.frame(
-  treecode = character(0),
-  sitecode = character(0),
-  n_wp = integer(0),
-  speciescode = character(0),
-  speciesname = character(0),
-  wood_type = character(0),
-  leaf_habit = character(0),
-  tree_ring_structure = character(0),
-  tree_treatment = character(0),
-  tree_dbh = numeric(0),
-  tree_height = numeric(0),
-  tree_age = numeric(0),
-  tree_sex = character(0),
-  tree_social_status = character(0),
-  tree_health_status = character(0),
-  tree_origin = character(0),
-  tree_comment = character(0),
-  stringsAsFactors = FALSE
-)
-
-tree_tbl_config <- list(
-  # NOTE: order matters for colHeaders (needs to be same as in df)
-  colHeaders = c(treecode = "Tree code", sitecode = "Site code",
-                 n_wp = "Nr of pieces", speciescode = "Species code", speciesname = 'Species',
-                 wood_type = "Wood type", leaf_habit = "Leaf habit",
-                 tree_ring_structure = "Treering structure", tree_treatment = "Treatment",
-                 tree_dbh = "Diameter at breast height", tree_height = "Total height",
-                 tree_age = "Age", tree_sex = "Sex", tree_social_status = "Social status",
-                 tree_health_status = "Health condition", tree_origin = "Origin",
-                 tree_comment = "Comments"
-                 ),
-  treecode = list(type = 'character', readOnly = TRUE),
-  sitecode = list(type = 'character', readOnly = TRUE),
-  n_wp = list(type = 'numeric', readOnly = TRUE),
-  speciescode = list(type = 'autocomplete', required = TRUE, options = species_info$itrdb_species_code),
-  speciesname = list(type = 'autocomplete', required = TRUE, options = species_info$tree_species),
-  wood_type = list(type = 'dropdown', required = FALSE, options = c('gymnosperm','angiosperm')),
-  leaf_habit = list(type = 'dropdown', required = FALSE, options = c('evergreen','deciduous')),
-  tree_ring_structure = list(type = 'dropdown', required = FALSE, options = c('conifer','diffuse-porous','ring-porous')),
-  tree_treatment = list(type = 'dropdown', required = FALSE,
-                        options = c('none', 'pruning', 'thinning', 'water exclusion', 'watering', 'heating', 'cooling')),
-  tree_dbh = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 500),
-  tree_height = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 120),
-  tree_age = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 5000),
-  tree_sex = list(type = 'dropdown', required = FALSE,
-                  options = c('male','female','both','unknown')),
-  tree_social_status = list(type = 'dropdown', required = FALSE,
-                             options = c('dominant','co-dominant','suppressed','dying')),
-  tree_health_status = list(type = 'dropdown', required = FALSE,
-                            options = c('healthy','declining','dying','dead')),
-  tree_origin = list(type = 'dropdown', required = FALSE,
-                     options = c('planted', 'natural regeneration', 'potted',
-                                 'coppiced', 'grafted')),
-  tree_comment = list(type = 'character', required = FALSE)
-)
-
-tree_tbl <- list(
-  tbl_str = tree_tbl_str,
-  tbl_config = tree_tbl_config
-)
-
-wp_tbl_str <- data.frame(
-  wpcode = character(0),
-  treecode = character(0),
-  n_slides = integer(0),
-  sample_date = character(0),
-  organ = character(0),
-  sampling_height = numeric(0),
-  sample_apex_distance = numeric(0),
-  sample_type = character(0),
-  sample_embedding = character(0),
-  sample_archived = logical(0),
-  pith_year = numeric(0),
-  stringsAsFactors = FALSE
-)
-
-wp_tbl_config <- list(
-  colHeaders = c(
-    wpcode = "Woodpiece code", treecode = "Tree code", n_slides = "Nr of slides",
-    sample_date = "Sample date", organ = "Organ", sampling_height = "Sampling height",
-    sample_apex_distance = "Distance from apex", sample_type = "Sample type",
-    sample_embedding = "Embedding method", sample_archived = "Sample archived",
-    pith_year = "Pith year"
-  ),
-  wpcode = list(type = 'character', readOnly = TRUE),
-  treecode = list(type = 'character', readOnly = TRUE),
-  n_slides = list(type = 'numeric', readOnly = TRUE),
-  sample_date = list(type = 'date', required = TRUE),
-  organ = list(type = 'dropdown', required = TRUE,
-               options = c('branch','root','stem')),
-  sampling_height = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 150),
-  sample_apex_distance = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 150),
-  sample_type = list(type = 'dropdown', required = FALSE,
-                      options = c('core 5 mm', 'core 10 mm', 'wood section', 'wood disk')),
-  sample_embedding = list(type = 'dropdown', required = FALSE,
-                options = c('paraffin embedding', 'none')),
-  sample_archived = list(type = 'checkbox', required = FALSE),
-  pith_year = list(type = 'numeric', required = FALSE, min_val = -15000, max_val = 2500)
-)
-
-woodpiece_tbl <- list(
-  tbl_str = wp_tbl_str,
-  tbl_config = wp_tbl_config
-)
-
-slide_tbl_str <- data.frame(
-  slidecode = character(0),
-  wpcode = character(0),
-  n_imgs = integer(0),
-  sample_date = character(0),
-  sect_thickness = character(0),
-  cutting_plane = character(0),
-  slide_prep = character(0),
-  slide_staining = character(0),
-  slide_archived = logical(0),
-  img_cap_system = character(0),
-  data_structure = character(0),
-  stringsAsFactors = FALSE
-)
-
-
-slide_tbl_config <- list(
-  colHeaders = c(
-    slidecode = "Slide code", wpcode = "Woodpiece code", n_imgs = "Nr of images",
-    sample_date = "Sample date", sect_thickness = "Section thickness",
-    cutting_plane = "Cutting plane", slide_prep = "Slide preparation",
-    slide_staining = "Staining method", slide_archived = "Slide archived",
-    img_cap_system = "Image capturing system", data_structure = "Data structure"
-  ),
-  slidecode = list(type = 'character', readOnly = TRUE),
-  wpcode = list(type = 'character', readOnly = TRUE),
-  n_imgs = list(type = 'numeric', readOnly = TRUE),
-  sample_date = list(type = 'date', required = TRUE),
-  sect_thickness = list(type = 'numeric', required = FALSE, min_val = 0, max_val = 100),
-  cutting_plane = list(type = 'dropdown', required = FALSE,
-                      options = c('cross-section', 'tangential section', 'radial section')),
-  slide_prep = list(type = 'dropdown', required = FALSE,
-                     options = c('micro-section', 'cut surface', 'polished surface', 'double saw cut')),
-  slide_staining = list(type = 'dropdown', required = FALSE,
-                        options = c('Sarafin Astrablue')),
-  slide_archived = list(type = 'checkbox', required = FALSE),
-  img_cap_system = list(type = 'dropdown', required = FALSE,
-                        options = c('confocal microscope','light microscope','...')),
-  data_structure= list(type='dropdown', required=FALSE,
-                       options=c('tracheid-full', 'vessels', '...'))
-)
-
-slide_tbl <- list(
-  tbl_str = slide_tbl_str,
-  tbl_config = slide_tbl_config
-)
 
 
 # SERVER -----------------------------------------------------------------------
@@ -245,7 +25,6 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
     observeEvent(1,{
       accordion_panel_close(id = 'map_acc', values = TRUE)
     }, ignoreNULL = FALSE) # to fire the event at startup
-
 
 
     # initialize reactiveVals (responding to changes in df_meta, file upload)
@@ -261,52 +40,52 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
       df_meta <- start_info$input_meta$df
 
       # site
-      df_site <- site_tbl$tbl_str
+      df_site <- create_empty_tbl(site_tbl, nrows=0)
       df_site <- df_meta %>%
         dplyr::group_by(site) %>%
         dplyr::summarise(n = dplyr::n_distinct(tree_code)) %>%
-        dplyr::rename(sitecode = site, n_tree = n) %>%
-        dplyr::left_join(df_site, by = c('sitecode', 'n_tree'))
+        dplyr::rename(site_code = site, n_trees = n) %>%
+        dplyr::left_join(df_site, by = c('site_code', 'n_trees'))
 
       site_data_in(df_site)
 
       # tree
-      df_tree <- tree_tbl$tbl_str
+      df_tree <- create_empty_tbl(tree_tbl, nrows=0)
       df_tree <- df_meta %>%
         dplyr::group_by(site, species, tree_code) %>%
         dplyr::summarise(n = dplyr::n_distinct(woodpiece_code), .groups = 'keep') %>%
-        dplyr::rename(treecode = tree_code, sitecode = site, speciescode = species, n_wp = n) %>%
-        dplyr::left_join(df_tree, by = c('treecode', 'sitecode', 'speciescode', 'n_wp')) %>%
+        dplyr::rename(site_code = site, species_code = species, n_woodpieces = n) %>%
+        dplyr::left_join(df_tree, by = c('tree_code', 'site_code', 'species_code', 'n_woodpieces')) %>%
         dplyr::select(colnames(df_tree))
       # add species information
       df_tree <- df_tree %>%
-        dplyr::left_join(species_info, by = c('speciescode' = 'itrdb_species_code'), suffix = c("",".lookup")) %>%
-        dplyr::mutate(speciesname = tree_species,
+        dplyr::left_join(species_info, by = c('species_code' = 'itrdb_species_code'), suffix = c("",".lookup")) %>%
+        dplyr::mutate(species_name = species_name.lookup,
                       wood_type = wood_type.lookup,
                       leaf_habit = leaf_habit.lookup,
                       tree_ring_structure = tree_ring_structure.lookup) %>%
-        dplyr::select(-tree_species, -dplyr::ends_with(".lookup"))
+        dplyr::select(-dplyr::ends_with(".lookup"))
 
       tree_data_in(df_tree)
 
       # woodpiece
-      df_wp <- woodpiece_tbl$tbl_str
+      df_wp <- create_empty_tbl(woodpiece_tbl, nrows=0)
       df_wp <- df_meta %>%
         dplyr::group_by(tree_code, woodpiece_code) %>%
         dplyr::summarise(n = dplyr::n_distinct(slide_code), .groups = 'keep') %>%
-        dplyr::rename(wpcode = woodpiece_code, treecode = tree_code, n_slides = n) %>%
-        dplyr::left_join(df_wp, by = c('wpcode', 'treecode', 'n_slides')) %>%
+        dplyr::rename(n_slides = n) %>%
+        dplyr::left_join(df_wp, by = c('woodpiece_code', 'tree_code', 'n_slides')) %>%
         dplyr::select(colnames(df_wp))
 
       wp_data_in(df_wp)
 
       # slide
-      df_slide <- slide_tbl$tbl_str
+      df_slide <- create_empty_tbl(slide_tbl, nrows=0)
       df_slide <- df_meta %>%
         dplyr::group_by(woodpiece_code, slide_code) %>%
         dplyr::summarise(n = dplyr::n_distinct(image_code), .groups = 'keep') %>%
-        dplyr::rename(slidecode = slide_code, wpcode = woodpiece_code, n_imgs = n) %>%
-        dplyr::left_join(df_slide, by = c('slidecode', 'wpcode', 'n_imgs')) %>%
+        dplyr::rename(n_imgs = n) %>%
+        dplyr::left_join(df_slide, by = c('slide_code', 'woodpiece_code', 'n_imgs')) %>%
         dplyr::select(colnames(df_slide))
 
       slide_data_in(df_slide)
@@ -351,34 +130,15 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
 
 
     # SITE MAP -----------------------------------------------------------------
-    # render Leaflet map
-    output$site_map <- leaflet::renderLeaflet({
-      # start map on WSL coordinates
-      sitemap <- leaflet::leaflet() %>%
-        leaflet::setView(lng = 8.44256, lat = 47.35515, zoom = 8) %>%
-        leaflet::addTiles()
-
-      # add markers for all sites in the table
-      site_coords <- site_coordinates()
-      # if we have both lat and longitude, add markers and zoom to new bounds
-      if (nrow(site_coords)>0) {
-        sitemap <- sitemap %>% leaflet::addMarkers(lng = site_coords$longitude, lat = site_coords$latitude) %>%
-          leaflet::fitBounds(lng1 = min(site_coords$longitude)-5, lng2 = max(site_coords$longitude)+5,
-                             lat1 = min(site_coords$latitude)-5, lat2 = max(site_coords$latitude)+5)
-      }
-
-      sitemap
-    })
-
     # site coordinates reactiveVal, updates IFF coord cols in site_data_out change
     site_coordinates <- reactiveVal(NULL)
 
     observeEvent(site_data_out(),{
       # valid range from site tbl config
-      min_lng <- site_tbl$tbl_config[['longitude']]$min_val
-      max_lng <- site_tbl$tbl_config[['longitude']]$max_val
-      min_lat <- site_tbl$tbl_config[['latitude']]$min_val
-      max_lat <- site_tbl$tbl_config[['latitude']]$max_val
+      min_lng <- site_tbl$longitude$min_val
+      max_lng <- site_tbl$longitude$max_val
+      min_lat <- site_tbl$latitude$min_val
+      max_lat <- site_tbl$latitude$max_val
 
       # get valid pairs of coordinates from table
       site_coords <- site_data_out()
@@ -399,28 +159,209 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
       site_coordinates(site_coords)
     }, ignoreInit = TRUE)
 
+    # render Leaflet map
+    output$site_map <- leaflet::renderLeaflet({
+      # start map on WSL coordinates
+      sitemap <- leaflet::leaflet() %>%
+        leaflet::setView(lng = 8.44256, lat = 47.35515, zoom = 8) %>%
+        leaflet::addTiles()
 
+      # add markers for all sites in the table
+      site_coords <- site_coordinates()
+      # if we have both lat and longitude, add markers and zoom to new bounds
+      if (nrow(site_coords)>0) {
+        sitemap <- sitemap %>% leaflet::addMarkers(lng = site_coords$longitude, lat = site_coords$latitude) %>%
+          leaflet::fitBounds(lng1 = min(site_coords$longitude)-5, lng2 = max(site_coords$longitude)+5,
+                             lat1 = min(site_coords$latitude)-5, lat2 = max(site_coords$latitude)+5)
+      }
+
+      sitemap
+    })
+
+
+
+
+    # SITE TABLE ---------------------------------------------------------------
+    # render editable table
+    output$site_table <- rhandsontable::renderRHandsontable({
+      validate(need(!is.null(site_data_in()), "No data to show"))
+
+      colHeaders <- get_tbl_colHeaders(site_tbl)
+      tippies <- get_header_tippies(site_tbl)
+
+      rhandsontable::rhandsontable(
+        site_data_in(), #site_data$df_in,
+        rowHeaders = TRUE,
+        contextMenu = FALSE,
+        stretchH = "all",
+        #overflow = "visible",
+        height = 180,
+        colHeaders = unname(colHeaders),
+        afterGetColHeader = tippy_renderer(tippies)) %>%
+        #rhandsontable::hot_cols(fixedColumnsLeft = 1) %>%
+        # custom validation checks renderers for all cols based on tbl_config
+        purrr::reduce(
+          names(colHeaders), # names in df
+          function(ht, col) {
+            config <- site_tbl[[col]]
+            colName <- colHeaders[col] # name in ht
+            hot_col_wrapper(ht, colName, config)
+          },
+          .init = .
+        )
+    })
+
+    # create dataframe reactive to hot updates
+    site_data_out <- reactive({
+      rhandsontable::hot_to_r(input$site_table)
+    })
+
+    # update country column in site data based on coordinates
     observeEvent(site_coordinates(),{
       site_coords <- site_coordinates()
       if (nrow(site_coords) > 0) {
         current_df <- site_data_out()
         site_coords$iso_codes <- country_from_coords(lng = site_coords$longitude, lat = site_coords$latitude, countries_sf)
         site_coords$new_country <- ifelse(
-            is.na(site_coords$iso_codes) | site_coords$iso_codes == "-99",
-            "",  # Assign empty string for NA values
-            names(countries_list)[match(site_coords$iso_codes, countries_list)]
-          )
+          is.na(site_coords$iso_codes) | site_coords$iso_codes == "-99",
+          "",  # Assign empty string for NA values
+          names(countries_list)[match(site_coords$iso_codes, countries_list)]
+        )
 
-          # update country column in site data
-          current_df <- current_df %>% dplyr::left_join(site_coords, by = c('longitude', 'latitude')) %>%
-            dplyr::mutate(country = new_country) %>%
-            dplyr::select(-iso_codes, -new_country)
-          site_data_in(current_df)
-
+        # update country column in site data
+        current_df <- current_df %>% dplyr::left_join(site_coords, by = c('longitude', 'latitude')) %>%
+          dplyr::mutate(country = new_country) %>%
+          dplyr::select(-iso_codes, -new_country)
+        site_data_in(current_df)
       }
 
     }, ignoreInit = TRUE)
 
+
+    # networks
+    observeEvent(input$btn_add_nws, {
+      site_codes <- site_data_out() %>% dplyr::pull(site_code)
+      showModal(modalDialog(
+        title = "Add site network",
+        tagList(
+          textInput(ns("nw_name"), "Network name", value = NA,
+                    placeholder = "Specify a name for the network (max 64 char.)"),
+          textAreaInput(ns("nw_desc"), "Network description", rows = 4,
+                    placeholder = "Provide a brief description of what characterises the site network."),
+          selectizeInput(
+            inputId = ns("sel_sites"),
+            label = "Choose the sites:",
+            choices = site_codes,
+            multiple = TRUE)
+        ),
+        easyClose = TRUE,
+        footer = tagList(
+          modalButton("Cancel"),
+          actionButton(ns("btn_trans_nw"), "Add")
+        )
+      ))
+    })
+
+    nw_data_in <- reactiveVal(data.frame(
+      Name = character(0),
+      Description = character(0),
+      Sites = character(0),
+      stringsAsFactors = FALSE
+    ))
+
+    observeEvent(input$btn_trans_nw, {
+      # check if all fields are filled
+      validate(need(input$nw_name != "", "Please provide a name for the network"))
+      validate(need(input$nw_desc != "", "Please provide a description for the network"))
+      validate(need(length(input$sel_sites) > 0, "Please select at least one site"))
+
+      # create new row
+      new_row <- data.frame(
+        Name = input$nw_name,
+        Description = input$nw_desc,
+        Sites = paste(input$sel_sites, collapse = ", "),
+        stringsAsFactors = FALSE
+      )
+
+      # add to existing data
+      current_df <- nw_data_in()
+      current_df[nrow(current_df)+1,] <- new_row
+      nw_data_in(current_df)
+
+      removeModal()
+    })
+
+    # TODO:
+    # add validator rules for dataset inputs
+    iv <- shinyvalidate::InputValidator$new()
+    iv$add_rule("nw_name", shinyvalidate::sv_required())
+    iv$add_rule("nw_name", max_char_limit, limit = 64)
+    # iv$add_rule(
+    #   "ds_name",
+    #   shinyvalidate::sv_regex("^[a-zA-Z0-9]*$", "Only alphanumeric characters allowed")
+    # )
+    iv$add_rule("nw_desc", shinyvalidate::sv_required())
+    iv$add_rule("sel_sites", shinyvalidate::sv_required())
+
+    iv$enable() # TODO: enable from start?
+
+    shiny::observe({
+      shinyjs::toggleState(id = "btn_trans_nw",
+                           condition = iv$is_valid())
+    })
+
+    output$networks <- DT::renderDataTable({
+      req(nrow(nw_data_in()) > 0)
+
+      deleteButtonColumn(nw_data_in(), 'delbtn', ns)
+
+    })
+
+    # observe delete row events
+    observeEvent(input$deletePressed, {
+      rowNum <- parseDeleteEvent(input$deletePressed)
+      # Delete the row from the data frame
+      current_df <- nw_data_in()
+      current_df <- current_df[-rowNum,]
+      if (nrow(current_df) > 0) {
+        rownames(current_df) <- 1:nrow(current_df) # update rownames
+      }
+      nw_data_in(current_df)
+    })
+
+
+    # TREE TABLE ---------------------------------------------------------------
+    output$tree_table <- rhandsontable::renderRHandsontable({
+      validate(need(!is.null(tree_data_in()), "No data to show"))
+
+      colHeaders <- get_tbl_colHeaders(tree_tbl)
+      tippies <- get_header_tippies(tree_tbl)
+
+      rhandsontable::rhandsontable(
+        tree_data_in(),
+        rowHeaders = TRUE,
+        contextMenu = FALSE,
+        stretchH = "all",
+        height = 180,
+        colHeaders = unname(colHeaders),
+        afterGetColHeader = tippy_renderer(tippies)) %>%
+        #rhandsontable::hot_cols(fixedColumnsLeft = 1) %>%
+        # custom validation checks renderers for all cols based on tbl_config
+        purrr::reduce(
+          names(colHeaders), # names in df
+          function(ht, col) {
+            config <- tree_tbl[[col]]
+            colName <- colHeaders[col] # name in ht
+            hot_col_wrapper(ht, colName, config)
+          },
+          .init = .
+        )
+    })
+
+    # create dataframe reactive to hot updates
+    tree_data_out <- reactive({
+      rhandsontable::hot_to_r(input$tree_table)
+    })
 
     # TODO: for simultaneous updates
     #tree_species <- reactiveVal(NULL)
@@ -443,7 +384,7 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
           # Look species name, woodtype and leaf habit of new species code
           new_species_info <- species_info[species_info$itrdb_species_code == new_val,]
           if (nrow(new_species_info) > 0) {
-            current_df[row + 1, col + 2] <- new_species_info$tree_species
+            current_df[row + 1, col + 2] <- new_species_info$species_name
             current_df[row + 1, col + 3] <- new_species_info$wood_type
             current_df[row + 1, col + 4] <- new_species_info$leaf_habit
             current_df[row + 1, col + 5] <- new_species_info$tree_ring_structure
@@ -453,7 +394,7 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
         # col 4 is speciesname (0-index)
         if (!is.null(col) && col == 4) {
           # Look species name, woodtype and leaf habit of new species code
-          new_species_info <- species_info[species_info$tree_species == new_val,]
+          new_species_info <- species_info[species_info$species_name == new_val,]
           if (nrow(new_species_info) > 0) {
             current_df[row + 1, col] <- new_species_info$itrdb_species_code
             current_df[row + 1, col + 2] <- new_species_info$wood_type
@@ -471,71 +412,12 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
     }, ignoreInit = TRUE)
 
 
-
-    # render editable table
-    output$site_table <- rhandsontable::renderRHandsontable({
-      validate(need(!is.null(site_data_in()), "No data to show"))
-
-      rhandsontable::rhandsontable(
-        site_data_in(), #site_data$df_in,
-        rowHeaders = TRUE,
-        contextMenu = FALSE,
-        stretchH = "all",
-        #overflow = "visible",
-        height = 180,
-        colHeaders = unname(site_tbl$tbl_config$colHeaders)) %>%
-        #rhandsontable::hot_cols(fixedColumnsLeft = 1) %>%
-        # custom validation checks renderers for all cols based on tbl_config
-        purrr::reduce(
-          names(site_tbl$tbl_config$colHeaders), # names in df
-          function(ht, col) {
-            config <- site_tbl$tbl_config[[col]]
-            colName <- site_tbl$tbl_config$colHeaders[col] # name in ht
-            hot_col_wrapper(ht, colName, config)
-          },
-          .init = .
-        )
-    })
-
-    # create dataframe reactive to hot updates
-    site_data_out <- reactive({
-      rhandsontable::hot_to_r(input$site_table)
-    })
-
-
-
-
-
-    output$tree_table <- rhandsontable::renderRHandsontable({
-      validate(need(!is.null(tree_data_in()), "No data to show"))
-
-      rhandsontable::rhandsontable(
-        tree_data_in(),
-        rowHeaders = TRUE,
-        contextMenu = FALSE,
-        stretchH = "all",
-        height = 180,
-        colHeaders = unname(tree_tbl$tbl_config$colHeaders)) %>%
-        #rhandsontable::hot_cols(fixedColumnsLeft = 1) %>%
-        # custom validation checks renderers for all cols based on tbl_config
-        purrr::reduce(
-          names(tree_tbl_config$colHeaders), # names in df
-          function(ht, col) {
-            config <- tree_tbl$tbl_config[[col]]
-            colName <- tree_tbl$tbl_config$colHeaders[col] # name in ht
-            hot_col_wrapper(ht, colName, config)
-          },
-          .init = .
-        )
-    })
-
-    # create dataframe reactive to hot updates
-    tree_data_out <- reactive({
-      rhandsontable::hot_to_r(input$tree_table)
-    })
-
+    # WOODPIECE TABLE ----------------------------------------------------------
     output$wp_table <- rhandsontable::renderRHandsontable({
       validate(need(!is.null(wp_data_in()), "No data to show"))
+
+      colHeaders <- get_tbl_colHeaders(woodpiece_tbl)
+      tippies <- get_header_tippies(woodpiece_tbl)
 
       rhandsontable::rhandsontable(
         wp_data_in(),
@@ -543,12 +425,13 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
         contextMenu = FALSE,
         stretchH = "all",
         height = 180,
-        colHeaders = unname(woodpiece_tbl$tbl_config$colHeaders)) %>%
+        colHeaders = unname(colHeaders),
+        afterGetColHeader = tippy_renderer(tippies)) %>%
         purrr::reduce(
-          names(woodpiece_tbl$tbl_config$colHeaders), # names in df
+          names(colHeaders), # names in df
           function(ht, col) {
-            config <- woodpiece_tbl$tbl_config[[col]]
-            colName <- woodpiece_tbl$tbl_config$colHeaders[col] # name in ht
+            config <- woodpiece_tbl[[col]]
+            colName <- colHeaders[col] # name in ht
             hot_col_wrapper(ht, colName, config)
           },
           .init = .
@@ -560,20 +443,25 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
       rhandsontable::hot_to_r(input$wp_table)
     })
 
+    # SLIDE TABLE --------------------------------------------------------------
     output$slide_table <- rhandsontable::renderRHandsontable({
       validate(need(!is.null(slide_data_in()), "No data to show"))
+
+      colHeaders <- get_tbl_colHeaders(slide_tbl)
+      tippies <- get_header_tippies(slide_tbl)
 
       rhandsontable::rhandsontable(
         slide_data_in(),
         rowHeaders = TRUE,
         contextMenu = FALSE,
         stretchH = "all",
-        colHeaders = unname(slide_tbl$tbl_config$colHeaders)) %>%
+        colHeaders = unname(colHeaders),
+        afterGetColHeader = tippy_renderer(tippies)) %>%
         purrr::reduce(
-          names(slide_tbl$tbl_config$colHeaders), # names in df
+          names(colHeaders), # names in df
           function(ht, col) {
-            config <- slide_tbl$tbl_config[[col]]
-            colName <- slide_tbl$tbl_config$colHeaders[col] # name in ht
+            config <- slide_tbl[[col]]
+            colName <- colHeaders[col] # name in ht
             hot_col_wrapper(ht, colName, config)
           },
           .init = .
@@ -594,19 +482,19 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
 
       # 1) site table
       df_site <- site_data_out()
-      results$site_data <- collect_hot_val_results(df_site, site_tbl$tbl_config)
+      results$site_data <- collect_hot_val_results(df_site, site_tbl)
 
       # 2) tree table
       df_tree <- tree_data_out()
-      results$tree_data <- collect_hot_val_results(df_tree, tree_tbl$tbl_config)
+      results$tree_data <- collect_hot_val_results(df_tree, tree_tbl)
 
       # 3) woodpiece table
       df_wp <- wp_data_out()
-      results$wp_data <- collect_hot_val_results(df_wp, woodpiece_tbl$tbl_config)
+      results$wp_data <- collect_hot_val_results(df_wp, woodpiece_tbl)
 
       # 4) slide table
       df_slide <- slide_data_out()
-      results$slide_data <- collect_hot_val_results(df_slide, slide_tbl$tbl_config)
+      results$slide_data <- collect_hot_val_results(df_slide, slide_tbl)
 
 
 
@@ -669,6 +557,7 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
       nav_select(id = 'tabs', selected = tab_general, session = main_session)
     })
 
+
     # TODO:
     # SAVE BUTTON
 
@@ -683,13 +572,13 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
           slide_data = slide_data_out
         ),
         val_check = validation_checks
-        # ,
-        # val_check = validation_results
       )
     )
 
   })
 }
+
+
 
 
 
