@@ -101,7 +101,7 @@ dataset_ui <- function(id, countries_list) {
               dateInput(ns("ds_embargoed"),
                         "If applicable, select an embargo date",
                         value = Sys.Date() + 365),
-              span("*Access rights will", strong("not"), "be changed automatically after embargo date."),
+              span("*Access rights will only be changed after explicit confirmation by the data owners."),
               ns=NS(id))
           )
         ),

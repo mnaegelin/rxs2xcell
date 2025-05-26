@@ -36,11 +36,21 @@ dataset_server <- function(id, main_session, start_info,
     }, ignoreNULL = FALSE) # to fire the event at startup
 
     observeEvent(start_info$input_meta$meta_json,{
+      # req(start_info$input_meta$meta_json)
       if (!is.null(start_info$input_meta$meta_json)){
         meta_json <- start_info$input_meta$meta_json
-        ds_name <- meta_json$ds_data$ds_name
-        print(ds_name)
-        updateTextInput(session, "ds_name", value = ds_name)
+        ds_data <- meta_json$ds_data
+        updateTextInput(session, "ds_name", value = ds_data$ds_name)
+        updateTextAreaInput(session, "ds_desc", value = ds_data$ds_desc)
+        updateTextAreaInput(session, "ds_ackn", value = ds_data$ds_ackn)
+        updateRadioButtons(session, "ds_access", selected = ds_data$ds_access)
+        if (ds_data$ds_access == "public"){
+          updateSelectizeInput(session, "ds_license", selected = ds_data$ds_license)
+        } else if (ds_data$ds_access == "restricted"){
+          updateDateInput(session, "ds_embargoed", value = as.Date(ds_data$ds_embargoed))
+        }
+        author_data <- start_info$input_meta$author_data # to dataframe ...
+
         # TODO: the rest of the fields, in all tabs
       }
     })
@@ -347,17 +357,17 @@ dataset_server <- function(id, main_session, start_info,
         tagList(
           span("Importing data will overwrite any changes already made in the current table.
           Are you sure you wish to continue?"),
+          br(),
           checkboxInput(
-            ns("aut_col_order"),
-            label = "Ignore column names, use order instead.",
-            value = FALSE
+            ns("aut_col_names"),
+            label = "Data includes column names?",
+            value = TRUE
           ),
           numericInput(
-            ns("aut_col_header"),
-            label = "Column order to use (1-based):",
-            value = 1,
-            min = 1,
-            max = length(author_tbl)
+            ns("aut_header_skip"),
+            label = "Number of lines to skip before reading data?",
+            value = NA,
+            min = 0
           ),
         ),
         footer = tagList(
@@ -374,6 +384,7 @@ dataset_server <- function(id, main_session, start_info,
       removeModal()
       imported_data <- tryCatch({
         vroom::vroom(input$file_authors$datapath,
+                     col_names = input$aut_col_names, skip = input$aut_header_skip,
                      .name_repair = janitor::make_clean_names,
                      show_col_types = FALSE)
         #read.csv(input$file_authors$datapath, stringsAsFactors = FALSE, encoding = 'UTF-8')
@@ -388,6 +399,7 @@ dataset_server <- function(id, main_session, start_info,
       })
       # try to convert data to right structure
       converted_data <- tryCatch({
+        # TODO: does not work
         align_to_structure(create_empty_tbl(author_tbl), imported_data)
       }, error = function(e) {
         showModal(modalDialog(

@@ -76,7 +76,7 @@ start_server <- function(id, main_session) {
 
     # load input data
     observeEvent(input$btn_load_input, {
-      # Check if df is already set
+      # check if df is already set
       if (!is.null(input_meta$df)) {
         showModal(
           modalDialog(
@@ -90,7 +90,7 @@ start_server <- function(id, main_session) {
           )
         )
       } else {
-        # Load the data directly if no existing df
+        # load the data directly if no existing df
         data <- load_input_data(input$input_src, input$file_input)
         input_meta$df <- data$df
         input_meta$source <- data$source
@@ -101,30 +101,10 @@ start_server <- function(id, main_session) {
       }
     })
 
-    # # load input data
-    # observeEvent(input$btn_load_input, {
-    #   if (is.null(input_meta$df)){
-    #     input_meta <- load_input_data(input$input_src, input$file_input, input_meta)
-    #     shinyjs::reset(id = "check_raw")
-    #   } else {
-    #     # show warning if we already have df_meta
-    #     showModal(
-    #       modalDialog(
-    #         title = "Warning",
-    #         "This action overwrites any existing inputs provided in the app. Are you sure you want to proceed?",
-    #         footer = tagList(
-    #           modalButton("Cancel"),
-    #           actionButton(ns("confirm_submit"), "Proceed")
-    #         )
-    #       )
-    #     )
-    #   }
-    # })
-
     # load input data in case of confirm overwrite
     observeEvent(input$confirm_submit, {
       removeModal()
-      # Load the data
+      # load the data
       data <- load_input_data(input$input_src, input$file_input)
       input_meta$df <- data$df
       input_meta$source <- data$source
@@ -194,15 +174,9 @@ start_server <- function(id, main_session) {
       dtree_json()
       })
 
-    # output$notree <- renderPrint({
-    #   if (is.null(input_meta$df)) {
-    #     "no data to show"
-    #   }
-    # })
-
 
     # RENDER DT ----------------------------------------------------------------
-    # Preprocess input metadata
+    # preprocess input metadata
     filt_meta <- reactive({
       req(input$tree)
 
@@ -233,7 +207,25 @@ start_server <- function(id, main_session) {
                     extensions = "FixedColumns",
                     options = list(
                       scrollX = TRUE,
-                      #searching = FALSE,
+                      initComplete = DT::JS( # tippy tooltips for first level headers
+                        "function(settings, json) {",
+                        "  const headerCell1 = $(this.api().table().header()).find('th:first-child')[0];",
+                        "  const headerCell2 = $(this.api().table().header()).find('th:nth-child(2)')[0];",
+                        "  const headerCell3 = $(this.api().table().header()).find('th:nth-child(3)')[0];",
+                        "  const headerCell4 = $(this.api().table().header()).find('th:nth-child(4)')[0];",
+                        "  const headerCell5 = $(this.api().table().header()).find('th:nth-child(5)')[0];",
+                        "  if(headerCell1.hasOwnProperty('_tippy')) {headerCell1._tippy.destroy();}",
+                        "  tippy(headerCell1, {content: 'unique identifier derived by rxs2xcell'})",
+                        "  if(headerCell2.hasOwnProperty('_tippy')) {headerCell2._tippy.destroy();}",
+                        "  tippy(headerCell2, {content: 'structure inferred by rxs2xcell from filename patterns'})",
+                        "  if(headerCell3.hasOwnProperty('_tippy')) {headerCell3._tippy.destroy();}",
+                        "  tippy(headerCell3, {content: 'metadata extracted from image files'})",
+                        "  if(headerCell4.hasOwnProperty('_tippy')) {headerCell4._tippy.destroy();}",
+                        "  tippy(headerCell4, {content: 'metadata extracted from Roxas settings files'})",
+                        "  if(headerCell5.hasOwnProperty('_tippy')) {headerCell5._tippy.destroy();}",
+                        "  tippy(headerCell5, {content: 'local paths of raw data files will not be entered in database'})",
+                        "}"
+                      ),
                       fixedColumns = list(leftColumns = 1)
                     )
       ) %>%
@@ -243,12 +235,8 @@ start_server <- function(id, main_session) {
           columns = c(cols_structure,cols_settings), backgroundColor = prim_col_grad[6])
     })
 
-    # output$noDTmeta <- renderPrint({
-    #   if (is.null(input_meta$df)) {
-    #     "no data to show"
-    #   }
-    # })
 
+    # VALIDATION CHECKS --------------------------------------------------------
     validation_checks <- reactive({
       df_results <- data.frame(topic = character(0), field = character(0),
                                type = character(0), message = character(0))

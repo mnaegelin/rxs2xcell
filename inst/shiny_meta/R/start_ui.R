@@ -16,7 +16,7 @@ start_ui <- function(id) {
           'Input data'),
         radioButtons(
           inputId = ns("input_src"),
-          label = "Choose a data source:",
+          label = "Choose a data source to start",
           choices = list(
             "Use df_meta available in R environment" = "df_meta_env",
             "Use df_meta loaded from .csv" = "df_meta_csv",
@@ -37,7 +37,7 @@ start_ui <- function(id) {
 
       hr(),
       span(
-        span('Source of shown data:', style=paste("font-weight:bold; color:", prim_col)),
+        span('Source of shown data', style=paste("font-weight:bold; color:", prim_col)),
         htmlOutput(ns("file_status"))
       ),
 
@@ -57,7 +57,7 @@ start_ui <- function(id) {
         title = "Data structure",
         p("Use this data.tree (site > tree > woodpiece > slide > image) to
            explore the inferred structure of the provided dataset and filter the
-           metadata table below. Note that filtering here does not exclude any
+           metadata table below. Note that filtering here does", strong("not"), "exclude any
            images from the dataset."),
 
         shinyTree::shinyTree(ns("tree"), theme="proton", checkbox = TRUE, tie_selection = TRUE,

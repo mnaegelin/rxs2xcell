@@ -39,7 +39,7 @@ server <- function(input, output, session) {
       # check that we have the right columns
       req_columns <- c(
         'tree_code', 'woodpiece_code', 'slide_code', 'image_code', 'year',
-        'cno', 'ra', 'mrw', 'rvgi', 'rvsf', 'rgsgv', 'aoiar', 'raoiar', 'dh_w', 'dh_m',
+        'cno', 'ra', 'mrw', 'rvgi', 'rvsf', 'rgsgv', 'aoiar', 'dh_w', 'dh_m',
         'incomplete_ring',  'missing_ring', 'duplicate_ring', 'duplicate_rank')
 
       if (!checkmate::test_subset(req_columns,colnames(df_rings))) {

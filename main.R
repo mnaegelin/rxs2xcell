@@ -31,6 +31,10 @@ df_structure <- extract_data_structure(files)
 df_meta <- collect_metadata_from_files(df_structure,
                                        roxas_version='classic')
 
+# TODO:
+# - only_ew variable from min_cell_area? plus user input?
+# - infer species -> wood_type from filenames? what if code not available?
+
 # save extracted metadata to file
 # write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta_extracted.csv')),
 #           row.names = FALSE)
@@ -96,6 +100,19 @@ write.csv(QWA_data$rings,
 
 
 
+# df <- table_configs$site_tbl |>
+#   purrr::map(
+#     \(sub) purrr::map(sub, \(i) if (length(i) == 1) list(i) else i)
+#   ) |>
+#    dplyr::bind_rows() |>
+#   tidyr::unnest(cols = c(col_header, col_header_tippy, type, readOnly, required, options, min_val, max_val)) |>
+#   dplyr::group_by(col_header) |>
+#   dplyr::mutate(options = list(options)) |>
+#   dplyr::ungroup() |>
+#   dplyr::distinct() |>
+#   dplyr::mutate(attr_name = names(table_configs$site_tbl)) |>
+#   dplyr::select(-col_header_tippy,-readOnly, -required)
+
 
 
 
@@ -124,7 +141,7 @@ complete_metadata <- jsonlite::fromJSON("./inst/shiny_meta/data.json", flatten =
 
 dbcon2 <- DBI::dbConnect(RPostgreSQL::PostgreSQL(),
                         dbname = "xcell",
-                        host = "pgdbxcell.wsl.ch",
+                        host = "pgdbxcell.wsl.ch", # old: pgdbtapp.wsl.ch or pgdboapp.wsl.ch
                         port = 5432,
                         user = "xcell_edit", #naegelin
                         password = keyring::key_get("pgdbt_xcell", username = "xcell_edit")) #naegelin

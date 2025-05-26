@@ -37,7 +37,7 @@ read_cells_output <- function(file_cells){
                                   col_types = readr::cols(.default="d", ID="c")) %>%
         dplyr::rename(dplyr::any_of(colname_variants)) %>%
         dplyr::select(dplyr::all_of(selcols_cells)) %>%
-        dplyr::rename_with(tolower),
+        janitor::clean_names(),
       sound=2
     ),
     error = function(e){
@@ -85,12 +85,12 @@ read_rings_output <- function(file_rings){
   # 3.0.285, 3.0.575, 3.0.590, 3.0.608, 3.0.620, 3.0.634, 3.0.655
   selcols_rings <- c(
     'YEAR','RA','MRW',
-    'RVGI', 'RVSF', 'RGSGV', 'AOIAR', 'RAOIAR', 'DH', 'DH2'
+    'RVGI', 'RVSF', 'RGSGV', 'AOIAR', 'DH', 'DH2'
     # not included cols are:
     # 'CNO', 'CD', 'CTA', 'RCTA', 'MLA', # we re-calculate from cells output
     # 'ID', 'MINRW', 'MAXRW', 'MRADDIST', # not relevant
     # and the following which could still be recalculated from cells if needed
-    # 'MINLA', 'MAXLA', 'KH', 'KS', 'CWTPI', 'CWTBA', 'CWTLE', 'CWTRI', 'CWTTAN',
+    # 'MINLA', 'MAXLA', 'KH', 'KS', 'RAOIAR', 'CWTPI', 'CWTBA', 'CWTLE', 'CWTRI', 'CWTTAN',
     # 'CWTRAD', 'CWTALL', 'RTSR', 'CTSR', 'DRAD', 'DTAN', 'TB2', 'CWA', 'RWD',
     # plus other AOI / AOE related measures (not relevant)
   )
@@ -110,7 +110,7 @@ read_rings_output <- function(file_rings){
                                   col_types = readr::cols(.default="d", ID="c")) %>%
         dplyr::select(dplyr::all_of(selcols_rings)) %>%
         dplyr::rename(dplyr::any_of(colname_variants)) %>%
-        dplyr::rename_with(tolower),
+        janitor::clean_names(),
       sound=2
     ),
     error = function(e){

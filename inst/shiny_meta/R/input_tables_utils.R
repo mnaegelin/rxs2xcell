@@ -1,5 +1,6 @@
 # Function to align df_authors to the structure of author_tbl_str
 align_to_structure <- function(target_structure, source_data, colHeaders = NULL, ignore_colnames = FALSE) {
+  # TODO: use compare_df_cols from janitor?
   # Get the column names of the target and source
   target_cols <- names(target_structure)
 

@@ -194,6 +194,8 @@ parseDeleteEvent <- function(idstr) {
 }
 
 
+
+
 ## START SERVER -----
 # helper function to load input data df_meta
 load_meta_env <- function(){
@@ -230,13 +232,15 @@ load_meta_csv <- function(datapath){
 }
 
 load_meta_json <- function(datapath){
+  # TODO: validation of file
   meta_json <- jsonlite::fromJSON(datapath, flatten = TRUE)
   return(meta_json$df_meta)
 }
 
 load_whole_json <- function(datapath){
+  # TODO: validation of file
   meta_json <- jsonlite::fromJSON(datapath, flatten = TRUE)
-  meta_json$df_meta <- NULL
+  meta_json$df_meta <- NULL # we want only the rest of the json
   return(meta_json)
 }
 
@@ -263,23 +267,23 @@ load_input_data <- function(input_src, file_input = NULL) {
 }
 
 
-
 # helper to get the list of all selected images in the shinyTree
-get_selected_imgs <- function(tree, selected = c()) { #ancestry = "",
+get_selected_imgs <- function(tree, selected = c()) {
   for (leaf in names(tree)){
     if (is.null(names(tree[[leaf]]))) {
-      # if no more children, get stselected attribute
+      # if no more children (i.e. image level), get stselected attribute
       a <- attr(tree[[leaf]], 'stselected', TRUE)
       if (!is.null(a) && a == TRUE) {
-        selected <- c(selected,  attr(tree[[leaf]], 'image_code', TRUE)) # paste0(ancestry, "/", leaf) # since image_codes are unique, we don't need the path
-        #img_codes <- c(img_codes, attr(tree[[leaf]], 'image_code', TRUE))
+        selected <- c(selected,  attr(tree[[leaf]], 'image_code', TRUE))
       }
     } else {
-      selected <- get_selected_imgs(tree[[leaf]], selected) #paste0(ancestry, "/", leaf)
+      selected <- get_selected_imgs(tree[[leaf]], selected)
     }
   }
   return(selected)
 }
+
+
 
 
 ## DATASET SERVER -----
