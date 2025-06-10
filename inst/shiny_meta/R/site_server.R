@@ -26,6 +26,10 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
       accordion_panel_close(id = 'map_acc', values = TRUE)
     }, ignoreNULL = FALSE) # to fire the event at startup
 
+    shinyjs::disable("file_sites")
+    shinyjs::disable("file_trees")
+    shinyjs::disable("file_wp")
+    shinyjs::disable("file_slide")
 
     # initialize reactiveVals (responding to changes in df_meta, file upload)
     site_data_in <- reactiveVal(NULL)

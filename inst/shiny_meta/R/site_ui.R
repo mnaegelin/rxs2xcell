@@ -68,7 +68,7 @@ site_ui <- function(id) {
         div(style="min-height:200px;height:auto;",
           rhandsontable::rHandsontableOutput(ns("site_table"))),
 
-        p(tags$i("In case of site networks, ...")),
+        p(tags$i("Are (some of the) sites part of a network? If so, please provide the network information below.")),
         actionButton(ns('btn_add_nws'), 'Add site network', icon = icon('plus')),
         DT::DTOutput(ns("networks")) # Placeholder for the selectize input
 

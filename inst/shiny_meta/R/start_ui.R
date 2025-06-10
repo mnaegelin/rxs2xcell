@@ -7,8 +7,9 @@ start_ui <- function(id) {
     sidebar = bslib::sidebar(
       title = "Instructions", #paste(icon("info", style = paste("color:", prim_col)),
 
-      span("Start from the raw metadata inferred from images and ROXAS settings
-           files with the", code('rxs2xcell'), 'package, or re-load an export of partially completed metadata.'),
+      span("Start a new submission from the raw metadata inferred from images and ROXAS settings
+           files with the", code('rxs2xcell'), 'package, or continue by
+           re-loading a partially completed metadata file.'),
       # card(
       #   class = 'card-note',
       #   card_header(
@@ -46,7 +47,7 @@ start_ui <- function(id) {
           inputId = ns("input_src_ex"),
           label = "Example data",
           choices = list(
-            "Start fresh with only the automatically extractable metadata" = "df_meta_env",
+            "Start fresh from automatically extracted metadata" = "df_meta_env",
             #"Use df_meta loaded from .csv" = "df_meta_csv",
             "Start from partially completed metadata file" = "df_meta_json"
           ),

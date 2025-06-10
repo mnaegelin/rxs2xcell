@@ -22,8 +22,12 @@ summary_ui <- function(id) {
         class = 'custom-indent', start = 2,
         tags$li("When there are no more issues or if you are certain that you want to ignore the remaining messages,
                 please click the 'Export data to file' button to download the final version of the metadata.
-                You can then share the file with the XCELL team, contact at patrick.fonti@wsl.ch."),
+                You are then ready to share the file alongside the harmonized cells and rings data with the QWA database team,
+                please contact ",
+                tags$a(href = "mailto:mara.naegelin@wsl.ch","mara.naegelin(at)wsl.ch")),
+
       ),
+
       hr(),
 
       actionButton(ns('btn_prev'), 'Previous', icon = icon('angle-double-left')),
@@ -40,7 +44,7 @@ summary_ui <- function(id) {
       accordion_panel(
         'Overview',
 
-        h5('Data overview:', style = paste0('color: ',  sec_col)),
+        h5('Data overview'),
 
         card(
           class = 'card-note',

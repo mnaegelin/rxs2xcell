@@ -245,7 +245,8 @@ ui <- bslib::page_fluid(
     # fillable = FALSE,
 
     # TITLE --------------------------------------------------------------------
-    title = "QWA database: Contribute metadata (example)",
+    title = "QWA database: Contribute metadata [interactive preview]",
+
     #HTML('<h4 style="color: #006268; font-weight: bold;">rxs2xcell: Contribute metadata</h4>'),
 
 
@@ -282,6 +283,22 @@ ui <- bslib::page_fluid(
   ), # end of tabs
 
   verbatimTextOutput("debug"), # for debugging
+
+  tags$footer(
+    style = "
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background: #006268;
+    color: white;
+    padding: 10px 30px;
+    z-index: 1000;
+    text-align: left;
+    box-shadow: 0 -2px 4px rgba(0,0,0,0.05);
+    ",
+    tags$img(src = "WSL_Logo_neg.png", height = "30px", style = "vertical-align:middle; margin-right: 10px;"),
+    actionLink("contact_link", "Contact", style = "color: white; margin-left: 20px; text-decoration: none;"),
+  ),
 
 ) # end of ui
 

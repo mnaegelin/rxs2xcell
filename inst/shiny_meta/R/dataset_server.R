@@ -35,6 +35,11 @@ dataset_server <- function(id, main_session, start_info,
       accordion_panel_close(id = 'search_tools', values = TRUE)
     }, ignoreNULL = FALSE) # to fire the event at startup
 
+
+    shinyjs::disable("file_authors")
+    shinyjs::disable("file_funding")
+
+
     observeEvent(start_info$input_meta$meta_json,{
       # req(start_info$input_meta$meta_json)
       if (!is.null(start_info$input_meta$meta_json)){
@@ -490,7 +495,7 @@ dataset_server <- function(id, main_session, start_info,
     doi_data_in <- reactiveVal(data.frame(
       DOI = character(0),
       Citation = character(0),
-      XCELLID = character(0),
+      Dataset_ID = character(0),
       stringsAsFactors = FALSE
     ))
 

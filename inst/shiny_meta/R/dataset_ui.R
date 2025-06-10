@@ -230,19 +230,19 @@ dataset_ui <- function(id, countries_list) {
             textInput(ns("doi"), "Either enter DOI", placeholder = "e.g., 10.3389/fpls.2016.00781"),
             textAreaInput(ns("citation"), "Or enter full citation", "", rows = 3,
                           placeholder = "e.g., von Arx, G. et al., Quantitative Wood Anatomy—Practical Guidelines. Front. Plant Sci. 7, 781 (2016)."),
-            textInput(ns("xcellid"), "Or enter XCELL ID", placeholder = "TO BE IMPLEMENTED"),
+            textInput(ns("xcellid"), "Or enter QWA dataset ID", placeholder = "123"),
             col_widths = c(4,4,4)
           ),
-          span(tags$i('If a valid DOI or XCELL ID is entered, a citation will
-                      automatically be generated via the DOI or XCELL APIs, respectively.
-                      Otherwise, the provided citation is used directly.')),
+          span(tags$i('If a valid DOI is entered, a citation will
+                      automatically be generated via the DOI API.
+                      Otherwise, the provided citation text is used directly.')),
           actionButton(ns("btn_add_pub"), "Add item", style = "width: 130px",
                        class = "btn btn-secondary", icon = icon('plus', lib = "glyphicon"))
           #shiny::selectizeInput("result_choice", "Select Result:", choices = NULL)
         ),
 
         hr(),
-        p(tags$i("Add related publications or datasets by providing either DOI, full citation or XCELL ID.")),
+        p(tags$i("Add related publications or datasets by providing either DOI, full citation or dataset ID.")),
 
         DT::DTOutput(ns("rel_resources"))
 
