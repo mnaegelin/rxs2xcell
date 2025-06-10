@@ -1,0 +1,338 @@
+{
+    "ds_data":
+    {
+        "ds_name":
+        [
+            "Arzac testdata"
+        ],
+        "ds_desc":
+        [
+            "this is a test dataset"
+        ],
+        "ds_access":
+        [
+            "public"
+        ],
+        "ds_license":
+        [
+            "CC BY 4.0"
+        ],
+        "ds_embargoed":
+        [
+            "2026-05-20"
+        ],
+        "ds_ackn":
+        [
+            ""
+        ]
+    },
+    "author_data":
+    [
+        {
+            "last_name": "Naegelin",
+            "first_name": "Mara",
+            "email": "mara.naegelin@wsl.ch",
+            "orcid": "0000-0002-0490-7510",
+            "org_name": "Swiss Federal Institute for Forest, Snow and<br>Landscape Research",
+            "org_rorid": "04bs5yc70",
+            "aff_dep": "",
+            "aff_street": "",
+            "aff_plz": "",
+            "aff_city": "Birmensdorf",
+            "org_country": "Switzerland  (CH)",
+            "contact_person": true
+        },
+        {
+            "last_name": "Fonti",
+            "first_name": "Patrick",
+            "email": "pfonti@wsl.ch",
+            "orcid": "",
+            "org_name": "WSL",
+            "org_rorid": "",
+            "aff_dep": "",
+            "aff_street": "",
+            "aff_plz": "",
+            "aff_city": "Birmensdorf",
+            "org_country": "Switzerland  (CH)",
+            "contact_person": false
+        }
+    ],
+    "funding_data":
+    [
+        {
+            "inst_name": "Swiss Federal Institute for Forest, Snow and Landscape Research",
+            "inst_rorid": "04bs5yc70",
+            "inst_city": "Birmensdorf",
+            "inst_country": "Switzerland  (CH)",
+            "grant_name": "",
+            "grant_nr": "Grant ABC"
+        }
+    ],
+    "doi_data":
+    [
+        {
+            "DOI": "10.3389/fpls.2016.00781",
+            "Citation": "von Arx, G., Crivellaro, A., Prendin, A. L., Čufar, K., & Carrer, M. (2016). Quantitative Wood Anatomy—Practical Guidelines. Frontiers in Plant Science, 7. https://doi.org/10.3389/fpls.2016.00781\n"
+        }
+    ],
+    "site_data":
+    [
+        {
+            "site_code": "POG",
+            "n_trees": 2,
+            "site_name": "POG site",
+            "site_desc": "Pogorelsky bor",
+            "latitude": 56.3693,
+            "longitude": 92.9552,
+            "country": "Russian Federation  (RU)",
+            "elevation": 164,
+            "stand_type": "mono gymnosperm",
+            "stand_structure": "regular",
+            "stand_main_species": "",
+            "stand_management": "extensive"
+        },
+        {
+            "site_code": "STO",
+            "n_trees": 1,
+            "site_name": "STO site",
+            "site_desc": "another description",
+            "latitude": 50,
+            "longitude": 85,
+            "country": "Russian Federation  (RU)",
+            "elevation": 200,
+            "topography": "",
+            "soil_depth": "",
+            "stand_type": ""
+        }
+    ],
+    "tree_data":
+    [
+        {
+            "tree_code": "POG_PISY_02",
+            "site_code": "POG",
+            "n_woodpieces": 1,
+            "species_code": "PISY",
+            "species_name": "Pinus sylvestris L.",
+            "wood_type": "gymnosperm",
+            "leaf_habit": "evergreen",
+            "tree_ring_structure": "conifer",
+            "tree_treatment": "none",
+            "tree_dbh": 67.2,
+            "tree_height": 21.9,
+            "tree_age": 85,
+            "tree_social_status": "dominant",
+            "tree_health_status": "healthy",
+            "tree_origin": "natural regeneration"
+        },
+        {
+            "tree_code": "POG_PISY_08",
+            "site_code": "POG",
+            "n_woodpieces": 1,
+            "species_code": "PISY",
+            "species_name": "Pinus sylvestris L.",
+            "wood_type": "gymnosperm",
+            "leaf_habit": "evergreen",
+            "tree_ring_structure": "conifer",
+            "tree_treatment": "none",
+            "tree_dbh": 48.7,
+            "tree_height": 24.5,
+            "tree_age": 87,
+            "tree_social_status": "dominant",
+            "tree_health_status": "healthy",
+            "tree_origin": "natural regeneration"
+        },
+        {
+            "tree_code": "STO_PISY_20",
+            "site_code": "STO",
+            "n_woodpieces": 1,
+            "species_code": "PISY",
+            "species_name": "Pinus sylvestris L.",
+            "wood_type": "gymnosperm",
+            "leaf_habit": "evergreen",
+            "tree_ring_structure": "conifer",
+            "tree_treatment": "none"
+        }
+    ],
+    "wp_data":
+    [
+        {
+            "woodpiece_code": "POG_PISY_02_B",
+            "tree_code": "POG_PISY_02",
+            "n_slides": 4,
+            "organ": "stem",
+            "sampling_height": 1.3,
+            "sample_type": "core 5 mm",
+            "sample_embedding": "paraffin embedding",
+            "sample_archived": true
+        },
+        {
+            "woodpiece_code": "POG_PISY_08_B",
+            "tree_code": "POG_PISY_08",
+            "n_slides": 6,
+            "organ": "stem",
+            "sampling_height": 1.3,
+            "sample_type": "core 5 mm",
+            "sample_embedding": "paraffin embedding",
+            "sample_archived": true
+        },
+        {
+            "woodpiece_code": "STO_PISY_20",
+            "tree_code": "STO_PISY_20",
+            "n_slides": 2,
+            "organ": "stem",
+            "sampling_height": 1.3,
+            "sample_type": "core 5 mm",
+            "sample_embedding": "paraffin embedding",
+            "sample_archived": true
+        }
+    ],
+    "slide_data":
+    [
+        {
+            "slide_code": "POG_PISY_02_B_1",
+            "woodpiece_code": "POG_PISY_02_B",
+            "n_imgs": 3,
+            "sect_thickness": 12,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "POG_PISY_02_B_2",
+            "woodpiece_code": "POG_PISY_02_B",
+            "n_imgs": 3,
+            "sect_thickness": 12,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "POG_PISY_02_B_3",
+            "woodpiece_code": "POG_PISY_02_B",
+            "n_imgs": 3,
+            "sect_thickness": 12,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "POG_PISY_02_B_4",
+            "woodpiece_code": "POG_PISY_02_B",
+            "n_imgs": 2,
+            "sect_thickness": 12,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "POG_PISY_08_B_1",
+            "woodpiece_code": "POG_PISY_08_B",
+            "n_imgs": 3,
+            "sect_thickness": 12,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "POG_PISY_08_B_2",
+            "woodpiece_code": "POG_PISY_08_B",
+            "n_imgs": 3,
+            "sect_thickness": 12,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "POG_PISY_08_B_3",
+            "woodpiece_code": "POG_PISY_08_B",
+            "n_imgs": 3,
+            "sect_thickness": 12,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "POG_PISY_08_B_4",
+            "woodpiece_code": "POG_PISY_08_B",
+            "n_imgs": 3,
+            "sect_thickness": 12,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "POG_PISY_08_B_5",
+            "woodpiece_code": "POG_PISY_08_B",
+            "n_imgs": 3,
+            "sect_thickness": 12,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "POG_PISY_08_B_6",
+            "woodpiece_code": "POG_PISY_08_B",
+            "n_imgs": 2,
+            "sect_thickness": 12,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "STO_PISY_20_1",
+            "woodpiece_code": "STO_PISY_20",
+            "n_imgs": 3,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        },
+        {
+            "slide_code": "STO_PISY_20_2",
+            "woodpiece_code": "STO_PISY_20",
+            "n_imgs": 2,
+            "cutting_plane": "cross-section",
+            "slide_prep": "micro-section",
+            "slide_staining": "Sarafin Astrablue",
+            "slide_archived": true,
+            "img_cap_system": "light microscope",
+            "data_structure": "tracheid-full"
+        }
+    ],
+    "export_type":
+    [
+        "final"
+    ]
+}

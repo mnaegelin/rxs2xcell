@@ -7,30 +7,58 @@ start_ui <- function(id) {
     sidebar = bslib::sidebar(
       title = "Instructions", #paste(icon("info", style = paste("color:", prim_col)),
 
-      span("We start from the raw metadata inferred from images and ROXAS settings
-           files with the", code('rxs2xcell'), 'package.'),
+      span("Start from the raw metadata inferred from images and ROXAS settings
+           files with the", code('rxs2xcell'), 'package, or re-load an export of partially completed metadata.'),
+      # card(
+      #   class = 'card-note',
+      #   card_header(
+      #     class = 'bg-secondary',
+      #     'Input data'),
+      #   radioButtons(
+      #     inputId = ns("input_src"),
+      #     label = "Choose a data source to start",
+      #     choices = list(
+      #       "Use df_meta available in R environment" = "df_meta_env",
+      #       "Use df_meta loaded from .csv" = "df_meta_csv",
+      #       "Use partially completed metadata contribution from .json" = "df_meta_json"
+      #     ),
+      #     selected = character(0)
+      #   ),
+      #   fileInput(
+      #     inputId = ns("file_input"),
+      #     label = "Upload file:",
+      #     accept = c(".csv", ".json")
+      #   ),
+      #   actionButton(
+      #     inputId = ns("btn_load_input"),
+      #     label = "Load data"
+      #   )
+      # ),
+
+      # EXAMPLE ONLY
       card(
         class = 'card-note',
         card_header(
           class = 'bg-secondary',
           'Input data'),
+        span('Select and load a data source to start:'),
         radioButtons(
-          inputId = ns("input_src"),
-          label = "Choose a data source to start",
+          inputId = ns("input_src_ex"),
+          label = "Example data",
           choices = list(
-            "Use df_meta available in R environment" = "df_meta_env",
-            "Use df_meta loaded from .csv" = "df_meta_csv",
-            "Use partially completed metadata contribution from .json" = "df_meta_json"
+            "Start fresh with only the automatically extractable metadata" = "df_meta_env",
+            #"Use df_meta loaded from .csv" = "df_meta_csv",
+            "Start from partially completed metadata file" = "df_meta_json"
           ),
           selected = character(0)
         ),
         fileInput(
-          inputId = ns("file_input"),
-          label = "Upload file:",
+          inputId = ns("file_input_ex"),
+          label = "Upload own file",
           accept = c(".csv", ".json")
         ),
         actionButton(
-          inputId = ns("btn_load_input"),
+          inputId = ns("btn_load_input_ex"),
           label = "Load data"
         )
       ),

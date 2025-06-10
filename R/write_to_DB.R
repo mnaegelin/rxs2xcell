@@ -216,7 +216,7 @@ add_new_DS_entry <- function(ds_data, author_data_with_ids, dbcon, schema){
   placeholders <- paste0("$", 1:length(ds_data), collapse = ", ")
   #placeholders <- paste0("nullif($", 1:ncol(ds_data), " , 'NA')", collapse = ", ")
   query <- sprintf(
-    "INSERT INTO %s.dataset (%s) VALUES (%s) RETURNING ds_id",
+    "INSERT INTO %s.dataset (%s) VALUES (%s) RETURNING ds_id;",
     schema, col_names, placeholders
   )
   # execute insert
@@ -248,7 +248,7 @@ add_authorships <- function(ds_data_with_id, author_data_with_ids, dbcon, schema
       dataset_authors,
       row.names = FALSE, overwrite = FALSE, append = TRUE
     )
-    cat("%d authors added to DB.\n", nrow(dataset_authors))
+    cat(sprintf("%d authors added to DB.\n", nrow(dataset_authors)))
   } else {
     cat('Existing authorship assignments in DB:\n')
     print(author_table)
@@ -443,7 +443,7 @@ add_affiliations <- function(org_data_with_ids, dbcon, schema){
     dplyr::mutate(address = gsub("NA,* ", "", paste0(
       aff_street, ", ", aff_plz, " ", aff_city, ", ", country_code
     ))) %>%
-    dplyr::mutate(address = dplyr::if_else(length(address)<3, NA, address)) %>%
+    dplyr::mutate(address = dplyr::if_else(nchar(address)<3, NA, address)) %>%
     dplyr::select(person_id, org_id, department, address)
 
   # get existing entries
@@ -460,15 +460,7 @@ add_affiliations <- function(org_data_with_ids, dbcon, schema){
 
   # rows in aff_data where (person_id, org_id) are also in aff_table
   aff_existing <- aff_data %>%
-    dplyr::inner_join(aff_table, by = c("person_id", "org_id"), suffix = c('.DB','.new')) %>%
-    # reformatting for output message:
-    tidyr::pivot_longer(
-      cols = dplyr::matches("\\.(new|DB)$"),
-      names_to = c(".value", "source"),
-      names_pattern = "^(.*)\\.(new|DB)$") %>%
-    dplyr::mutate(entry_created_at = dplyr::if_else(source == 'new', as.POSIXct(NA), entry_created_at),
-                  aff_id = dplyr::if_else(source == 'new', NA, aff_id)) %>%
-    dplyr::relocate(source, .before = 1)
+    dplyr::inner_join(aff_table, by = c("person_id", "org_id"), suffix = c('.DB','.new'))
 
   # rows in aff_data where (person_id, org_id) are NOT in aff_table
   aff_new <- aff_data %>% dplyr::anti_join(aff_table, by = c("person_id", "org_id"))
@@ -488,6 +480,15 @@ add_affiliations <- function(org_data_with_ids, dbcon, schema){
 
   # warn if there are existing affiliations in DB for these authors + organizations
   if (nrow(aff_existing) > 0) {
+    aff_existing <- aff_existing %>%
+      # reformatting for output message:
+      tidyr::pivot_longer(
+        cols = dplyr::matches("\\.(new|DB)$"),
+        names_to = c(".value", "source"),
+        names_pattern = "^(.*)\\.(new|DB)$") %>%
+      dplyr::mutate(entry_created_at = dplyr::if_else(source == 'new', as.POSIXct(NA), entry_created_at),
+                    aff_id = dplyr::if_else(source == 'new', NA, aff_id)) %>%
+      dplyr::relocate(source, .before = 1)
     cat('There are existing affiliation entries in DB for these authors and organizations:\n')
     print(aff_existing)
     warning("Please check and revise affiliations manually if necessary.")
@@ -552,6 +553,101 @@ add_funding_sources <- function(ds_data_with_id, org_data_with_ids, dbcon, schem
 
 }
 
+
+add_related_resources <- function(ds_id, related_data, dbcon, schema){
+  rel_data <- related_data
+  for (col in c('DOI','XCELLID')){
+    if (! col %in% names(related_data)){
+      rel_data[,col] <- NA_character_
+    }
+  }
+
+  # publications
+  rel_pubs <- rel_data %>%
+    dplyr::filter((is.na(rel_data$XCELLID) | rel_data$XCELLID == "")) %>%
+    dplyr::rename(
+      pub_info = Citation,
+      doi = DOI
+    ) %>%
+    dplyr::mutate(
+      pub_info = gsub("<br>"," ", pub_info),
+      pub_info = gsub("\n","", pub_info),
+      doi = dplyr::if_else(doi == "", NA_character_, doi),
+    ) %>%
+    dplyr::select(doi,pub_info)
+
+  pub_table <- DBI::dbReadTable(conn = dbcon, name = c(schema, 'publication'))
+  rel_pubs <- rel_pubs %>% dplyr::left_join(pub_table, by = c('doi'), suffix = c('','.DB'))
+
+  # check if publications (DOI) already exist in DB
+  rel_pubs_new <- rel_pubs %>%
+    dplyr::filter(is.na(pub_id)) #| (pub_info %in% rel_pubs$pub_info)
+
+  # add new publications to db
+  if (nrow(rel_pubs_new) > 0){
+    # compose sql query: first paste the values together
+    values_sql <- paste(
+      apply(rel_pubs_new, 1, function(row) {
+        stringr::str_glue("({DBI::dbQuoteString(dbcon, row['doi'])}, {DBI::dbQuoteString(dbcon, row['pub_info'])})")
+      }),
+      collapse = ", "
+    )
+    # then combine into insert query
+    query <- stringr::str_glue("
+      INSERT INTO {schema}.publication (doi, pub_info)
+      VALUES {values_sql}
+      RETURNING pub_id;
+    ")
+
+    pub_ids <- DBI::dbGetQuery(dbcon, query)
+    rel_pubs[rownames(rel_pubs_new), 'pub_id'] <- pub_ids$pub_id
+
+    cat(sprintf('%d/%d new publications written to DB.', nrow(rel_pubs_new), nrow(rel_pubs)))
+    if (nrow(rel_pubs_new)< nrow(rel_pubs)){
+      cat(sprintf('%d/%d publications already exist in DB.', nrow(rel_pubs) - nrow(rel_pubs_new), nrow(rel_pubs)))
+    }
+  }
+
+
+  # add the relationships to the dataset
+  if (nrow(rel_pubs)>0){
+    rel_pubs_ds <- rel_pubs %>%
+      dplyr::mutate(ds_id = ds_id) %>%
+      dplyr::select(ds_id, pub_id)
+
+    result <- DBI::dbWriteTable(
+      dbcon,
+      c(schema, 'related_publication'),
+      rel_pubs_ds,
+      row.names = FALSE, overwrite = FALSE, append = TRUE
+    )
+    cat(sprintf('%d publications related to dataset in DB.', nrow(rel_pubs_ds)))
+  }
+
+
+  # related datasets
+  rel_ds_ds <- rel_data %>%
+    dplyr::filter((!is.na(rel_data$XCELLID) & rel_data$XCELLID != ""))
+
+  if (nrow(rel_ds_ds)>0){
+    # add the relationships to the datasets
+    rel_ds_ds <- rel_ds_ds %>%
+      dplyr::mutate(
+        rel_ds_id = as.integer(rel_data$XCELLID),
+        org_ds_id = ds_id
+      ) %>% dplyr::select(org_ds_id, rel_ds_id)
+    result <- DBI::dbWriteTable(
+      dbcon,
+      c(schema, 'related_dataset'),
+      rel_ds_ds,
+      row.names = FALSE, overwrite = FALSE, append = TRUE
+    )
+    cat(sprintf('%d datasets related to this dataset in DB.', nrow(rel_ds_ds)))
+  }
+
+}
+
+
 add_sites <- function(site_data, dbcon, schema){
   # get the field names for the main site table
   cols <- DBI::dbListFields(conn = dbcon, name = c(schema, 'site'))
@@ -594,7 +690,7 @@ write_data_to_db <- function(complete_metadata,
   complete_metadata <- jsonlite::read_json("./explorations/collected_data_2025-05-20.json",simplifyVector = TRUE)
   dbcon <- DBI::dbConnect(RPostgreSQL::PostgreSQL(),
                           dbname = "xcell",
-                          host = "pgdbtapp.wsl.ch", # new: pgdbxcell.wsl.ch / old: pgdbtapp.wsl.ch or pgdboapp.wsl.ch
+                          host = "pgdboapp.wsl.ch", # new: pgdbxcell.wsl.ch / old: pgdbtapp.wsl.ch or pgdboapp.wsl.ch
                           port = 5432,
                           user = "naegelin", #naegelin or xcell_edit
                           password = keyring::key_get("pgdbt_xcell", username = "naegelin")) #naegelin or xcell_edit
@@ -625,15 +721,15 @@ write_data_to_db <- function(complete_metadata,
   # FUNDING table
   add_funding_sources(ds_data_with_id, org_data_with_ids, dbcon, schema)
 
-  # RELATED PUBS
-  # TODO
+  # RELATED PUBS and DS
+  related_data <- complete_metadata$doi_data
+  add_related_resources(ds_data_with_id$ds_id, related_data, dbcon, schema)
 
-  # RELATED DS
-  # TODO
 
 
   # LEVEL 1 METADATA -----------------------------------------------------------
   # SITE table
+
 
 
 

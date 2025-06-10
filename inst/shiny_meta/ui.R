@@ -35,6 +35,7 @@ theme <-  bslib::bs_add_rules(theme, HTML(paste0("
       color: #212529 !important;
     }
 
+
     /* styling the navbar: primary bg color, white font, hover, active*/
     .bslib-navs-card-title {
       background-color: ", prim_col, ";
@@ -220,7 +221,15 @@ ui <- bslib::page_fluid(
         background-color: white;
       }
 
-    ")),
+
+    .btn-file {
+             background-color: grey !important;
+             border-color: grey !important;
+             }
+
+    ")), # EXAMPLE: greyed out file input button
+
+
     # for the tippy tooltip
     tags$script(src = "https://unpkg.com/@popperjs/core@2"),
     tags$script(src = "https://unpkg.com/tippy.js@6"),
@@ -236,7 +245,7 @@ ui <- bslib::page_fluid(
     # fillable = FALSE,
 
     # TITLE --------------------------------------------------------------------
-    title = "rxs2xcell: Contribute metadata",
+    title = "QWA database: Contribute metadata (example)",
     #HTML('<h4 style="color: #006268; font-weight: bold;">rxs2xcell: Contribute metadata</h4>'),
 
 

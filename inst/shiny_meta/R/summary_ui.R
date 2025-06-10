@@ -47,7 +47,7 @@ summary_ui <- function(id) {
           card_header(
             class = 'bg-primary',
             span(icon("exclamation", style = "color: white"),'Validation check summary')),
-          "to be implemented: summary of provided data and additional, more complex validation checks",
+          "List of all failed validation checks:",
           #uiOutput(ns('validation_check')),
           DT::DTOutput(ns('DT_valcheck'))
         ),
