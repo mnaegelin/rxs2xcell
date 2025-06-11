@@ -3,11 +3,11 @@
     {
         "ds_name":
         [
-            "Arzac testdata"
+            "Example dataset"
         ],
         "ds_desc":
         [
-            "this is a test dataset"
+            "This is an example dataset with QWA data of Pinus sylvestris from two sampling sites."
         ],
         "ds_access":
         [
@@ -29,10 +29,10 @@
     "author_data":
     [
         {
-            "last_name": "Naegelin",
-            "first_name": "Mara",
-            "email": "mara.naegelin@wsl.ch",
-            "orcid": "0000-0002-0490-7510",
+            "last_name": "Smith",
+            "first_name": "Jane",
+            "email": "jane.smith@wsl.ch",
+            "orcid": "",
             "org_name": "Swiss Federal Institute for Forest, Snow and<br>Landscape Research",
             "org_rorid": "04bs5yc70",
             "aff_dep": "",
@@ -43,12 +43,12 @@
             "contact_person": true
         },
         {
-            "last_name": "Fonti",
-            "first_name": "Patrick",
-            "email": "pfonti@wsl.ch",
+            "last_name": "Doe",
+            "first_name": "John",
+            "email": "",
             "orcid": "",
-            "org_name": "WSL",
-            "org_rorid": "",
+            "org_name": "Swiss Federal Institute for Forest, Snow and<br>Landscape Research",
+            "org_rorid": "04bs5yc70",
             "aff_dep": "",
             "aff_street": "",
             "aff_plz": "",
@@ -65,14 +65,15 @@
             "inst_city": "Birmensdorf",
             "inst_country": "Switzerland  (CH)",
             "grant_name": "",
-            "grant_nr": "Grant ABC"
+            "grant_nr": "Grant ABC-01"
         }
     ],
     "doi_data":
     [
         {
             "DOI": "10.3389/fpls.2016.00781",
-            "Citation": "von Arx, G., Crivellaro, A., Prendin, A. L., Čufar, K., & Carrer, M. (2016). Quantitative Wood Anatomy—Practical Guidelines. Frontiers in Plant Science, 7. https://doi.org/10.3389/fpls.2016.00781\n"
+            "Citation": "von Arx, G., Crivellaro, A., Prendin, A. L., Čufar, K., & Carrer, M. (2016). Quantitative Wood Anatomy—Practical Guidelines. Frontiers in Plant Science, 7. https://doi.org/10.3389/fpls.2016.00781\n",
+            "Dataset_ID": ""
         }
     ],
     "site_data":
@@ -94,12 +95,12 @@
         {
             "site_code": "STO",
             "n_trees": 1,
-            "site_name": "STO site",
-            "site_desc": "another description",
-            "latitude": 50,
-            "longitude": 85,
+            "site_name": "",
+            "site_desc": "",
+            "latitude": null,
+            "longitude": null,
             "country": "Russian Federation  (RU)",
-            "elevation": 200,
+            "elevation": null,
             "topography": "",
             "soil_depth": "",
             "stand_type": ""

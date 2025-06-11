@@ -2,6 +2,8 @@ summary_server <- function(id, main_session, start_info, dataset_info, site_info
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    shinyjs::disable("btn_save")
+
     valchecks_combined <- reactive({
       dplyr::bind_rows(
         start_info$val_check(),
@@ -12,7 +14,9 @@ summary_server <- function(id, main_session, start_info, dataset_info, site_info
 
     output$DT_valcheck <- DT::renderDataTable({
       DT::datatable(
-        valchecks_combined() %>% dplyr::select(-dplyr::any_of(c('fname', 'tname')))
+        valchecks_combined() %>% dplyr::select(-dplyr::any_of(c('fname', 'tname'))),
+        selection = 'none',
+        options = list(dom = 't')
       )
 
     })

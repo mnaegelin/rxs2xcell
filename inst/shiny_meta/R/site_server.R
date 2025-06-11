@@ -37,62 +37,88 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
     wp_data_in <- reactiveVal(NULL)
     slide_data_in <- reactiveVal(NULL)
 
+
     # observe changes in df_meta to (re-)initialize these dataframes
     # NOTE: this purposefully overwrites/resets any updates via hot edit or
     # file upload if the underlying df_meta is changed
-    observeEvent(start_info$input_meta$df, {
-      df_meta <- start_info$input_meta$df
+    observeEvent({
+      list(start_info$input_meta$df, start_info$input_meta$meta_json)}, {
+        req(start_info$input_meta$df)
 
-      # site
-      df_site <- create_empty_tbl(site_tbl, nrows=0)
-      df_site <- df_meta %>%
-        dplyr::group_by(site) %>%
-        dplyr::summarise(n = dplyr::n_distinct(tree_code)) %>%
-        dplyr::rename(site_code = site, n_trees = n) %>%
-        dplyr::left_join(df_site, by = c('site_code', 'n_trees'))
+        df_meta <- start_info$input_meta$df
 
-      site_data_in(df_site)
+        # site
+        df_site <- create_empty_tbl(site_tbl, nrows=0)
+        df_site <- df_meta %>%
+          dplyr::group_by(site) %>%
+          dplyr::summarise(n = dplyr::n_distinct(tree_code)) %>%
+          dplyr::rename(site_code = site, n_trees = n) %>%
+          dplyr::left_join(df_site, by = c('site_code', 'n_trees'))
 
-      # tree
-      df_tree <- create_empty_tbl(tree_tbl, nrows=0)
-      df_tree <- df_meta %>%
-        dplyr::group_by(site, species, tree_code) %>%
-        dplyr::summarise(n = dplyr::n_distinct(woodpiece_code), .groups = 'keep') %>%
-        dplyr::rename(site_code = site, species_code = species, n_woodpieces = n) %>%
-        dplyr::left_join(df_tree, by = c('tree_code', 'site_code', 'species_code', 'n_woodpieces')) %>%
-        dplyr::select(colnames(df_tree))
-      # add species information
-      df_tree <- df_tree %>%
-        dplyr::left_join(species_info, by = c('species_code' = 'itrdb_species_code'), suffix = c("",".lookup")) %>%
-        dplyr::mutate(species_name = species_name.lookup,
-                      wood_type = wood_type.lookup,
-                      leaf_habit = leaf_habit.lookup,
-                      tree_ring_structure = tree_ring_structure.lookup) %>%
-        dplyr::select(-dplyr::ends_with(".lookup"))
+        site_data_in(df_site)
 
-      tree_data_in(df_tree)
+        # tree
+        df_tree <- create_empty_tbl(tree_tbl, nrows=0)
+        df_tree <- df_meta %>%
+          dplyr::group_by(site, species, tree_code) %>%
+          dplyr::summarise(n = dplyr::n_distinct(woodpiece_code), .groups = 'keep') %>%
+          dplyr::rename(site_code = site, species_code = species, n_woodpieces = n) %>%
+          dplyr::left_join(df_tree, by = c('tree_code', 'site_code', 'species_code', 'n_woodpieces')) %>%
+          dplyr::select(colnames(df_tree))
+        # add species information
+        df_tree <- df_tree %>%
+          dplyr::left_join(species_info, by = c('species_code' = 'itrdb_species_code'), suffix = c("",".lookup")) %>%
+          dplyr::mutate(species_name = species_name.lookup,
+                        wood_type = wood_type.lookup,
+                        leaf_habit = leaf_habit.lookup,
+                        tree_ring_structure = tree_ring_structure.lookup) %>%
+          dplyr::select(-dplyr::ends_with(".lookup"))
 
-      # woodpiece
-      df_wp <- create_empty_tbl(woodpiece_tbl, nrows=0)
-      df_wp <- df_meta %>%
-        dplyr::group_by(tree_code, woodpiece_code) %>%
-        dplyr::summarise(n = dplyr::n_distinct(slide_code), .groups = 'keep') %>%
-        dplyr::rename(n_slides = n) %>%
-        dplyr::left_join(df_wp, by = c('woodpiece_code', 'tree_code', 'n_slides')) %>%
-        dplyr::select(colnames(df_wp))
+        tree_data_in(df_tree)
 
-      wp_data_in(df_wp)
+        # woodpiece
+        df_wp <- create_empty_tbl(woodpiece_tbl, nrows=0)
+        df_wp <- df_meta %>%
+          dplyr::group_by(tree_code, woodpiece_code) %>%
+          dplyr::summarise(n = dplyr::n_distinct(slide_code), .groups = 'keep') %>%
+          dplyr::rename(n_slides = n) %>%
+          dplyr::left_join(df_wp, by = c('woodpiece_code', 'tree_code', 'n_slides')) %>%
+          dplyr::select(colnames(df_wp))
 
-      # slide
-      df_slide <- create_empty_tbl(slide_tbl, nrows=0)
-      df_slide <- df_meta %>%
-        dplyr::group_by(woodpiece_code, slide_code) %>%
-        dplyr::summarise(n = dplyr::n_distinct(image_code), .groups = 'keep') %>%
-        dplyr::rename(n_imgs = n) %>%
-        dplyr::left_join(df_slide, by = c('slide_code', 'woodpiece_code', 'n_imgs')) %>%
-        dplyr::select(colnames(df_slide))
+        wp_data_in(df_wp)
 
-      slide_data_in(df_slide)
+        # slide
+        df_slide <- create_empty_tbl(slide_tbl, nrows=0)
+        df_slide <- df_meta %>%
+          dplyr::group_by(woodpiece_code, slide_code) %>%
+          dplyr::summarise(n = dplyr::n_distinct(image_code), .groups = 'keep') %>%
+          dplyr::rename(n_imgs = n) %>%
+          dplyr::left_join(df_slide, by = c('slide_code', 'woodpiece_code', 'n_imgs')) %>%
+          dplyr::select(colnames(df_slide))
+
+        slide_data_in(df_slide)
+
+        if (!is.null(start_info$input_meta$meta_json)) {
+
+          meta_json <- start_info$input_meta$meta_json
+
+          df_site <- create_empty_tbl(site_tbl, nrows=0)
+          df_site <- dplyr::bind_rows(df_site, meta_json$site_data)
+          site_data_in(df_site)
+
+          df_tree <- create_empty_tbl(tree_tbl, nrows=0)
+          df_tree <- dplyr::bind_rows(df_tree, meta_json$tree_data)
+          tree_data_in(df_tree)
+
+          df_wp <- create_empty_tbl(woodpiece_tbl, nrows=0)
+          df_wp <- dplyr::bind_rows(df_wp, meta_json$wp_data)
+          wp_data_in(df_wp)
+
+          df_slide <- create_empty_tbl(slide_tbl, nrows=0)
+          df_slide <- dplyr::bind_rows(df_slide, meta_json$slide_data)
+          slide_data_in(df_slide)
+
+        }
     })
 
     # TODO: observe file upload button: merge file input with site_data_out and update site_data_in
@@ -526,7 +552,7 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
         df_validation <- validation_checks()
 
         if (nrow(df_validation) == 0) {
-          return(tagList(strong("ALL GOOD :)", style = paste0('color: ', prim_col, ';'))))
+          return(tagList(strong("All checks passed", style = paste0('color: ', prim_col, ';'))))
         } else {
           # generate html lists for each topic
           html_output <- df_validation %>%

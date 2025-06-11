@@ -21,11 +21,13 @@ summary_ui <- function(id) {
       tags$ol(
         class = 'custom-indent', start = 2,
         tags$li("When there are no more issues or if you are certain that you want to ignore the remaining messages,
-                please click the 'Export data to file' button to download the final version of the metadata.
-                You are then ready to share the file alongside the harmonized cells and rings data with the QWA database team,
+                please click the 'Export data to file' button to download the final version of the metadata.")),
+      hr(),
+      tags$ol(
+        class = 'custom-indent', start = 3,
+        tags$li("You are now ready to share the file alongside the harmonized cells and rings data with the QWA database team,
                 please contact ",
                 tags$a(href = "mailto:mara.naegelin@wsl.ch","mara.naegelin(at)wsl.ch")),
-
       ),
 
       hr(),

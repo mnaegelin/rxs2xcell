@@ -158,11 +158,12 @@ start_server <- function(id, main_session) {
       df_meta <- read.csv(file_path, stringsAsFactors = FALSE, na.strings=c(""))
       input_meta$df <- df_meta
       input_meta$source <- "example data, starting fresh from extracted metadata"
+      input_meta$meta_json <- NULL # reset meta_json
       if (input$input_src_ex == 'df_meta_json'){
         file_path <- system.file("extdata", "partial_meta_ex.json", package = "rxs2xcell")
         meta_json <- jsonlite::fromJSON(file_path, flatten = TRUE)
         input_meta$meta_json <- meta_json
-        input_meta$meta_json$df_meta <- NULL # we want only the rest of the json
+        input_meta$meta_json$df_meta <- NULL # we want only the rest of the json (don't have it in example anyway)
         input_meta$source <- "example data, starting from partially completed metadata"
       }
       shinyjs::reset(id = "check_raw")

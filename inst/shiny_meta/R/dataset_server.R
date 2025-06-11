@@ -41,6 +41,7 @@ dataset_server <- function(id, main_session, start_info,
 
 
     observeEvent(start_info$input_meta$meta_json,{
+      # TODO: add validity checks before updating values?
       # req(start_info$input_meta$meta_json)
       if (!is.null(start_info$input_meta$meta_json)){
         meta_json <- start_info$input_meta$meta_json
@@ -54,9 +55,9 @@ dataset_server <- function(id, main_session, start_info,
         } else if (ds_data$ds_access == "restricted"){
           updateDateInput(session, "ds_embargoed", value = as.Date(ds_data$ds_embargoed))
         }
-        author_data <- start_info$input_meta$author_data # to dataframe ...
-
-        # TODO: the rest of the fields, in all tabs
+        author_data_in(meta_json$author_data)
+        funding_data_in(meta_json$funding_data)
+        doi_data_in(meta_json$doi_data)
       }
     })
 
@@ -300,6 +301,7 @@ dataset_server <- function(id, main_session, start_info,
       # close the modal
       removeModal()
     })
+
 
 
 
@@ -612,7 +614,7 @@ dataset_server <- function(id, main_session, start_info,
       df_validation <- validation_checks()
 
       if (nrow(df_validation) == 0) {
-        return(tagList(strong("ALL GOOD :)", style = paste0('color: ', prim_col, ';'))))
+        return(tagList(strong("All checks passed", style = paste0('color: ', prim_col, ';'))))
       } else {
         # generate html lists for each topic
         html_output <- df_validation %>%
