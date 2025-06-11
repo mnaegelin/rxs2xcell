@@ -21,7 +21,7 @@ the input dataframe with additional logical columns 'incomplete_ring'
 This function determines which of the inner- and outermost rings of each
 image are incomplete (i.e. extend across the image boundaries).
 For the innermost rings, we rely on the position and shape of the estimated
-inner ring border (see helper function check_incomplete_innermost). For the
+inner ring border (see helper function \code{check_incomplete_innermost}). For the
 outermost rings, we check the MRW value, since ROXAS only estimates an MRW if
 it can detect an outer ring boundary.
 }

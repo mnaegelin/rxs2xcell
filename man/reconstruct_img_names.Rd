@@ -21,6 +21,8 @@ data structure (site, species, tree, woodpiece, sample, image), and the
 labeling pattern followed by the original image filenames, we reconstruct
 the filenames.
 This requires that all files follow the same labeling pattern.
+}
+\details{
 NOTE: At the moment, only tested with following pattern:
 \verb{\{site\}_\{species\}_\{tree\}\{woodpiece\}_\{sample\}_\{image\}}
 where tree is assumed to be a two-character code, and woodpiece is optional.

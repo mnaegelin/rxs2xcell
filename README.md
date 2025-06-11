@@ -10,6 +10,10 @@ The goal of `rxs2xcell` is to prepare, quality check and harmonize a
 collection of QWA images and corresponding ROXAS output files for
 submission to the QWA database.
 
+**Note:** This package is currently under development and not yet stable
+nor officially released. Version 1.0.0 will be made available under the
+organizational github.
+
 ## Installation
 
 You can install the development version of `rxs2xcell` from
@@ -20,9 +24,7 @@ You can install the development version of `rxs2xcell` from
 pak::pak("mnaegelin/rxs2xcell")
 
 # or:
-remotes::install_github('mnaegelin/rxs2xcell', auth_token = GITHUB_PAT)
-
-# TODO: change to final version under organization in future
+remotes::install_github('mnaegelin/rxs2xcell')
 ```
 
 ## Usage
@@ -51,12 +53,6 @@ df_meta <- collect_metadata_from_files(df_structure,
 # write extracted metadata to file
 write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta_extracted.csv')),
           row.names = FALSE)
-
-# TODO:
-# maybe write a use_template() function that takes a template file and opens it, so no copy paste needed?
-# maybe just a wrapper around:
-# usethis::use_template('template_workflow.Rmd', package='rxs2xcell')
-# maybe something like the use_targets() function from https://docs.ropensci.org/targets/reference/use_targets.html
 ```
 
 To provide the additional metadata required (e.g. site and tree
@@ -64,7 +60,7 @@ information, author details, …) for the submission of a dataset, you can
 use the interactive Shiny app which is part of this package.
 
 The app is hosted on a WSL server and accessible via
-[LINK](https://shiny16.wsl.ch:3838/naegelin/xcell_meta).
+[webapps.wsl.ch/QWAmeta](https://webapps.wsl.ch/QWAmeta/).
 
 Or, if you want to run it locally, you can use the following command:
 
@@ -104,5 +100,5 @@ To check the coverage and add ring flags:
 ``` r
 launch_coverage_app()
 
-# TODO: make it so ring flags overwrite files?
+# TODO: add export functionality to coverage app
 ```

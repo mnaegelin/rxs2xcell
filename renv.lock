@@ -245,30 +245,6 @@
       "NeedsCompilation": "no",
       "Repository": "CRAN"
     },
-    "RPostgreSQL": {
-      "Package": "RPostgreSQL",
-      "Version": "0.7-8",
-      "Source": "Repository",
-      "Date": "2025-03-28",
-      "Title": "R Interface to the 'PostgreSQL' Database System",
-      "Maintainer": "Tomoaki Nishiyama <tomoaki@sci.u-toyama.ac.jp>",
-      "Description": "Database interface and 'PostgreSQL' driver for 'R'. This package provides a Database Interface 'DBI' compliant  driver for 'R' to access 'PostgreSQL' database systems.   In order to build and install this package from source, 'PostgreSQL'  itself must be present your system to provide 'PostgreSQL' functionality  via its libraries and header files. These files are provided as 'postgresql-devel' package under some Linux distributions. On 'macOS' and 'Microsoft Windows' system the attached 'libpq' library source will be used.",
-      "LazyLoad": "true",
-      "Depends": [
-        "R (>= 3.4.0)",
-        "methods",
-        "DBI (>= 0.3)"
-      ],
-      "License": "GPL-3 | file LICENSE",
-      "Copyright": "Authors listed above, PostgreSQL Global Development Group, and The Regents of the University of California",
-      "Collate": "S4R.R zzz.R PostgreSQLSupport.R dbObjectId.R PostgreSQL.R",
-      "URL": "https://github.com/tomoakin/RPostgreSQL, https://cran.r-project.org/package=DBI, https://www.postgresql.org",
-      "Authors@R": "c(person(given = \"Joe\", family = \"Conway\", role = \"aut\"), person(given = \"Dirk\", family = \"Eddelbuettel\", role = \"aut\"), person(given = \"Tomoaki\", family = \"Nishiyama\", role = c(\"aut\", \"cre\"), email = \"tomoaki@sci.u-toyama.ac.jp\"), person(given = c(\"Sameer\", \"Kumar\"), family = \"Prayaga\", role = \"aut\", comment = \"during 2008\"), person(given = \"Neil\", family = \"Tiffin\", role = \"aut\"))",
-      "NeedsCompilation": "yes",
-      "Author": "Joe Conway [aut], Dirk Eddelbuettel [aut], Tomoaki Nishiyama [aut, cre], Sameer Kumar Prayaga [aut] (during 2008), Neil Tiffin [aut]",
-      "Repository": "CRAN",
-      "Encoding": "UTF-8"
-    },
     "Rcpp": {
       "Package": "Rcpp",
       "Version": "1.0.14",
@@ -337,65 +313,6 @@
       "License": "MIT + file LICENSE",
       "URL": "http://www.rforge.net/audio/",
       "NeedsCompilation": "yes",
-      "Repository": "CRAN",
-      "Encoding": "UTF-8"
-    },
-    "aws.s3": {
-      "Package": "aws.s3",
-      "Version": "0.3.21",
-      "Source": "Repository",
-      "Type": "Package",
-      "Title": "'AWS S3' Client Package",
-      "Authors@R": "c(person(\"Thomas J.\", \"Leeper\", role = \"aut\", email = \"thosjleeper@gmail.com\", comment = c(ORCID = \"0000-0003-4097-6326\")), person(\"Boettiger\", \"Carl\", role = \"ctb\"), person(\"Andrew\", \"Martin\", role = \"ctb\"), person(\"Mark\", \"Thompson\", role = \"ctb\"), person(\"Tyler\", \"Hunt\", role = \"ctb\"), person(\"Steven\", \"Akins\", role = \"ctb\"), person(\"Bao\", \"Nguyen\", role = \"ctb\"), person(\"Thierry\", \"Onkelinx\", role = \"ctb\"), person(\"Andrii\", \"Degtiarov\", role = \"ctb\"), person(\"Dhruv\", \"Aggarwal\", role = \"ctb\"), person(\"Alyssa\", \"Columbus\", role = \"ctb\"), person(\"Simon\", \"Urbanek\", role = c(\"cre\", \"ctb\"), email = \"simon.urbanek@R-project.org\") )",
-      "Maintainer": "Simon Urbanek <simon.urbanek@R-project.org>",
-      "Description": "A simple client package for the Amazon Web Services ('AWS') Simple Storage Service ('S3') 'REST' 'API' <https://aws.amazon.com/s3/>.",
-      "License": "GPL (>= 2)",
-      "URL": "https://github.com/cloudyr/aws.s3",
-      "BugReports": "https://github.com/cloudyr/aws.s3/issues",
-      "Encoding": "UTF-8",
-      "Imports": [
-        "utils",
-        "tools",
-        "curl",
-        "httr",
-        "xml2 (> 1.0.0)",
-        "base64enc",
-        "digest",
-        "aws.signature (>= 0.3.7)"
-      ],
-      "Suggests": [
-        "testthat",
-        "datasets"
-      ],
-      "RoxygenNote": "7.0.2",
-      "NeedsCompilation": "no",
-      "Author": "Thomas J. Leeper [aut] (<https://orcid.org/0000-0003-4097-6326>), Boettiger Carl [ctb], Andrew Martin [ctb], Mark Thompson [ctb], Tyler Hunt [ctb], Steven Akins [ctb], Bao Nguyen [ctb], Thierry Onkelinx [ctb], Andrii Degtiarov [ctb], Dhruv Aggarwal [ctb], Alyssa Columbus [ctb], Simon Urbanek [cre, ctb]",
-      "Repository": "CRAN"
-    },
-    "aws.signature": {
-      "Package": "aws.signature",
-      "Version": "0.6.0",
-      "Source": "Repository",
-      "Type": "Package",
-      "Title": "Amazon Web Services Request Signatures",
-      "Date": "2020-06-01",
-      "Authors@R": "c(person(\"Thomas J.\", \"Leeper\", role = c(\"aut\"), email = \"thosjleeper@gmail.com\", comment = c(ORCID = \"0000-0003-4097-6326\")), person(\"Jonathan\", \"Stott\", email = \"jonathan.stott@magairports.com\", role = c(\"cre\", \"aut\")), person(\"Mike\", \"Kaminsky\", email = \"kaminsky.michael@gmail.com\", role = \"ctb\") )",
-      "Description": "Generates version 2 and version 4 request signatures for Amazon Web Services ('AWS') <https://aws.amazon.com/> Application Programming Interfaces ('APIs') and provides a mechanism for retrieving credentials from environment variables, 'AWS' credentials files, and 'EC2' instance metadata. For use on 'EC2' instances, users will need to install the suggested package 'aws.ec2metadata' <https://cran.r-project.org/package=aws.ec2metadata>.",
-      "License": "GPL (>= 2)",
-      "Imports": [
-        "digest",
-        "base64enc"
-      ],
-      "Suggests": [
-        "testthat (>= 2.1.0)",
-        "aws.ec2metadata (>= 0.1.6)"
-      ],
-      "URL": "https://github.com/cloudyr/aws.signature",
-      "BugReports": "https://github.com/cloudyr/aws.signature/issues",
-      "RoxygenNote": "7.1.0",
-      "NeedsCompilation": "no",
-      "Author": "Thomas J. Leeper [aut] (<https://orcid.org/0000-0003-4097-6326>), Jonathan Stott [cre, aut], Mike Kaminsky [ctb]",
-      "Maintainer": "Jonathan Stott <jonathan.stott@magairports.com>",
       "Repository": "CRAN",
       "Encoding": "UTF-8"
     },
@@ -4990,46 +4907,6 @@
       "NeedsCompilation": "yes",
       "Author": "Yihui Xie [aut, cre, cph] (<https://orcid.org/0000-0003-0645-5666>, https://yihui.org), Wush Wu [ctb], Daijiang Li [ctb], Xianying Tan [ctb], Salim Brüggemann [ctb] (<https://orcid.org/0000-0002-5329-5987>), Christophe Dervieux [ctb]",
       "Maintainer": "Yihui Xie <xie@yihui.name>",
-      "Repository": "CRAN"
-    },
-    "xml2": {
-      "Package": "xml2",
-      "Version": "1.3.6",
-      "Source": "Repository",
-      "Title": "Parse XML",
-      "Authors@R": "c( person(\"Hadley\", \"Wickham\", , \"hadley@posit.co\", role = c(\"aut\", \"cre\")), person(\"Jim\", \"Hester\", role = \"aut\"), person(\"Jeroen\", \"Ooms\", role = \"aut\"), person(\"Posit Software, PBC\", role = c(\"cph\", \"fnd\")), person(\"R Foundation\", role = \"ctb\", comment = \"Copy of R-project homepage cached as example\") )",
-      "Description": "Work with XML files using a simple, consistent interface. Built on top of the 'libxml2' C library.",
-      "License": "MIT + file LICENSE",
-      "URL": "https://xml2.r-lib.org/, https://github.com/r-lib/xml2",
-      "BugReports": "https://github.com/r-lib/xml2/issues",
-      "Depends": [
-        "R (>= 3.6.0)"
-      ],
-      "Imports": [
-        "cli",
-        "methods",
-        "rlang (>= 1.1.0)"
-      ],
-      "Suggests": [
-        "covr",
-        "curl",
-        "httr",
-        "knitr",
-        "magrittr",
-        "mockery",
-        "rmarkdown",
-        "testthat (>= 3.0.0)"
-      ],
-      "VignetteBuilder": "knitr",
-      "Config/Needs/website": "tidyverse/tidytemplate",
-      "Encoding": "UTF-8",
-      "RoxygenNote": "7.2.3",
-      "SystemRequirements": "libxml2: libxml2-dev (deb), libxml2-devel (rpm)",
-      "Collate": "'S4.R' 'as_list.R' 'xml_parse.R' 'as_xml_document.R' 'classes.R' 'format.R' 'import-standalone-obj-type.R' 'import-standalone-purrr.R' 'import-standalone-types-check.R' 'init.R' 'nodeset_apply.R' 'paths.R' 'utils.R' 'xml2-package.R' 'xml_attr.R' 'xml_children.R' 'xml_document.R' 'xml_find.R' 'xml_missing.R' 'xml_modify.R' 'xml_name.R' 'xml_namespaces.R' 'xml_node.R' 'xml_nodeset.R' 'xml_path.R' 'xml_schema.R' 'xml_serialize.R' 'xml_structure.R' 'xml_text.R' 'xml_type.R' 'xml_url.R' 'xml_write.R' 'zzz.R'",
-      "Config/testthat/edition": "3",
-      "NeedsCompilation": "yes",
-      "Author": "Hadley Wickham [aut, cre], Jim Hester [aut], Jeroen Ooms [aut], Posit Software, PBC [cph, fnd], R Foundation [ctb] (Copy of R-project homepage cached as example)",
-      "Maintainer": "Hadley Wickham <hadley@posit.co>",
       "Repository": "CRAN"
     },
     "xtable": {

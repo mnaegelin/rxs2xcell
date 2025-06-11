@@ -51,6 +51,7 @@ as incomplete if and only if it has no MRW.
 \strong{Missing} rings are for years that have no discernible ring in the image, but
 have been manually added in ROXAS during cross-dating, leading to an entry
 in the rings data but no corresponding no entries (cells) in the cells data.
+This is usually the case with wedging rings.
 
 \strong{Duplicate} rings are those that are present in multiple images due to them
 overlapping. All years which have cells in more than one image are flagged

@@ -10,8 +10,10 @@ get_input_files(path_in)
 \item{path_in}{path of the input directory.}
 }
 \value{
-A list of lists containing filepaths of images and ROXAS output files.
+A list of lists containing filepaths of images and ROXAS output
+files (cells, rings, settings).
 }
 \description{
-Given a path_in, get the paths and filenames of the ROXAS files to be processed.
+Given a path_in, get the paths and filenames of the (ROXAS) input files to be
+processed.
 }
