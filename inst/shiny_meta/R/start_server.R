@@ -136,8 +136,10 @@ start_server <- function(id, main_session) {
       } else {
         # load the data directly if no existing df
         file_path <- system.file("extdata", "raw_meta_ex.csv", package = "rxs2xcell")
-        df_meta <- read.csv(file_path, stringsAsFactors = FALSE, na.strings=c(""))
+        #df_meta <- read.csv(file_path, stringsAsFactors = FALSE, na.strings=c(""))
+        df_meta <- vroom::vroom(file_path, col_types = c(tree = "c"))
         input_meta$df <- df_meta
+        #print(str(df_meta))
         input_meta$source <- "example data, starting fresh from extracted metadata"
         if (input$input_src_ex == 'df_meta_json'){
           file_path <- system.file("extdata", "partial_meta_ex.json", package = "rxs2xcell")

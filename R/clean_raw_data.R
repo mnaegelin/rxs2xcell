@@ -388,7 +388,8 @@ validate_QWA_data <- function(QWA_data, df_meta){
   # output summary
   issue_counts <-  df_rings_log %>%
     dplyr::summarise(dplyr::across(c(incomplete_ring:duplicate_ring),
-                                   ~sum(.x,na.rm=TRUE)))
+                                   ~sum(.x,na.rm=TRUE))) %>%
+    dplyr::select(incomplete_ring, missing_ring, duplicate_ring) # TODO: other checks along the way
   message('QWA data have been validated successfully!\n',
           'The following issues were found:')
   message(paste0(capture.output(print(as.data.frame(issue_counts),

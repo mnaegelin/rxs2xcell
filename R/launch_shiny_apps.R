@@ -19,12 +19,11 @@ launch_coverage_app <- function() {
 #' @import bslib
 #' @importFrom magrittr %>%
 #' @export
-#' # dependencies:
+#'
 # full: shiny, bslib,
 # explicit: DT, dplyr, shinyjs, reactable, shinyvalidata, data.tree, networkD3
 launch_metadata_app <- function() {
   app_dir <- system.file("shiny_meta", package = "rxs2xcell")
-  'b' %>% print()
   if (app_dir == "") {
     stop("Could not find the Shiny app directory. Reinstall the package.")
   }

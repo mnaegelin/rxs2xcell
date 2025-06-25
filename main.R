@@ -34,9 +34,7 @@ df_structure <- extract_data_structure(files)
 df_meta <- collect_metadata_from_files(df_structure,
                                        roxas_version='classic')
 
-# TODO:
-# - only_ew variable from min_cell_area? plus user input?
-# - infer species -> wood_type from filenames? what if code not available?
+
 
 # save extracted metadata to file
 # write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta_extracted.csv')),
@@ -110,7 +108,8 @@ write.csv(QWA_data$rings,
 
 
 
-
+# TODO:
+# - only_ew variable from min_cell_area? plus user input?
 
 
 

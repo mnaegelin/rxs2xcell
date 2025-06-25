@@ -1,42 +1,42 @@
 ﻿species_name,itrdb_species_code,wood_type,leaf_habit,tree_ring_structure
-Abies Mill. fir,ABSP,gymnosperm,evergreen,conifer
-Abies alba Mill.,ABAL,gymnosperm,evergreen,conifer
-Abies amabilis Dougl. ex Forbes,ABAM,gymnosperm,evergreen,conifer
-Abies balsamea (L.) Mill.,ABBA,gymnosperm,evergreen,conifer
-Abies borisii-regis Mattf.,ABBO,gymnosperm,evergreen,conifer
-Abies bornmuelleriana Mattf.,ABBN,gymnosperm,evergreen,conifer
-Abies bracteata (D.Don) Nutt.,ABBR,gymnosperm,evergreen,conifer
-Abies cephalonica Loud.,ABCE,gymnosperm,evergreen,conifer
-Abies chensiensis van Tiegh,ABCH,gymnosperm,evergreen,conifer
-Abies cilicica (Ant. & Kotschy) Carr.,ABCI,gymnosperm,evergreen,conifer
-Abies concolor (Gord. & Glend.) Lindl. ex Hildebr.,ABCO,gymnosperm,evergreen,conifer
-Abies equi-trojani Aschers. & Sint.,ABEQ,gymnosperm,evergreen,conifer
-Abies faxoniana Rehd. & Wils.,ABFX,gymnosperm,evergreen,conifer
-Abies firma Sieb. & Zucc.,ABFI,gymnosperm,evergreen,conifer
-Abies forestii Rogers,ABFO,gymnosperm,evergreen,conifer
-Abies fraseri (Pursh) Poir.,ABFR,gymnosperm,evergreen,conifer
-Abies grandis (Dougl. ex D. Don) Lindl.,ABGR,gymnosperm,evergreen,conifer
-Abies holophylla Maxim.,ABHO,gymnosperm,evergreen,conifer
-Abies kawakamii (Hayata) Ito,ABKA,gymnosperm,evergreen,conifer
-Abies koreana Wils.,ABKO,gymnosperm,evergreen,conifer
-Abies lasiocarpa (Hook.) Nutt.,ABLA,gymnosperm,evergreen,conifer
-Abies magnifica A. Murr.,ABMA,gymnosperm,evergreen,conifer
-Abies mariessi Mast.,ABMR,gymnosperm,evergreen,conifer
-Abies marocana Trabut,ABMC,gymnosperm,evergreen,conifer
-Abies nebrodensis (Lojac.) Mattei,ABNB,gymnosperm,evergreen,conifer
-Abies nephrolepis Maxim.,ABNE,gymnosperm,evergreen,conifer
-Abies nordmanniana (Stev.) Spach,ABNO,gymnosperm,evergreen,conifer
-Abies numidica De Lannoy ex. Carr.,ABNU,gymnosperm,evergreen,conifer
-Abies pindrow (Royle) Spach,ABPI,gymnosperm,evergreen,conifer
-Abies pinsapo Boiss.,ABPN,gymnosperm,evergreen,conifer
-Abies procera Rehd.,ABPR,gymnosperm,evergreen,conifer
-Abies recurvata Mast.,ABRC,gymnosperm,evergreen,conifer
-Abies religiosa Schlecht.,ABRE,gymnosperm,evergreen,conifer
-Abies sachalinensis (Schmidt) Mast.,ABSA,gymnosperm,evergreen,conifer
-Abies sibirica Ledeb.,ABSI,gymnosperm,evergreen,conifer
-Abies spectabilis (D. Don) Spach,ABSB,gymnosperm,evergreen,conifer
-Abies squamata Mast.,ABSQ,gymnosperm,evergreen,conifer
-Abies vietchii Lindl.,ABVI,gymnosperm,evergreen,conifer
+Abies Mill. fir,ABSP,gymnosperm,evergreen,non-porous
+Abies alba Mill.,ABAL,gymnosperm,evergreen,non-porous
+Abies amabilis Dougl. ex Forbes,ABAM,gymnosperm,evergreen,non-porous
+Abies balsamea (L.) Mill.,ABBA,gymnosperm,evergreen,non-porous
+Abies borisii-regis Mattf.,ABBO,gymnosperm,evergreen,non-porous
+Abies bornmuelleriana Mattf.,ABBN,gymnosperm,evergreen,non-porous
+Abies bracteata (D.Don) Nutt.,ABBR,gymnosperm,evergreen,non-porous
+Abies cephalonica Loud.,ABCE,gymnosperm,evergreen,non-porous
+Abies chensiensis van Tiegh,ABCH,gymnosperm,evergreen,non-porous
+Abies cilicica (Ant. & Kotschy) Carr.,ABCI,gymnosperm,evergreen,non-porous
+Abies concolor (Gord. & Glend.) Lindl. ex Hildebr.,ABCO,gymnosperm,evergreen,non-porous
+Abies equi-trojani Aschers. & Sint.,ABEQ,gymnosperm,evergreen,non-porous
+Abies faxoniana Rehd. & Wils.,ABFX,gymnosperm,evergreen,non-porous
+Abies firma Sieb. & Zucc.,ABFI,gymnosperm,evergreen,non-porous
+Abies forestii Rogers,ABFO,gymnosperm,evergreen,non-porous
+Abies fraseri (Pursh) Poir.,ABFR,gymnosperm,evergreen,non-porous
+Abies grandis (Dougl. ex D. Don) Lindl.,ABGR,gymnosperm,evergreen,non-porous
+Abies holophylla Maxim.,ABHO,gymnosperm,evergreen,non-porous
+Abies kawakamii (Hayata) Ito,ABKA,gymnosperm,evergreen,non-porous
+Abies koreana Wils.,ABKO,gymnosperm,evergreen,non-porous
+Abies lasiocarpa (Hook.) Nutt.,ABLA,gymnosperm,evergreen,non-porous
+Abies magnifica A. Murr.,ABMA,gymnosperm,evergreen,non-porous
+Abies mariessi Mast.,ABMR,gymnosperm,evergreen,non-porous
+Abies marocana Trabut,ABMC,gymnosperm,evergreen,non-porous
+Abies nebrodensis (Lojac.) Mattei,ABNB,gymnosperm,evergreen,non-porous
+Abies nephrolepis Maxim.,ABNE,gymnosperm,evergreen,non-porous
+Abies nordmanniana (Stev.) Spach,ABNO,gymnosperm,evergreen,non-porous
+Abies numidica De Lannoy ex. Carr.,ABNU,gymnosperm,evergreen,non-porous
+Abies pindrow (Royle) Spach,ABPI,gymnosperm,evergreen,non-porous
+Abies pinsapo Boiss.,ABPN,gymnosperm,evergreen,non-porous
+Abies procera Rehd.,ABPR,gymnosperm,evergreen,non-porous
+Abies recurvata Mast.,ABRC,gymnosperm,evergreen,non-porous
+Abies religiosa Schlecht.,ABRE,gymnosperm,evergreen,non-porous
+Abies sachalinensis (Schmidt) Mast.,ABSA,gymnosperm,evergreen,non-porous
+Abies sibirica Ledeb.,ABSI,gymnosperm,evergreen,non-porous
+Abies spectabilis (D. Don) Spach,ABSB,gymnosperm,evergreen,non-porous
+Abies squamata Mast.,ABSQ,gymnosperm,evergreen,non-porous
+Abies vietchii Lindl.,ABVI,gymnosperm,evergreen,non-porous
 Acacia alpina F.Muell.,ACAL,,,
 Acacia catechu Willd.,ACCA,,,
 Acacia giraffae Willd.,ACGI,,,
@@ -304,7 +304,7 @@ Juniperus recurva Buch.-Ham. ex D. Don,JURE,,,
 Juniperus scopulorum Sarg.,JUSC,,,
 Juniperus semiglobosa Regel,JUSM,,,
 Juniperus seravschanica Komar.,JUSE,,,
-Juniperus thurifera L.,JUTH,gymnosperm,evergreen,conifer
+Juniperus thurifera L.,JUTH,gymnosperm,evergreen,non-porous
 Juniperus turkestanica Komar.,JUTU,,,
 Juniperus virginiana L.,JUVI,,,
 Khaya grandifolia C.DC.,KHGR,,,
@@ -318,15 +318,15 @@ Lagerstroemia flos-reginae Retz.,LSFL,,,
 Lagerstroemia parviflora Roxb.,LSPA,,,
 Lagerstroemia lanceolata Wall.,LSLA,,,
 Larix Mill.,LASP,,,
-Larix decidua Mill.,LADE,gymnosperm,deciduous,conifer
-Larix gmelinii (Rupr.) Litvin.,LAGM,gymnosperm,deciduous,conifer
+Larix decidua Mill.,LADE,gymnosperm,deciduous,non-porous
+Larix gmelinii (Rupr.) Litvin.,LAGM,gymnosperm,deciduous,non-porous
 Larix griffithiana (Lindl. & Gord.) Carr.,LAGR,,,
 Larix japonica Carr.,LAJA,,,
 Larix laricina (Du Roi) K. Koch,LALA,,,
 Larix lyalli Parl.,LALY,,,
 Larix occidentalis Nutt.,LAOC,,,
 Larix potanini Batal.,LAPO,,,
-Larix sibirica Ledeb.,LASI,gymnosperm,deciduous,conifer
+Larix sibirica Ledeb.,LASI,gymnosperm,deciduous,non-porous
 Laurelia philippiana Looser,LAPH,,,
 Laurelia sempervirens Tul.,LASE,,,
 Laxopterigium huasango,LAHU,,,
@@ -389,7 +389,7 @@ Phyllocladus aspleniifolius (Labill.) Hook. f.,PHAS,,,
 Phyllocladus glaucus Carr.,PHGL,,,
 Phyllocladus trichomanoides D. Don in Lamb.,PHTR,,,
 Picea A. Dietr.,PCSP,,,
-Picea abies (L.) Karst.,PCAB,gymnosperm,evergreen,conifer
+Picea abies (L.) Karst.,PCAB,gymnosperm,evergreen,non-porous
 Picea asperata Mast.,PCAS,,,
 Picea balfouriana,PCBA,,,
 Picea brachytyla (Franch.) Pritz.,PCBR,,,
@@ -401,7 +401,7 @@ Picea glehnii (Fr. Schmidt) Mast.,PCGN,,,
 Picea jezoensis (Sieb. & Zucc.) Carr.,PCJE,,,
 Picea likiangensis (Franchet) Pritzel,PCLI,,,
 "Picea mariana (Mill.) Britt., Sterns & Poggenb.",PCMA,,,
-Picea obovata,PCOB,gymnosperm,evergreen,conifer
+Picea obovata,PCOB,gymnosperm,evergreen,non-porous
 Picea omorika (Panc.) Purk.,PCOM,,,
 Picea orientalis (L.) Link,PCOR,,,
 Picea pungens Engelm.,PCPU,,,
@@ -412,74 +412,74 @@ Picea sitchensis (Bong.) Carr.,PCSI,,,
 Picea smithiana (Wall.) Boiss.,PCSM,,,
 Picea tienschanica Rupr.,PCTI,,,
 Pilgerodendron uviferum (Pilger) Florin,PLUV,,,
-Pinus L.,PISP,gymnosperm,evergreen,conifer
-Pinus albicaulis Engelm.,PIAL,gymnosperm,evergreen,conifer
-Pinus aristata Engelm. in Parry & Engelm.,PIAR,gymnosperm,evergreen,conifer
-Pinus armandii Franchet,PIAM,gymnosperm,evergreen,conifer
-Pinus balfouriana Grev. & Balf. in A. Murr.,PIBA,gymnosperm,evergreen,conifer
-Pinus banksiana Lamb.,PIBN,gymnosperm,evergreen,conifer
-Pinus brutia Ten,PIBR,gymnosperm,evergreen,conifer
-Pinus bungeana Zucc.,PIBU,gymnosperm,evergreen,conifer
-Pinus canariensis Chr. Sm. ex DC,PICN,gymnosperm,evergreen,conifer
-Pinus caribaea Mor.,PICA,gymnosperm,evergreen,conifer
-Pinus cembra L.,PICE,gymnosperm,evergreen,conifer
-Pinus cembroides Zucc.,PICM,gymnosperm,evergreen,conifer
-Pinus chihuahuana Engelm.,PICH,gymnosperm,evergreen,conifer
-Pinus contorta Dougl. ex Loud.,PICO,gymnosperm,evergreen,conifer
-Pinus coulteri D.Don,PICL,gymnosperm,evergreen,conifer
-Pinus densata (See note at bottom),PIDN,gymnosperm,evergreen,conifer
-Pinus densiflora Sieb. & Zucc.,PIDE,gymnosperm,evergreen,conifer
-Pinus echinata Mill.,PIEC,gymnosperm,evergreen,conifer
-Pinus edulis Engelm. in Wisliz.,PIED,gymnosperm,evergreen,conifer
-Pinus elliottii Engelm.,PIEL,gymnosperm,evergreen,conifer
-Pinus engelmannii Carr.,PIEN,gymnosperm,evergreen,conifer
-Pinus flexilis,PIFL,gymnosperm,evergreen,conifer
-Pinus gerardiana Wall. ex D. Don.,PIGE,gymnosperm,evergreen,conifer
-Pinus halepensis Mill.,PIHA,gymnosperm,evergreen,conifer
-Pinus heldreichii Christ,PIHE,gymnosperm,evergreen,conifer
-Pinus jeffreyi Grev. & Balf. in A. Murr.,PIJE,gymnosperm,evergreen,conifer
-Pinus kesiya Royle ex Gordon,PIKE,gymnosperm,evergreen,conifer
-Pinus koraiensis Sieb. & Zucc.,PIKO,gymnosperm,evergreen,conifer
-Pinus lagunae M.-F. Passini,PILG,gymnosperm,evergreen,conifer
-Pinus lambertiana Dougl.,PILA,gymnosperm,evergreen,conifer
-Pinus leucodermis Ant.,PILE,gymnosperm,evergreen,conifer
-Pinus longaeva D.K. Bailey,PILO,gymnosperm,evergreen,conifer
-Pinus massoniana Lamb.,PIMA,gymnosperm,evergreen,conifer
-Pinus merkusii Jungh. & De Vriese,PIMK,gymnosperm,evergreen,conifer
-Pinus mesogeensis Fieschi & Gaussen,PIME,gymnosperm,evergreen,conifer
-Pinus monophylla Torr. & Frem. in Frem.,PIMO,gymnosperm,evergreen,conifer
-Pinus montezumae Lamb.,PIMZ,gymnosperm,evergreen,conifer
-Pinus monticola Dougl. ex D. Don in Lamb.,PIMC,gymnosperm,evergreen,conifer
-Pinus mughus Scop. = Pinus mugo Turra,PIMU,gymnosperm,evergreen,conifer
-Pinus mugo Turra,PIMG,gymnosperm,evergreen,conifer
-Pinus muricata D.Don,PIMR,gymnosperm,evergreen,conifer
-Pinus nigra Arnold,PINI,gymnosperm,evergreen,conifer
-Pinus occidentalis Swartz,PIOC,gymnosperm,evergreen,conifer
-Pinus oocarpa Schiede,PIOO,gymnosperm,evergreen,conifer
-Pinus palustris Mill.,PIPA,gymnosperm,evergreen,conifer
-Pinus patula Schiede & Deppe,PIPT,gymnosperm,evergreen,conifer
-Pinus peuce Griseb.,PIPE,gymnosperm,evergreen,conifer
-Pinus pinaster Ait.,PIPI,gymnosperm,evergreen,conifer
-Pinus pinea L.,PIPN,gymnosperm,evergreen,conifer
-Pinus ponderosa Dougl. ex Laws.,PIPO,gymnosperm,evergreen,conifer
-Pinus pumila (Pall.) Regel,PIPM,gymnosperm,evergreen,conifer
-Pinus pungens Lamb.,PIPU,gymnosperm,evergreen,conifer
-Pinus quadrifolia Parl. ex Sudw.,PIQU,gymnosperm,evergreen,conifer
-Pinus radiata D. Don,PIRA,gymnosperm,evergreen,conifer
-Pinus resinosa Ait.,PIRE,gymnosperm,evergreen,conifer
-Pinus rigida Mill.,PIRI,gymnosperm,evergreen,conifer
-Pinus roxburghii Sarg.,PIRO,gymnosperm,evergreen,conifer
-Pinus sibirica Du Tour,PISI,gymnosperm,evergreen,conifer
-Pinus strobiformis Engelm.,PISF,gymnosperm,evergreen,conifer
-Pinus strobus L.,PIST,gymnosperm,evergreen,conifer
-Pinus sylvestris L.,PISY,gymnosperm,evergreen,conifer
-Pinus tabulaeformis Carr.,PITB,gymnosperm,evergreen,conifer
-Pinus taeda L.,PITA,gymnosperm,evergreen,conifer
-Pinus thunbergii Parl.,PITH,gymnosperm,evergreen,conifer
-Pinus torreyana Parry ex Carr.,PITO,gymnosperm,evergreen,conifer
-Pinus uncinata Mill. ex Mirb. in Buffon,PIUN,gymnosperm,evergreen,conifer
-Pinus virginiana Mill.,PIVI,gymnosperm,evergreen,conifer
-Pinus wallichiana A.B. Jackson,PIWA,gymnosperm,evergreen,conifer
+Pinus L.,PISP,gymnosperm,evergreen,non-porous
+Pinus albicaulis Engelm.,PIAL,gymnosperm,evergreen,non-porous
+Pinus aristata Engelm. in Parry & Engelm.,PIAR,gymnosperm,evergreen,non-porous
+Pinus armandii Franchet,PIAM,gymnosperm,evergreen,non-porous
+Pinus balfouriana Grev. & Balf. in A. Murr.,PIBA,gymnosperm,evergreen,non-porous
+Pinus banksiana Lamb.,PIBN,gymnosperm,evergreen,non-porous
+Pinus brutia Ten,PIBR,gymnosperm,evergreen,non-porous
+Pinus bungeana Zucc.,PIBU,gymnosperm,evergreen,non-porous
+Pinus canariensis Chr. Sm. ex DC,PICN,gymnosperm,evergreen,non-porous
+Pinus caribaea Mor.,PICA,gymnosperm,evergreen,non-porous
+Pinus cembra L.,PICE,gymnosperm,evergreen,non-porous
+Pinus cembroides Zucc.,PICM,gymnosperm,evergreen,non-porous
+Pinus chihuahuana Engelm.,PICH,gymnosperm,evergreen,non-porous
+Pinus contorta Dougl. ex Loud.,PICO,gymnosperm,evergreen,non-porous
+Pinus coulteri D.Don,PICL,gymnosperm,evergreen,non-porous
+Pinus densata (See note at bottom),PIDN,gymnosperm,evergreen,non-porous
+Pinus densiflora Sieb. & Zucc.,PIDE,gymnosperm,evergreen,non-porous
+Pinus echinata Mill.,PIEC,gymnosperm,evergreen,non-porous
+Pinus edulis Engelm. in Wisliz.,PIED,gymnosperm,evergreen,non-porous
+Pinus elliottii Engelm.,PIEL,gymnosperm,evergreen,non-porous
+Pinus engelmannii Carr.,PIEN,gymnosperm,evergreen,non-porous
+Pinus flexilis,PIFL,gymnosperm,evergreen,non-porous
+Pinus gerardiana Wall. ex D. Don.,PIGE,gymnosperm,evergreen,non-porous
+Pinus halepensis Mill.,PIHA,gymnosperm,evergreen,non-porous
+Pinus heldreichii Christ,PIHE,gymnosperm,evergreen,non-porous
+Pinus jeffreyi Grev. & Balf. in A. Murr.,PIJE,gymnosperm,evergreen,non-porous
+Pinus kesiya Royle ex Gordon,PIKE,gymnosperm,evergreen,non-porous
+Pinus koraiensis Sieb. & Zucc.,PIKO,gymnosperm,evergreen,non-porous
+Pinus lagunae M.-F. Passini,PILG,gymnosperm,evergreen,non-porous
+Pinus lambertiana Dougl.,PILA,gymnosperm,evergreen,non-porous
+Pinus leucodermis Ant.,PILE,gymnosperm,evergreen,non-porous
+Pinus longaeva D.K. Bailey,PILO,gymnosperm,evergreen,non-porous
+Pinus massoniana Lamb.,PIMA,gymnosperm,evergreen,non-porous
+Pinus merkusii Jungh. & De Vriese,PIMK,gymnosperm,evergreen,non-porous
+Pinus mesogeensis Fieschi & Gaussen,PIME,gymnosperm,evergreen,non-porous
+Pinus monophylla Torr. & Frem. in Frem.,PIMO,gymnosperm,evergreen,non-porous
+Pinus montezumae Lamb.,PIMZ,gymnosperm,evergreen,non-porous
+Pinus monticola Dougl. ex D. Don in Lamb.,PIMC,gymnosperm,evergreen,non-porous
+Pinus mughus Scop. = Pinus mugo Turra,PIMU,gymnosperm,evergreen,non-porous
+Pinus mugo Turra,PIMG,gymnosperm,evergreen,non-porous
+Pinus muricata D.Don,PIMR,gymnosperm,evergreen,non-porous
+Pinus nigra Arnold,PINI,gymnosperm,evergreen,non-porous
+Pinus occidentalis Swartz,PIOC,gymnosperm,evergreen,non-porous
+Pinus oocarpa Schiede,PIOO,gymnosperm,evergreen,non-porous
+Pinus palustris Mill.,PIPA,gymnosperm,evergreen,non-porous
+Pinus patula Schiede & Deppe,PIPT,gymnosperm,evergreen,non-porous
+Pinus peuce Griseb.,PIPE,gymnosperm,evergreen,non-porous
+Pinus pinaster Ait.,PIPI,gymnosperm,evergreen,non-porous
+Pinus pinea L.,PIPN,gymnosperm,evergreen,non-porous
+Pinus ponderosa Dougl. ex Laws.,PIPO,gymnosperm,evergreen,non-porous
+Pinus pumila (Pall.) Regel,PIPM,gymnosperm,evergreen,non-porous
+Pinus pungens Lamb.,PIPU,gymnosperm,evergreen,non-porous
+Pinus quadrifolia Parl. ex Sudw.,PIQU,gymnosperm,evergreen,non-porous
+Pinus radiata D. Don,PIRA,gymnosperm,evergreen,non-porous
+Pinus resinosa Ait.,PIRE,gymnosperm,evergreen,non-porous
+Pinus rigida Mill.,PIRI,gymnosperm,evergreen,non-porous
+Pinus roxburghii Sarg.,PIRO,gymnosperm,evergreen,non-porous
+Pinus sibirica Du Tour,PISI,gymnosperm,evergreen,non-porous
+Pinus strobiformis Engelm.,PISF,gymnosperm,evergreen,non-porous
+Pinus strobus L.,PIST,gymnosperm,evergreen,non-porous
+Pinus sylvestris L.,PISY,gymnosperm,evergreen,non-porous
+Pinus tabulaeformis Carr.,PITB,gymnosperm,evergreen,non-porous
+Pinus taeda L.,PITA,gymnosperm,evergreen,non-porous
+Pinus thunbergii Parl.,PITH,gymnosperm,evergreen,non-porous
+Pinus torreyana Parry ex Carr.,PITO,gymnosperm,evergreen,non-porous
+Pinus uncinata Mill. ex Mirb. in Buffon,PIUN,gymnosperm,evergreen,non-porous
+Pinus virginiana Mill.,PIVI,gymnosperm,evergreen,non-porous
+Pinus wallichiana A.B. Jackson,PIWA,gymnosperm,evergreen,non-porous
 Pisonia grandis R.Br.,PSGR,,,
 Pistacia L.,PTSP,,,
 Pistacia atlantica Desf.,PTAT,,,
@@ -532,7 +532,7 @@ Pseudobombax munguba Mart. & Zucc.,PSMU,,,
 Pseudobombax septenatum (Jacq.) Dugand,PSSE,,,
 Pseudotsuga japonica (Shirasawa) Beissn.,PSJA,,,
 Pseudotsuga macrocarpa (Vasey) Mayr,PSMA,,,
-Pseudotsuga menziesii (Mirb.) Franco,PSME,gymnosperm,evergreen,conifer
+Pseudotsuga menziesii (Mirb.) Franco,PSME,gymnosperm,evergreen,non-porous
 Pseudowintera axillaris (Forster & Forster f.) Dandy,PSAX,,,
 Pseudowintera colorata (Raoul) Dandy,PSCO,,,
 Pseudoxandra polyphleba (Diels) R.E. Fr.,PSXA,,,

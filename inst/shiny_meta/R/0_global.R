@@ -108,7 +108,7 @@ max_char_limit <- function(value, limit) {
 input_field_names <- c(
   ds_data = 'Dataset',
   ds_name = 'Dataset name',
-  ds_desc = 'Dataset description',
+  description = 'Dataset description',
   author_data = 'Authors',
   funding_data = 'Funding',
   site_data = 'Sites',

@@ -122,7 +122,7 @@
             "col_header": "Country",
             "col_header_tippy": "Country code and name (ISO 3166-1 alpha-2)",
             "type": "autocomplete",
-            "required": false,
+            "required": true,
             "options": "country_codes_names"
         },
         "grant_name":
@@ -145,7 +145,7 @@
         "site_code":
         {
             "col_header": "Site code",
-            "col_header_tippy": "",
+            "col_header_tippy": "Identifier for the site, unique within dataset",
             "type": "character",
             "readOnly": true
         },
@@ -174,7 +174,7 @@
         "latitude":
         {
             "col_header": "Latitude",
-            "col_header_tippy": "",
+            "col_header_tippy": "Latitude of the site in decimal degrees (WGS84)",
             "type": "numeric",
             "required": true,
             "min_val": -90,
@@ -183,7 +183,7 @@
         "longitude":
         {
             "col_header": "Longitude",
-            "col_header_tippy": "",
+            "col_header_tippy": "Longitude of the site in decimal degrees (WGS84)",
             "type": "numeric",
             "required": true,
             "min_val": -180,
@@ -200,7 +200,7 @@
         "elevation":
         {
             "col_header": "Elevation",
-            "col_header_tippy": "",
+            "col_header_tippy": "Elevation of the site above sea level",
             "type": "numeric",
             "required": true,
             "min_val": -420,
@@ -209,7 +209,7 @@
         "aspect":
         {
             "col_header": "Aspect",
-            "col_header_tippy": "",
+            "col_header_tippy": "Orientation of the slope at the site (degrees from north)",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -218,7 +218,7 @@
         "slope":
         {
             "col_header": "Slope",
-            "col_header_tippy": "",
+            "col_header_tippy": "Slope of the terrain at the site in degrees",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -227,7 +227,7 @@
         "topography":
         {
             "col_header": "Site topography",
-            "col_header_tippy": "",
+            "col_header_tippy": "Small-scale terrain features",
             "type": "dropdown",
             "required": false,
             "options":
@@ -244,20 +244,21 @@
         "soil_depth":
         {
             "col_header": "Soil depth",
-            "col_header_tippy": "",
+            "col_header_tippy": "Depth of the soil at the site",
             "type": "dropdown",
             "required": false,
             "options":
             [
-                "0-100 cm",
-                "100-200 cm",
-                ">200 cm"
+                "0-20 cm",
+                "20-50 cm",
+                "50-100 cm",
+                ">100 cm"
             ]
         },
         "soil_water_capacity":
         {
             "col_header": "Soil water holding cap.",
-            "col_header_tippy": "",
+            "col_header_tippy": "Water holding capacity of the soil at the site",
             "type": "dropdown",
             "required": false,
             "options":
@@ -267,10 +268,23 @@
                 "high"
             ]
         },
-        "stand_type":
+        "soil_moisture":
         {
-            "col_header": "Stand type",
-            "col_header_tippy": "",
+            "col_header": "Soil moisture",
+            "col_header_tippy": "Moisture level of soil at the site",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "low",
+                "medium",
+                "high"
+            ]
+        },
+        "stand_composition":
+        {
+            "col_header": "Stand composition",
+            "col_header_tippy": "Composition of forest stand",
             "type": "dropdown",
             "required": false,
             "options":
@@ -285,20 +299,19 @@
         "stand_structure":
         {
             "col_header": "Stand structure",
-            "col_header_tippy": "",
+            "col_header_tippy": "Structural description of the forest stand",
             "type": "dropdown",
             "required": false,
             "options":
             [
                 "regular",
-                "irregular",
-                "old growth"
+                "irregular"
             ]
         },
-        "stand_age":
+        "stand_age_str":
         {
-            "col_header": "Stand age",
-            "col_header_tippy": "",
+            "col_header": "Age structure",
+            "col_header_tippy": "Structure of the forest stand age",
             "type": "dropdown",
             "required": false,
             "options":
@@ -307,10 +320,26 @@
                 "unevenaged"
             ]
         },
+        "stand_age_class":
+        {
+            "col_header": "Stand age",
+            "col_header_tippy": "Age class of the forest stand",
+            "type": "dropdown",
+            "required": false,
+            "options":
+            [
+                "<5 years",
+                "5-30 years",
+                "30-100 years",
+                "100-200 years",
+                "200-300 years",
+                ">300 years"
+            ]
+        },
         "stand_main_species":
         {
             "col_header": "Main species",
-            "col_header_tippy": "",
+            "col_header_tippy": "Dominant tree species in the forest stand (ITRDB species code)",
             "type": "autocomplete",
             "required": false,
             "options": "species_names"
@@ -318,11 +347,12 @@
         "stand_management":
         {
             "col_header": "Management",
-            "col_header_tippy": "",
+            "col_header_tippy": "Level of management applied at the site",
             "type": "dropdown",
             "required": false,
             "options":
             [
+                "primary",
                 "unmanaged",
                 "extensive",
                 "moderate",
@@ -335,14 +365,14 @@
         "tree_code":
         {
             "col_header": "Tree code",
-            "col_header_tippy": "Identifying code for the tree (rxs2xcell generated)",
+            "col_header_tippy": "Identifying code for the tree (generated)",
             "type": "character",
             "readOnly": true
         },
         "site_code":
         {
             "col_header": "Site code",
-            "col_header_tippy": "Site to which the tree is assigned",
+            "col_header_tippy": "Site to which the tree belongs",
             "type": "character",
             "readOnly": true
         },
@@ -371,8 +401,8 @@
         },
         "wood_type":
         {
-            "col_header": "Wood type",
-            "col_header_tippy": "",
+            "col_header": "Phylogenetic group",
+            "col_header_tippy": "The type of wood of the tree, indicating whether it is hardwood or softwood",
             "type": "dropdown",
             "required": false,
             "options":
@@ -384,24 +414,25 @@
         "leaf_habit":
         {
             "col_header": "Leaf habit",
-            "col_header_tippy": "",
+            "col_header_tippy": "The habit or nature of the tree's leaves, whether deciduous or evergreen",
             "type": "dropdown",
             "required": false,
             "options":
             [
                 "evergreen",
-                "deciduous"
+                "deciduous",
+                "mixed"
             ]
         },
         "tree_ring_structure":
         {
-            "col_header": "Treering structure",
-            "col_header_tippy": "",
+            "col_header": "Ring structure",
+            "col_header_tippy": "Type of tree-ring structure",
             "type": "dropdown",
             "required": false,
             "options":
             [
-                "conifer",
+                "non-porous",
                 "diffuse-porous",
                 "ring-porous"
             ]
@@ -409,7 +440,7 @@
         "tree_treatment":
         {
             "col_header": "Treatment",
-            "col_header_tippy": "",
+            "col_header_tippy": "Indicates if the tree has been manipulated",
             "type": "dropdown",
             "required": false,
             "options":
@@ -420,13 +451,16 @@
                 "water exclusion",
                 "watering",
                 "heating",
-                "cooling"
+                "cooling",
+                "fertilization",
+                "girdling",
+                "other treatments"
             ]
         },
         "tree_dbh":
         {
             "col_header": "Diameter at breast height",
-            "col_header_tippy": "",
+            "col_header_tippy": "Diameter at 1.3 meters above ground",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -435,7 +469,7 @@
         "tree_height":
         {
             "col_header": "Total height",
-            "col_header_tippy": "",
+            "col_header_tippy": "The total height of the tree from the base to the topmost point",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -444,7 +478,7 @@
         "tree_age":
         {
             "col_header": "Age",
-            "col_header_tippy": "",
+            "col_header_tippy": "The age of the tree, generally calculated by dendrochronological methods or estimated from growth models",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -453,7 +487,7 @@
         "tree_sex":
         {
             "col_header": "Sex",
-            "col_header_tippy": "",
+            "col_header_tippy": "Sex of the tree (if applicable, e.g., dioecious species)",
             "type": "dropdown",
             "required": false,
             "options":
@@ -467,21 +501,20 @@
         "tree_social_status":
         {
             "col_header": "Social status",
-            "col_header_tippy": "",
+            "col_header_tippy": "Social status of the tree",
             "type": "dropdown",
             "required": false,
             "options":
             [
                 "dominant",
                 "co-dominant",
-                "suppressed",
-                "dying"
+                "suppressed"
             ]
         },
         "tree_health_status":
         {
             "col_header": "Health condition",
-            "col_header_tippy": "",
+            "col_header_tippy": "Health condition of the tree",
             "type": "dropdown",
             "required": false,
             "options":
@@ -495,7 +528,7 @@
         "tree_origin":
         {
             "col_header": "Origin",
-            "col_header_tippy": "",
+            "col_header_tippy": "Origin of the tree",
             "type": "dropdown",
             "required": false,
             "options":
@@ -504,7 +537,8 @@
                 "natural regeneration",
                 "potted",
                 "coppiced",
-                "grafted"
+                "grafted",
+                "cloned"
             ]
         },
         "tree_comment":
@@ -593,12 +627,13 @@
         "sample_embedding":
         {            
             "col_header": "Embedding method",
-            "col_header_tippy": "",
+            "col_header_tippy": "Description of the method used to prepare the sample",
             "type": "dropdown",
             "required": false,
             "options":
             [
-                "paraffin embedding",
+                "paraffin",
+                "resin",
                 "none"
             ]
         },
@@ -645,7 +680,7 @@
         "sample_date":
         {            
             "col_header": "Sample date",
-            "col_header_tippy": "",
+            "col_header_tippy": "when was the slide created",
             "type": "date",
             "required": true
         },
@@ -694,7 +729,26 @@
             "options": 
             [
                 "Sarafin Astrablue", 
-                "other"
+                "FASGA",
+                "Cresyl violet",
+                "Fast green",
+                "other",
+                "none"
+            ]
+        },
+        "slide_mounting":
+        {            
+            "col_header": "Description of the mounting method used",
+            "col_header_tippy": "",
+            "type": "dropdown",
+            "required": false,
+            "options": 
+            [
+                "Euparal", 
+                "Canada Balsam",
+                "Eukitt",
+                "other",
+                "none"
             ]
         },
         "slide_archived":

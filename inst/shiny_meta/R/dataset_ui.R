@@ -71,7 +71,7 @@ dataset_ui <- function(id, countries_list) {
           width = 1/2,
           textInput(ns("ds_name"), "Dataset name", value = NA,
                     placeholder = "Specify a name for your dataset (max 64 char.)"),
-          textAreaInput(ns("ds_desc"), "Description", rows = 4,
+          textAreaInput(ns("description"), "Description", rows = 4,
                         placeholder = "Provide a brief description of your dataset")
         ),
         layout_column_wrap(
@@ -98,7 +98,7 @@ dataset_ui <- function(id, countries_list) {
             # Conditional panel for private dataset: Embargo date
             conditionalPanel(
               condition = "input.ds_access == 'restricted'",
-              dateInput(ns("ds_embargoed"),
+              dateInput(ns("embargoed_until"),
                         "If applicable, select an embargo date",
                         value = Sys.Date() + 365),
               span("*Access rights will only be changed after explicit confirmation by the data owners."),
@@ -108,7 +108,7 @@ dataset_ui <- function(id, countries_list) {
         layout_column_wrap(
           width = 1/2,
           textAreaInput(
-            ns('ds_ackn'), "Acknowledgements", rows = 3,
+            ns('acknowledgements'), "Acknowledgements", rows = 3,
             placeholder = "If applicable, acknowledge the contributions of specific colleagues, institutions, or agencies that aided these research efforts. Note that all authors and funding sources must be listed separately below.")
         )
       ),

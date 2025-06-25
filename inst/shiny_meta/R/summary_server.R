@@ -2,21 +2,26 @@ summary_server <- function(id, main_session, start_info, dataset_info, site_info
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    shinyjs::disable("btn_save")
+    #shinyjs::disable("btn_save")
 
     valchecks_combined <- reactive({
-      dplyr::bind_rows(
+      df_checks <- dplyr::bind_rows(list(
         start_info$val_check(),
         dataset_info$val_check(),
-        site_info$val_check()
+        site_info$val_check())
       )
+
+      df_checks <- df_checks %>% dplyr::mutate(
+        type = dplyr::if_else(grepl('invalid', tolower(message)), 'warning', 'error')
+      )
+      df_checks
     })
 
     output$DT_valcheck <- DT::renderDataTable({
       DT::datatable(
         valchecks_combined() %>% dplyr::select(-dplyr::any_of(c('fname', 'tname'))),
         selection = 'none',
-        options = list(dom = 't')
+        options = list(dom = 'pt',  pageLength = 10)
       )
 
     })
@@ -25,11 +30,11 @@ summary_server <- function(id, main_session, start_info, dataset_info, site_info
       results <- list()
       results$ds_data <- list(
         ds_name = dataset_info$input_meta$ds_data$ds_name(),
-        ds_desc = dataset_info$input_meta$ds_data$ds_desc(),
+        description = dataset_info$input_meta$ds_data$description(),
         ds_access = dataset_info$input_meta$ds_data$ds_access(),
         ds_license = dataset_info$input_meta$ds_data$ds_license(),
-        ds_embargoed = dataset_info$input_meta$ds_data$ds_embargoed(),
-        ds_ackn = dataset_info$input_meta$ds_data$ds_ackn()
+        embargoed_until = dataset_info$input_meta$ds_data$embargoed_until(),
+        acknowledgements = dataset_info$input_meta$ds_data$acknowledgements()
       )
       results$author_data <- dataset_info$input_meta$author_data()
       results$funding_data <- dataset_info$input_meta$funding_data()

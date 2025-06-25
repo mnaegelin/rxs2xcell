@@ -47,13 +47,13 @@ dataset_server <- function(id, main_session, start_info,
         meta_json <- start_info$input_meta$meta_json
         ds_data <- meta_json$ds_data
         updateTextInput(session, "ds_name", value = ds_data$ds_name)
-        updateTextAreaInput(session, "ds_desc", value = ds_data$ds_desc)
-        updateTextAreaInput(session, "ds_ackn", value = ds_data$ds_ackn)
+        updateTextAreaInput(session, "description", value = ds_data$description)
+        updateTextAreaInput(session, "acknowledgements", value = ds_data$acknowledgements)
         updateRadioButtons(session, "ds_access", selected = ds_data$ds_access)
         if (ds_data$ds_access == "public"){
           updateSelectizeInput(session, "ds_license", selected = ds_data$ds_license)
         } else if (ds_data$ds_access == "restricted"){
-          updateDateInput(session, "ds_embargoed", value = as.Date(ds_data$ds_embargoed))
+          updateDateInput(session, "embargoed_until", value = as.Date(ds_data$embargoed_until))
         }
         author_data_in(meta_json$author_data)
         funding_data_in(meta_json$funding_data)
@@ -70,7 +70,7 @@ dataset_server <- function(id, main_session, start_info,
     #   "ds_name",
     #   shinyvalidate::sv_regex("^[a-zA-Z0-9]*$", "Only alphanumeric characters allowed")
     # )
-    iv_gen$add_rule("ds_desc", shinyvalidate::sv_required())
+    iv_gen$add_rule("description", shinyvalidate::sv_required())
 
     iv_gen$enable() # TODO: enable from start?
 
@@ -680,11 +680,11 @@ dataset_server <- function(id, main_session, start_info,
           input_meta = list(
             ds_data = list(
               ds_name = reactive(input$ds_name),
-              ds_desc = reactive(input$ds_desc),
+              description = reactive(input$description),
               ds_access = reactive(input$ds_access),
               ds_license = reactive(input$ds_license),
-              ds_embargoed = reactive(input$ds_embargoed),
-              ds_ackn = reactive(input$ds_ackn)
+              embargoed_until = reactive(input$embargoed_until),
+              acknowledgements = reactive(input$acknowledgements)
             ),
             author_data = author_data_out,
             funding_data = funding_data_out,

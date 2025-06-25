@@ -512,6 +512,9 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
 
       # 1) site table
       df_site <- site_data_out()
+      # for (col in names(df_site)){
+      #   print(c(col, site_tbl[[col]]$type))
+      # }
       results$site_data <- collect_hot_val_results(df_site, site_tbl)
 
       # 2) tree table

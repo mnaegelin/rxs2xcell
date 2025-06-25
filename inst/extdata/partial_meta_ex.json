@@ -87,7 +87,7 @@
             "longitude": 92.9552,
             "country": "Russian Federation  (RU)",
             "elevation": 164,
-            "stand_type": "mono gymnosperm",
+            "stand_composition": "mono gymnosperm",
             "stand_structure": "regular",
             "stand_main_species": "",
             "stand_management": "extensive"
@@ -103,7 +103,7 @@
             "elevation": null,
             "topography": "",
             "soil_depth": "",
-            "stand_type": ""
+            "stand_composition": ""
         }
     ],
     "tree_data":
