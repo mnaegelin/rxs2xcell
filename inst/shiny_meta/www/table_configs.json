@@ -39,7 +39,7 @@
             "type": "text",
             "required": true
         },
-        "org_rorid":
+        "rorid":
         {
             "col_header": "RORID",
             "col_header_tippy": "RORID, e.g. 04bs5yc70",
@@ -102,7 +102,7 @@
             "type": "text",
             "required": true
         },
-        "inst_rorid":
+        "rorid":
         {
             "col_header": "RORID",
             "col_header_tippy": "RORID, e.g. 04bs5yc70",
@@ -552,35 +552,35 @@
     "woodpiece_tbl":
     {
         "woodpiece_code":
-        {            
+        {
             "col_header": "Woodpiece code",
             "col_header_tippy": "",
             "type": "character",
             "readOnly": true
         },
         "tree_code":
-        {            
+        {
             "col_header": "Tree code",
             "col_header_tippy": "",
             "type": "character",
             "readOnly": true
         },
         "n_slides":
-        {            
+        {
             "col_header": "Nr of slides",
             "col_header_tippy": "",
             "type": "numeric",
             "readOnly": true
         },
         "sample_date":
-        {            
+        {
             "col_header": "Sample date",
             "col_header_tippy": "when was the sample collected from the tree",
             "type": "date",
             "required": true
         },
         "organ":
-        {            
+        {
             "col_header": "Organ",
             "col_header_tippy": "",
             "type": "dropdown",
@@ -593,7 +593,7 @@
             ]
         },
         "sampling_height":
-        {            
+        {
             "col_header":  "Sampling height",
             "col_header_tippy": "can be negative for root samples",
             "type": "numeric",
@@ -602,7 +602,7 @@
             "max_val": 150
         },
         "sample_apex_distance":
-        {            
+        {
             "col_header": "Distance from apex",
             "col_header_tippy": "",
             "type": "numeric",
@@ -611,7 +611,7 @@
             "max_val": 150
         },
         "sample_type":
-        {            
+        {
             "col_header": "Sample type",
             "col_header_tippy": "",
             "type": "dropdown",
@@ -625,7 +625,7 @@
             ]
         },
         "sample_embedding":
-        {            
+        {
             "col_header": "Embedding method",
             "col_header_tippy": "Description of the method used to prepare the sample",
             "type": "dropdown",
@@ -638,14 +638,14 @@
             ]
         },
         "sample_archived":
-        {            
+        {
             "col_header": "Sample archived",
             "col_header_tippy": "",
             "type": "checkbox",
             "required": false
         },
         "pith_year":
-        {            
+        {
             "col_header": "Pith year",
             "col_header_tippy": "",
             "type": "numeric",
@@ -657,35 +657,35 @@
     "slide_tbl":
     {
         "slide_code":
-        {            
+        {
             "col_header": "Slide code",
             "col_header_tippy": "Identifying code",
             "type": "character",
             "readOnly": true
         },
         "woodpiece_code":
-        {            
+        {
             "col_header": "Woodpiece code",
             "col_header_tippy": "To which woodpiece the slide belongs",
             "type": "character",
             "readOnly": true
         },
         "n_imgs":
-        {            
+        {
             "col_header": "Nr of images",
             "col_header_tippy": "",
             "type": "numeric",
             "readOnly": true
         },
         "sample_date":
-        {            
+        {
             "col_header": "Sample date",
             "col_header_tippy": "when was the slide created",
             "type": "date",
             "required": true
         },
         "sect_thickness":
-        {            
+        {
             "col_header": "Section thickness",
             "col_header_tippy": "",
             "type": "numeric",
@@ -694,7 +694,7 @@
             "max_val": 100
         },
         "cutting_plane":
-        {            
+        {
             "col_header": "Cutting plane",
             "col_header_tippy": "",
             "type": "dropdown",
@@ -707,7 +707,7 @@
             ]
         },
         "slide_prep":
-        {            
+        {
             "col_header": "Slide preparation",
             "col_header_tippy": "",
             "type": "dropdown",
@@ -721,14 +721,14 @@
             ]
         },
         "slide_staining":
-        {            
+        {
             "col_header": "Staining method",
             "col_header_tippy": "",
             "type": "dropdown",
             "required": false,
-            "options": 
+            "options":
             [
-                "Sarafin Astrablue", 
+                "Sarafin Astrablue",
                 "FASGA",
                 "Cresyl violet",
                 "Fast green",
@@ -737,14 +737,14 @@
             ]
         },
         "slide_mounting":
-        {            
+        {
             "col_header": "Description of the mounting method used",
             "col_header_tippy": "",
             "type": "dropdown",
             "required": false,
-            "options": 
+            "options":
             [
-                "Euparal", 
+                "Euparal",
                 "Canada Balsam",
                 "Eukitt",
                 "other",
@@ -752,14 +752,14 @@
             ]
         },
         "slide_archived":
-        {            
+        {
             "col_header": "Slide archived",
             "col_header_tippy": "",
             "type": "checkbox",
             "required": false
         },
         "img_cap_system":
-        {            
+        {
             "col_header": "Image capturing system",
             "col_header_tippy": "",
             "type": "dropdown",
@@ -772,7 +772,7 @@
             ]
         },
         "data_structure":
-        {            
+        {
             "col_header": "Data structure",
             "col_header_tippy": "",
             "type": "dropdown",

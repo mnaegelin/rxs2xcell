@@ -10,59 +10,61 @@ start_ui <- function(id) {
       span("Start a new submission from the raw metadata inferred from images and ROXAS settings
            files with the", code('rxs2xcell'), 'package, or continue by
            re-loading a partially completed metadata file.'),
-      # card(
-      #   class = 'card-note',
-      #   card_header(
-      #     class = 'bg-secondary',
-      #     'Input data'),
-      #   radioButtons(
-      #     inputId = ns("input_src"),
-      #     label = "Choose a data source to start",
-      #     choices = list(
-      #       "Use df_meta available in R environment" = "df_meta_env",
-      #       "Use df_meta loaded from .csv" = "df_meta_csv",
-      #       "Use partially completed metadata contribution from .json" = "df_meta_json"
-      #     ),
-      #     selected = character(0)
-      #   ),
-      #   fileInput(
-      #     inputId = ns("file_input"),
-      #     label = "Upload file:",
-      #     accept = c(".csv", ".json")
-      #   ),
-      #   actionButton(
-      #     inputId = ns("btn_load_input"),
-      #     label = "Load data"
-      #   )
-      # ),
 
-      # EXAMPLE ONLY
-      card(
-        class = 'card-note',
-        card_header(
-          class = 'bg-secondary',
-          'Input data'),
-        span('Select and load a data source to start:'),
-        radioButtons(
-          inputId = ns("input_src_ex"),
-          label = "Example data",
-          choices = list(
-            "Start fresh from automatically extracted metadata" = "df_meta_env",
-            #"Use df_meta loaded from .csv" = "df_meta_csv",
-            "Start from partially completed metadata file" = "df_meta_json"
+      # If example_run is TRUE, show example data options
+      if (example_run){
+        card(
+          class = 'card-note',
+          card_header(
+            class = 'bg-secondary',
+            'Input data'),
+          span('Select and load a data source to start:'),
+          radioButtons(
+            inputId = ns("input_src_ex"),
+            label = "Example data",
+            choices = list(
+              "Start fresh from automatically extracted metadata" = "df_meta_env",
+              "Start from partially completed metadata file" = "df_meta_json"
+            ),
+            selected = character(0)
           ),
-          selected = character(0)
-        ),
-        fileInput(
-          inputId = ns("file_input_ex"),
-          label = "Upload own file",
-          accept = c(".csv", ".json")
-        ),
-        actionButton(
-          inputId = ns("btn_load_input_ex"),
-          label = "Load data"
+          fileInput(
+            inputId = ns("file_input_ex"),
+            label = "Upload own file",
+            accept = c(".csv", ".json")
+          ),
+          actionButton(
+            inputId = ns("btn_load_input_ex"),
+            label = "Load data"
+          )
         )
-      ),
+      } else {
+        card(
+          class = 'card-note',
+          card_header(
+            class = 'bg-secondary',
+            'Input data'),
+          radioButtons(
+            inputId = ns("input_src"),
+            label = "Choose a data source to start",
+            choices = list(
+              "Use df_meta available in R environment" = "df_meta_env",
+              "Use df_meta loaded from .csv" = "df_meta_csv",
+              "Use partially completed metadata contribution from .json" = "df_meta_json"
+            ),
+            selected = character(0)
+          ),
+          fileInput(
+            inputId = ns("file_input"),
+            label = "Upload file:",
+            accept = c(".csv", ".json")
+          ),
+          actionButton(
+            inputId = ns("btn_load_input"),
+            label = "Load data"
+          )
+        )
+      },
 
       hr(),
       span(

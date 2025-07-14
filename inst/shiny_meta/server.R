@@ -18,8 +18,10 @@ server <- function(input, output, session) {
 
   summary_server('summary', session, start_info, dataset_info, site_info)
 
-  # output$debug <- renderPrint({
-  # })
+
+   output$debug <- renderPrint({
+     example_run
+   })
 
   observeEvent(input$contact_link, {
     showModal(modalDialog(

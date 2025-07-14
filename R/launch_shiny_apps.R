@@ -22,7 +22,8 @@ launch_coverage_app <- function() {
 #'
 # full: shiny, bslib,
 # explicit: DT, dplyr, shinyjs, reactable, shinyvalidata, data.tree, networkD3
-launch_metadata_app <- function() {
+launch_metadata_app <- function(example_run = FALSE) {
+  options(rxs2xcell.shinymeta.example_run = example_run)
   app_dir <- system.file("shiny_meta", package = "rxs2xcell")
   if (app_dir == "") {
     stop("Could not find the Shiny app directory. Reinstall the package.")

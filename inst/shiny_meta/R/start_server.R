@@ -44,7 +44,7 @@ create_table_sketch <- function(cols_structure, cols_img, cols_settings, cols_pa
 start_server <- function(id, main_session) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-    shinyjs::disable("file_input_ex")
+
 
     # BUTTONS AND INPUTS -------------------------------------------------------
     # toggle file input based on input source radiobuttons
@@ -118,7 +118,8 @@ start_server <- function(id, main_session) {
 
 
     # --------------------
-    # EXAMPLE ONLY
+    # EXAMPLE ONLY (no need for if statements, if not example_run, these ui elements just don't exist)
+    shinyjs::disable("file_input_ex") # this is just a 'for show' button
     observeEvent(input$btn_load_input_ex, {
       # check if df is already set
       if (!is.null(input_meta$df)) {

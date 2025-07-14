@@ -80,6 +80,7 @@ get_input_files <- function(path_in) {
   # stop if there are any mismatches
   if (length(dontmatch) > 0) {
     beepr::beep(sound = 2, expr = NULL)
+    list_mismatches <<- dontmatch
     stop(
       "ROXAS output files DON'T MATCH for:", "\n",
       paste(paste0("  ", dontmatch), collapse = "\n")
@@ -125,17 +126,19 @@ get_input_files <- function(path_in) {
 #'
 #' @returns A dataframe containing the filenames and data structure.
 #' @export
-extract_data_structure <- function(files) {
+extract_data_structure <- function(files, pattern) {
   # TODO: allow for other labeling structures
   # e.g., site/species/tree/sample/imgname.jpg, or other variants
   # NOTE: we expect the basenames of the files to have the following structure:
-  lbl_structure <- '{site}_{species}_{tree}{woodpiece}_{sample}_{image}'
+  #lbl_structure <- '{site}_{species}_{tree}{woodpiece}_{sample}_{image}'
+  #lbl_structure <- '{site}_{species}_{tree}_{sample}_{image}'
+  lbl_structure <- stringr::str_replace_all(pattern, "\\^|\\$", "")  # remove start and end anchors
+  lbl_structure <- stringr::str_replace_all(lbl_structure, "\\(\\?<(\\w+)>[^)]+\\)", "{\\1}") # replace group regex with {group}
   # in regex, this corresponds to the following pattern (NOTE the named groups)
-  pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:][:alnum:])(?<woodpiece>[:alnum:]*)_(?<slide>[:alnum:]+)_(?<image>[:alnum:]+)$"
 
   # remove paths and extensions from the image filenames (e.g. ".jpg")
   fnames <- basename(files$fname_image) %>%
-    stringr::str_split_i("\\.",1)
+    stringr::str_split_i("\\.[A-Za-z]+$",1)
 
   # check that we have no duplicate image labels (e.g. from different subfolders)
   duplicates <- fnames[duplicated(fnames)]
@@ -159,9 +162,17 @@ extract_data_structure <- function(files) {
   }
 
   # extract the matched pattern groups and collect info into df
-  df_structure <- as.data.frame(stringr::str_match(fnames,pattern))
-  df_structure <- df_structure %>%
-    dplyr::rename(org_img_name = V1) %>% # original pattern is in column 1
+  df_structure <- as.data.frame(stringr::str_match(fnames,pattern)) %>%
+    dplyr::rename(org_img_name = V1) # original pattern is in column 1
+
+  df_structure <- data.frame(org_img_name = character(0),
+                             site = character(0),
+                             species = character(0),
+                             tree = character(0),
+                             woodpiece = character(0),
+                             slide = character(0),
+                             image = character(0)) %>%
+    dplyr::bind_rows(df_structure) %>% # ensure all columns are present
     dplyr::mutate(dplyr::across(dplyr::everything(), ~dplyr::na_if(.x,""))) %>%
     tidyr::unite('tree_code', site:tree,
                  sep = '_', na.rm = TRUE, remove = FALSE) %>%
@@ -407,7 +418,8 @@ collect_settings_data <- function(files_settings,
   if (is.null(tz)) {
     tz <- Sys.timezone()
   }
-  conv_dates <- df_settings_all$created_at %>% lubridate::mdy_hm(., tz=tz)
+  #conv_dates <- df_settings_all$created_at %>% lubridate::mdy_hm(., tz=tz)
+  conv_dates <- df_settings_all$created_at %>% lubridate::parse_date_time(., c("%d.%m.%Y %H:%M:%S", "%m/%d/%Y %H:%M"), tz=tz)
   # plausibility checks: no NA and not before outmost year
   # TODO: this also checks undated?
   check_dates <- any(is.na(conv_dates)) |

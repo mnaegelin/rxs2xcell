@@ -34,7 +34,7 @@
             "email": "jane.smith@wsl.ch",
             "orcid": "",
             "org_name": "Swiss Federal Institute for Forest, Snow and<br>Landscape Research",
-            "org_rorid": "04bs5yc70",
+            "rorid": "04bs5yc70",
             "aff_dep": "",
             "aff_street": "",
             "aff_plz": "",
@@ -48,7 +48,7 @@
             "email": "",
             "orcid": "",
             "org_name": "Swiss Federal Institute for Forest, Snow and<br>Landscape Research",
-            "org_rorid": "04bs5yc70",
+            "rorid": "04bs5yc70",
             "aff_dep": "",
             "aff_street": "",
             "aff_plz": "",
@@ -61,7 +61,7 @@
     [
         {
             "inst_name": "Swiss Federal Institute for Forest, Snow and Landscape Research",
-            "inst_rorid": "04bs5yc70",
+            "rorid": "04bs5yc70",
             "inst_city": "Birmensdorf",
             "inst_country": "Switzerland  (CH)",
             "grant_name": "",

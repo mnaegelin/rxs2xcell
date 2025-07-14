@@ -147,7 +147,7 @@ dataset_server <- function(id, main_session, start_info,
         selected_ror_data$country_code <- names(countries_list[countries_list == selected_ror_data$country_code])
         # update the author data table for the selected authors
         current_df <- author_data_out()
-        current_df[input$selected_authors, c("org_rorid", "org_name", "aff_city", "org_country")] <- selected_ror_data
+        current_df[input$selected_authors, c("rorid", "org_name", "aff_city", "org_country")] <- selected_ror_data
         author_data_in(current_df)
       }
       # update the funding table
@@ -158,7 +158,7 @@ dataset_server <- function(id, main_session, start_info,
         selected_ror_data$country_code <- names(countries_list[countries_list == selected_ror_data$country_code])
         # update in the funding data table for the selected funders
         current_df <- funding_data_out()
-        current_df[input$selected_funders, c("inst_rorid", "inst_name", "inst_city", "inst_country")] <- selected_ror_data
+        current_df[input$selected_funders, c("rorid", "inst_name", "inst_city", "inst_country")] <- selected_ror_data
         funding_data_in(current_df)
       }
       # close the modal
