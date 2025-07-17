@@ -45,8 +45,8 @@ df_meta <- collect_metadata_from_files(df_structure,
 
 
 # save extracted metadata to file
-# write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta_extracted.csv')),
-#           row.names = FALSE)
+#write.csv(df_meta, file.path(path_out, paste0(dataset_name, '_meta_extracted.csv')),
+          #row.names = FALSE)
 
 
 ################################################################################

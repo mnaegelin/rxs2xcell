@@ -220,7 +220,9 @@ load_meta_env <- function(){
 
 load_meta_csv <- function(datapath){
   # TODO: try catch error
-  df <- read.csv(datapath, stringsAsFactors = FALSE)
+  df <- vroom::vroom(datapath, col_types = c(
+    site = "c", species = "c", tree = "c", woodpiece = "c", slide = "c", image = "c",
+    tree_code = "c", woodpiece_code = "c", slide_code = "c", image_code = "c"), show_col_types = FALSE)
   # TODO: improve validation, ROXAS AI
   if (setdiff(c(cols_structure,cols_img,cols_settings,cols_paths, cols_other),
               colnames(df)) %>% length() > 0) {
