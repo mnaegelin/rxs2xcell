@@ -26,7 +26,9 @@ complete_rings_log <- function(QWA_data){
     dplyr::select(tree_code, woodpiece_code, slide_code, dplyr::everything()) %>%
     dplyr::group_by(image_code) %>% # fill any missing tree/woodpiece codes by image
     tidyr::fill(tree_code, woodpiece_code, slide_code, .direction = 'downup') %>%
-    dplyr::ungroup()
+    dplyr::ungroup() %>%
+    dplyr::arrange(image_code, year) %>% # arrange by year within image bc missing rings can lead to disordered years
+    dplyr::mutate(cno = tidyr::replace_na(cno, 0)) # replace NA cno with 0
 
 return(df_rings_log)
 }
@@ -144,8 +146,17 @@ additional_year_check <- function(df_rings_log){
 #'
 #' TODO: compare my method with GvA's original one, check thresholds
 check_incomplete_innermost <- function(cells.innermost, res){
+  # first check that we do have cell data for the year in question,
+  # if not, it means the cells were manually excluded and it is def incomplete
+  if (nrow(cells.innermost) < 1 || all(is.na(cells.innermost$xpix))){
+    return(list(mae = NA, medYleft = NA, medYright = NA, mindist = NA,
+                incomplete_inner = TRUE, incomplete_innerv2 = TRUE))
+  }
+
   # estimate the Y position of the inner border respective to cell based on
   # raddistr (converted from microns to pixels with the image's spatial resolution)
+
+
   cells.innermost$ringposY <- cells.innermost$ypix - cells.innermost$raddistr*res
 
   # sort cells by X coordinate
@@ -249,8 +260,8 @@ flag_incomplete_rings <- function(df_rings_log, df_cells_all, df_meta){
     dplyr::right_join(df_rings_log %>% dplyr::filter(innermost_ring) %>%
                         dplyr::select(image_code,year),
                       by = c('image_code','year')) %>%
-    dplyr::group_by(image_code, year) %>%
-    tidyr::nest() %>%
+    #dplyr::group_by(image_code, year) %>%
+    tidyr::nest(.by = c(image_code, year)) %>%
     dplyr::left_join(df_meta[c('image_code','spatial_resolution')],
                      by = c('image_code'))
 
@@ -368,7 +379,7 @@ validate_QWA_data <- function(QWA_data, df_meta){
 
   # flag missing rings
   df_rings_log <- df_rings_log %>%
-    dplyr::mutate(missing_ring = is.na(cno),
+    dplyr::mutate(missing_ring = is.na(cno) | (cno == 0), # TODO: should never have NA cno anymore because we replace with 0
                   no_MRW_other = is.na(mrw) & !(outermost_ring | innermost_ring), # TODO: check if this ever occurs and for what reason
                   missing_ringV2 = mrw < 10) # TODO: check if V2 always aligns other def
 

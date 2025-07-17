@@ -218,6 +218,9 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
 
       colHeaders <- get_tbl_colHeaders(site_tbl)
       tippies <- get_header_tippies(site_tbl)
+      ht_height <- switch((nrow(site_data_in())>5)+1,
+                          `1` = 180, # 1-5 rows, set min height so dropdown renders ok
+                          `2` = NULL) # >5 rows, don't fix height
 
       rhandsontable::rhandsontable(
         site_data_in(), #site_data$df_in,
@@ -225,7 +228,7 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
         contextMenu = FALSE,
         stretchH = "all",
         #overflow = "visible",
-        height = 180,
+        height = ht_height,
         colHeaders = unname(colHeaders),
         afterGetColHeader = tippy_renderer(tippies)) %>%
         #rhandsontable::hot_cols(fixedColumnsLeft = 1) %>%
@@ -367,12 +370,16 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
       colHeaders <- get_tbl_colHeaders(tree_tbl)
       tippies <- get_header_tippies(tree_tbl)
 
+      ht_height <- switch((nrow(tree_data_in())>5)+1,
+                          `1` = 180, # 1-5 rows, set min height so dropdown renders ok
+                          `2` = NULL) # >5 rows, don't fix height
+
       rhandsontable::rhandsontable(
         tree_data_in(),
         rowHeaders = TRUE,
         contextMenu = FALSE,
         stretchH = "all",
-        height = 180,
+        height = ht_height,
         colHeaders = unname(colHeaders),
         afterGetColHeader = tippy_renderer(tippies)) %>%
         #rhandsontable::hot_cols(fixedColumnsLeft = 1) %>%
@@ -449,14 +456,19 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
       colHeaders <- get_tbl_colHeaders(woodpiece_tbl)
       tippies <- get_header_tippies(woodpiece_tbl)
 
+      ht_height <- switch((nrow(wp_data_in())>5)+1,
+                          `1` = 180, # 1-5 rows, set min height so dropdown renders ok
+                          `2` = NULL) # >5 rows, don't fix height
+
       rhandsontable::rhandsontable(
         wp_data_in(),
         rowHeaders = TRUE,
         contextMenu = FALSE,
         stretchH = "all",
-        height = 180,
+        height = ht_height,
         colHeaders = unname(colHeaders),
         afterGetColHeader = tippy_renderer(tippies)) %>%
+        rhandsontable::hot_cols(fixedColumnsLeft = 1) %>%
         purrr::reduce(
           names(colHeaders), # names in df
           function(ht, col) {
@@ -480,11 +492,16 @@ site_server <- function(id, main_session, start_info, countries_list, site_tbl, 
       colHeaders <- get_tbl_colHeaders(slide_tbl)
       tippies <- get_header_tippies(slide_tbl)
 
+      ht_height <- switch((nrow(slide_data_in())>5)+1,
+                          `1` = 180, # 1-5 rows, set min height so dropdown renders ok
+                          `2` = NULL) # >5 rows, don't fix height
+
       rhandsontable::rhandsontable(
         slide_data_in(),
         rowHeaders = TRUE,
         contextMenu = FALSE,
         stretchH = "all",
+        height = ht_height,
         colHeaders = unname(colHeaders),
         afterGetColHeader = tippy_renderer(tippies)) %>%
         purrr::reduce(

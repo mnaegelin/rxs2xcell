@@ -360,6 +360,7 @@ hot_col_wrapper <- function(ht, col, col_config) {
       rhandsontable::hot_col(
         col,
         type = 'numeric',
+        format = col_config$format,
         renderer = renderer_js,
         readOnly = readOnly
       )

@@ -12,18 +12,18 @@ load_all()
 ################################################################################
 # set path to the input and output data
 
-path_in <- '../QWA_Arzac2024'
+#path_in <- '../QWA_Arzac2024'
 path_in <- '/Users/maranaegelin/Documents/QWAdata/YAM_1880' # for testing
 path_out <- './out'
 
-dataset_name <- 'QWA_Arzac2024' # used to name the resulting output files
+dataset_name <- 'QWA_YAM1880' # used to name the resulting output files
 
 
 ################################################################################
 # get overview of data to be read and extract data structure from filenames
 files <- get_input_files(path_in)
 
-pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:][:alnum:])(?<woodpiece>[:alnum:]*)_(?<slide>[:alnum:]+)_(?<image>[:alnum:]+)$"
+#pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:][:alnum:])(?<woodpiece>[:alnum:]*)_(?<slide>[:alnum:]+)_(?<image>[:alnum:]+)$"
 pattern <- "^(?<site>[:alnum:]+)_(?<species>[:alnum:]+)_(?<tree>[:alnum:].+)_(?<slide>[:alnum:]+)_(?<image>[:alnum:]+)$"
 
 df_structure <- extract_data_structure(files, pattern)
@@ -80,9 +80,38 @@ QWA_data <- remove_outliers(QWA_data)
 QWA_data <- complete_cell_measures(QWA_data)
 
 
+
 ################################################################################
 # provide user input on ring flags
 # interactively in shiny app
+QWA_data <- read_QWAdata(file_path = './out', dataset_name = dataset_name)
+
+
+# ADDING THE YTE INFO
+yte <- readxl::read_excel(
+  '/Users/maranaegelin/Documents/QWAdata/YAM_1880/Years_to_exclude.xlsx',
+  skip = 5,
+  col_names = TRUE,
+  .name_repair = janitor::make_clean_names
+)
+yte <- yte %>%
+  dplyr::rename(image_code = id) %>%
+  dplyr::mutate(dplyr::across(c(year_to_exclude,x_dating:others), \(x) as.integer(gsub("\\.", "", x))),
+                other_issues = dplyr::if_else(is.na(year_to_exclude),T,F)) %>%
+  dplyr::filter(image_code != 'YAM_LASI_125_01_3') %>% tidyr::pivot_longer( # this img code has no year for any flags?
+    cols = c(x_dating:others),
+    names_to = 'other_reason',
+    values_to = 'year', values_drop_na = TRUE
+  )
+
+yte[yte$image_code == 'YAM_LASI_243_4_3',"other_reason"] <- 'decay, paraffin' # has two flags
+yte <- yte[!duplicated(yte[c('image_code','year')]),] # remove this and other duplicates (not in ds)
+
+QWA_data$rings <- QWA_data$rings %>% dplyr::left_join(yte %>% dplyr::select(image_code,year,other_issues, other_reason), #what about tissue, comment?
+                                    by = c('image_code','year')) %>% dplyr::mutate(other_issues = dplyr::if_else(is.na(other_issues), FALSE, other_issues))
+
+
+
 launch_coverage_app()
 
 # after running the app, reload the rings data

@@ -106,7 +106,7 @@ theme <-  bslib::bs_add_rules(theme, HTML(paste0("
     .dataTables_wrapper .dataTable td {
       padding: 2px 2px !important;
     }
-    .dataTables_wrapper .dataTables_paginate .paginate_button {
+    .dataTables_paginate .paginate_button {
       padding: 2px 2px !important;  /* Adjust padding to make buttons smaller */
     }
 
@@ -131,6 +131,9 @@ theme <-  bslib::bs_add_rules(theme, HTML(paste0("
       border-color: ", sec_col, " !important;
     }
 
+    .form-group {
+      margin-bottom: 0px !important;
+    }
 
      table.dataTable thead tr { background: #CCE0E0 !important; }
 
@@ -171,7 +174,7 @@ ui <- page_sidebar(
       }
       .shiny-input-container .checkbox input:checked  {
         border-color: ", sec_col, " !important;
-        background-color: ", sec_col, " !important;
+        background-color: red !important;
       }
 
       /* style for input DT similar to hot*/
@@ -182,7 +185,24 @@ ui <- page_sidebar(
         background-color: white;
       }
 
+      th.checkbox-col, td.checkbox-col {
+        width: 75px !important;
+        overflow: hidden;
+        max-width: 75px !important;
+        text-align: center;
+      }
+
+
+
     "))),
+
+
+
+  # .dataTables_scrollBody{
+  #   overflow-x:hidden !important;
+  #   text-overflow: ellipsis;
+  #   overflow-y:auto !important;
+  # }
   # to add css directly:
   # tags$head(
   #   tags$style(HTML( ... )))
@@ -274,8 +294,14 @@ ui <- page_sidebar(
     # DATA TABLE ---------------------------------------------------------------
     accordion_panel(
       "Data",
-      DT::DTOutput('tbl')
+      DT::DTOutput('tbl'),
+      hr(),
+      DT::DTOutput('tbl2')
+
     ),
+
+    verbatimTextOutput('debug')
+
 
     # accordion_panel(
     #   "Data",

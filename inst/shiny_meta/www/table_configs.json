@@ -151,9 +151,10 @@
         },
         "n_trees":
         {
-            "col_header": "Nr. of trees",
-            "col_header_tippy": "",
+            "col_header": "Nr of trees",
+            "col_header_tippy": "Nr. of sampled trees at each site",
             "type": "numeric",
+            "format": "0.",
             "readOnly": true
         },
         "site_name":
@@ -200,8 +201,9 @@
         "elevation":
         {
             "col_header": "Elevation",
-            "col_header_tippy": "Elevation of the site above sea level",
+            "col_header_tippy": "Elevation of the site above sea level (in m)",
             "type": "numeric",
+            "format": "0.",
             "required": true,
             "min_val": -420,
             "max_val": 8848
@@ -218,7 +220,7 @@
         "slope":
         {
             "col_header": "Slope",
-            "col_header_tippy": "Slope of the terrain at the site in degrees",
+            "col_header_tippy": "Slope of the terrain at the site (in degrees)",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -379,8 +381,9 @@
         "n_woodpieces":
         {
             "col_header": "Nr of pieces",
-            "col_header_tippy": "Nr. of woodpieces collected from tree",
+            "col_header_tippy": "Nr. of woodpieces collected from each tree",
             "type": "numeric",
+            "format": "0.",
             "readOnly": true
         },
         "species_code":
@@ -460,7 +463,7 @@
         "tree_dbh":
         {
             "col_header": "Diameter at breast height",
-            "col_header_tippy": "Diameter at 1.3 meters above ground",
+            "col_header_tippy": "Diameter at 1.3 meters above ground (in cm)",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -469,7 +472,7 @@
         "tree_height":
         {
             "col_header": "Total height",
-            "col_header_tippy": "The total height of the tree from the base to the topmost point",
+            "col_header_tippy": "The total height of the tree from the base to the topmost point (in m)",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -478,7 +481,7 @@
         "tree_age":
         {
             "col_header": "Age",
-            "col_header_tippy": "The age of the tree, generally calculated by dendrochronological methods or estimated from growth models",
+            "col_header_tippy": "The age of the tree (in years)",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -541,6 +544,24 @@
                 "cloned"
             ]
         },
+        "tree_latitude":
+        {
+            "col_header": "Latitude",
+            "col_header_tippy": "Latitude of the tree in decimal degrees (WGS84)",
+            "type": "numeric",
+            "required": false,
+            "min_val": -90,
+            "max_val": 90
+        },
+        "tree_longitude":
+        {
+            "col_header": "Longitude",
+            "col_header_tippy": "Longitude of the tree in decimal degrees (WGS84)",
+            "type": "numeric",
+            "required": false,
+            "min_val": -180,
+            "max_val": 180
+        },
         "tree_comment":
         {
             "col_header": "Comments",
@@ -568,21 +589,22 @@
         "n_slides":
         {
             "col_header": "Nr of slides",
-            "col_header_tippy": "",
+            "col_header_tippy": "Nr. of slides created from each woodpiece",
             "type": "numeric",
+            "format": "0.",
             "readOnly": true
         },
         "sample_date":
         {
             "col_header": "Sample date",
-            "col_header_tippy": "when was the sample collected from the tree",
+            "col_header_tippy": "When was the sample collected from the tree",
             "type": "date",
             "required": true
         },
         "organ":
         {
             "col_header": "Organ",
-            "col_header_tippy": "",
+            "col_header_tippy": "From which part of the tree was the sample",
             "type": "dropdown",
             "required": true,
             "options":
@@ -595,7 +617,7 @@
         "sampling_height":
         {
             "col_header":  "Sampling height",
-            "col_header_tippy": "can be negative for root samples",
+            "col_header_tippy": "in m (can be negative for root samples)",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -604,7 +626,7 @@
         "sample_apex_distance":
         {
             "col_header": "Distance from apex",
-            "col_header_tippy": "",
+            "col_header_tippy": "in m",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -673,21 +695,22 @@
         "n_imgs":
         {
             "col_header": "Nr of images",
-            "col_header_tippy": "",
+            "col_header_tippy": "Nr. of images taken from each slide",
             "type": "numeric",
+            "format": "0.",
             "readOnly": true
         },
         "sample_date":
         {
             "col_header": "Sample date",
-            "col_header_tippy": "when was the slide created",
+            "col_header_tippy": "When was the slide created",
             "type": "date",
-            "required": true
+            "required": false
         },
         "sect_thickness":
         {
             "col_header": "Section thickness",
-            "col_header_tippy": "",
+            "col_header_tippy": "in µm",
             "type": "numeric",
             "required": false,
             "min_val": 0,
@@ -738,8 +761,8 @@
         },
         "slide_mounting":
         {
-            "col_header": "Description of the mounting method used",
-            "col_header_tippy": "",
+            "col_header": "Mounting method",
+            "col_header_tippy": "Description of the mounting method used",
             "type": "dropdown",
             "required": false,
             "options":
